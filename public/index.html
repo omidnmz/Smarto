@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d7a5f">
+<title>اسمارتو · پنل هوشمند کسب‌وکار</title>
+<link rel="preload" href="/fonts/Vazirmatn[wght].woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><button id="back" class="lnk" hidden style="display:block;padding:0;font-size:.78rem">‹ کسب‌وکارهای من</button><span id="wsname">اسمارتو</span><small id="today"></small></div>
+  <div style="display:grid;gap:4px;justify-items:end">
+    <div style="display:flex;gap:6px"><button id="gear" class="chip" hidden>تیم و تنظیمات</button><button id="acct" class="chip" hidden>ورود</button></div>
+    <label class="who" for="who" id="whoWrap" hidden>نمایش برای <select id="who"></select></label>
+  </div>
+</div></header>
+<main id="view"><div class="empty">در حال بارگذاری…</div></main>
+<nav class="bottom" aria-label="بخش‌ها"><div class="in" id="nav"></div></nav>
+<div class="toast" id="toast" hidden></div>
+<script src="/api.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
