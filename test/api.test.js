@@ -60,7 +60,7 @@ test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => 
 
   await t.test('visitors see only the samples, read-only', async () => {
     const ws = await anon.get('workspaces');
-    assert.equal(ws.body.docs.length, 10);
+    assert.equal(ws.body.docs.length, 11);
     assert.ok(ws.body.docs.every((w) => w.data.example));
     assert.equal((await anon.get('workspaces/salon1/appointments')).status, 200);
     assert.equal((await anon.add('workspaces/salon1/tasks', { title: 'x' })).status, 401);
