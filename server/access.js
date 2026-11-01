@@ -4,7 +4,7 @@ import { q } from './db.js';
 export const WS_COLS = new Set([
   'people', 'products', 'sales', 'orders', 'payments', 'tasks', 'ideas', 'content', 'costs', 'salaries',
   'services', 'clients', 'appointments', 'sorders', 'menu', 'forders', 'inventory', 'jobs', 'parts',
-  'rsales', 'ledger', 'checks', 'gsales', 'listings', 'visits', 'deals',
+  'rsales', 'ledger', 'checks', 'gsales', 'listings', 'visits', 'deals', 'plans',
 ]);
 const TOP = new Set(['workspaces', 'requests', 'jobtypes']);
 const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
