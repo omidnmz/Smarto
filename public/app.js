@@ -31,6 +31,14 @@ const ICON={
   parts:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>',
   nasieh:'<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h4"/></svg>',
   checks:'<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 14h6M15 10h3"/></svg>',
+  ghome:'<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  gsell:'<svg viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
+  gstock:'<svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M12 21 8 9l4-6 4 6z"/></svg>',
+  edash:'<svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
+  listings:'<svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-6h6v6"/></svg>',
+  buyers:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .7 3.4 2.6 4 5.5"/></svg>',
+  visits:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M12 13v4M10 15h4"/></svg>',
+  edeals:'<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
   payments:'<svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
 };
 const NAV={
@@ -50,21 +58,25 @@ const CAFE_ROLES={owner:'مالک',manager:'مدیر کافه',cashier:'صندو
 const REST_ROLES={owner:'مالک',manager:'مدیر سالن',cashier:'صندوقدار',waiter:'گارسون',kitchen:'آشپزخانه',specialist:'متخصص'};
 const REPAIR_ROLES={owner:'مالک',reception:'پذیرش',tech:'تعمیرکار',specialist:'متخصص'};
 const RETAIL_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
+const GOLD_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
+const RE_ROLES={owner:'مدیر املاک',agent:'مشاور',specialist:'متخصص'};
 const PAY_TYPES=['حقوق ماهانه','درصدی','پروژه‌ای','ساعتی'];
 const LBL={salon:{client:'مشتری',clients:'مشتریان',staff:'آرایشگر',note:'یادداشت (مثلاً فرمول رنگ)'},clinic:{client:'بیمار',clients:'بیماران',staff:'پزشک',note:'یادداشت ویزیت'}};
 const APPT_ST=['رزرو','تأیید شده','انجام‌شده','لغو','نیامد'];
-const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',salon:'سالن زیبایی',clinic:'کلینیک'};
+const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',gold:'طلافروشی',realestate:'املاک',salon:'سالن زیبایی',clinic:'کلینیک'};
 const STORE_COLS=['people','products','sales','orders','payments','tasks','ideas','content','costs','salaries'];
 const APPT_COLS=['people','services','clients','appointments','tasks','ideas','costs','salaries'];
 const SHOP_COLS=['people','products','sorders','tasks','ideas','costs','salaries'];
 const FOOD_COLS=['people','menu','forders','inventory','tasks','ideas','costs','salaries'];
 const REPAIR_COLS=['people','jobs','parts','tasks','ideas','costs','salaries'];
 const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas','costs','salaries'];
-const colsFor=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS}[t]||APPT_COLS);
+const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
+const RE_COLS=['people','listings','clients','visits','deals','tasks','ideas','costs','salaries'];
+const colsFor=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS}[t]||APPT_COLS);
 let ws=null, workspaces=[], unsubs=[];
 const L=k=>(ws&&ws.labels&&ws.labels[k])||(LBL[ws&&ws.type]||LBL.salon)[k];
 const rolesOf=()=>({...baseRoles(ws.type),...(ws.roleLabels||{})});
-const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES}[type]||APPT_ROLES[type]||{});
+const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES}[type]||APPT_ROLES[type]||{});
 const roleLabel=r=>rolesOf()[r]||r;
 function navFor(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='store')return NAV[r]||NAV.team;
@@ -85,12 +97,18 @@ function navFor(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='retail'){
     if(r==='owner')return [['rhome','فروش'],['nasieh','نسیه'],['stock','انبار'],['money','مالی'],['tasks','کارها'],['rsell','',1],['checks','',1]];
     return [['rsell','فروش'],['nasieh','نسیه'],['stock','انبار'],['tasks','کارها']];}
+  if(ws.type==='gold'){
+    if(r==='owner')return [['ghome','فروش'],['gstock','ویترین'],['nasieh','نسیه'],['money','مالی'],['tasks','کارها'],['gsell','',1],['checks','',1]];
+    return [['gsell','فاکتور'],['gstock','ویترین'],['nasieh','نسیه'],['tasks','کارها']];}
+  if(ws.type==='realestate'){
+    if(r==='owner')return [['edash','داشبورد'],['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['tasks','کارها'],['edeals','',1],['money','',1]];
+    return [['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['edeals','قرارداد'],['tasks','کارها']];}
   if(r==='owner')return [['income','درآمد'],['appts','نوبت‌ها'],['clients',L('clients')],['money','مالی'],['tasks','کارها']];
   if(r==='front')return [['appts','نوبت‌ها'],['clients',L('clients')],['tasks','کارها']];
   return [['myappts','نوبت‌های من'],['earn','درآمد من'],['tasks','کارها']];}
 const P=x=>'workspaces/'+ws.id+'/'+x;
 const D=x=>db.doc(P(x)), C=x=>db.collection(P(x));
-const catsFor=()=>ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
+const catsFor=()=>ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:ws.type==='gold'?['فروش','ویترین و ساخت','نسیه و چک','مالی','سایر']:ws.type==='realestate'?['فایل‌ها','مشتریان','بازدید','قرارداد','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
 const CENTRAL='مرکزی';
 const CHANNELS=['حضوری','سایت','اینستاگرام'];
 const ORDER_ST=['ثبت‌شده','در حال آماده‌سازی','ارسال‌شده','تحویل‌شده'];
@@ -101,7 +119,7 @@ const REPEAT={none:'یک‌بار',daily:'روزانه',weekly:'هفتگی',mont
 const COST_CATS=['خرید و تأمین','حمل‌ونقل','قبوض','اجاره','تبلیغات','پذیرایی','سایر'];
 const JMONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 
-const state={};const resetState=()=>[...new Set([...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS])].forEach(c=>state[c]=[]);resetState();
+const state={};const resetState=()=>[...new Set([...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS])].forEach(c=>state[c]=[]);resetState();
 const ui={day:null,staffF:'همه',q:'',period:'today',source:'all',from:'',to:'',taskTab:'received',taskCat:'همه',moneyTab:'costs',salMonth:null,contentSt:'همه'};
 let db=null, me=null, armed=null, loaded=new Set();
 
@@ -909,6 +927,240 @@ function scrChecks(){
   <section class="card"><h3>به ترتیب سررسید</h3>${list.length?`<ul class="list">${list.map(c=>`<li class="${c.paid?'done':''} ${!c.paid&&c.due<TODAY?'late':''}"><input type="checkbox" class="chk" ${c.paid?'checked':''} data-paid="checks/${c.id}" aria-label="پاس شد"><div class="grow"><div class="t">${esc(c.party)}</div><div class="m">${jd(c.due)} · ${rel(c.due)}${c.note?' · '+esc(c.note):''}</div></div><div style="display:grid;justify-items:end;gap:4px"><span class="num">${fmtN(c.amount)}</span><span class="pill ${c.kind==='دریافتنی'?'p-ok':'p-warn'}">${esc(c.kind||'پرداختنی')}</span>${delBtn('checks',c.id)}</div></li>`).join('')}</ul>`:empty('چک یا بدهی ثبت نشده است.')}</section>`;
 }
 
+// ---------- gold shop ----------
+const KARATS=[['750','۱۸ عیار'],['900','۲۱ عیار'],['999','۲۴ عیار']];
+const karatLbl=k=>(KARATS.find(x=>x[0]===String(k))||[0,String(k||'')])[1];
+const fmtG=n=>(+n||0).toLocaleString('fa-IR',{maximumFractionDigits:3});
+const toNum=s=>parseFloat(toEn(s).replace(/[٫\/]/g,'.').replace(/[^\d.]/g,''))||0;
+const goldRate=()=>+ws.goldRate||0;
+// Invoice price: gold value (by weight, karat and the 18k rate) + making charge + seller profit + VAT on charge and profit.
+function goldCalc(o){
+  const base=toNum(o.weight)*(+o.rate||0)*((+o.karat||750)/750);
+  const wageAmt=base*(toNum(o.wage)/100), profitAmt=(base+wageAmt)*(toNum(o.profit)/100), taxAmt=(wageAmt+profitAmt)*(toNum(o.tax)/100);
+  const r=x=>Math.round(x/1000)*1000;
+  return {base:r(base),wageAmt:r(wageAmt),profitAmt:r(profitAmt),taxAmt:r(taxAmt),amount:r(base)+r(wageAmt)+r(profitAmt)+r(taxAmt)};
+}
+const gSold=()=>state.gsales.filter(s=>s.kind!=='خرید');
+function scrGHome(){
+  const [f,t]=range();
+  const rows=gSold().filter(s=>s.date>=f&&s.date<=t), bought=state.gsales.filter(s=>s.kind==='خرید'&&s.date>=f&&s.date<=t);
+  const total=rows.reduce((a,s)=>a+(+s.amount||0),0), grams=rows.reduce((a,s)=>a+(+s.weight||0),0);
+  const margin=rows.reduce((a,s)=>a+(+s.wageAmt||0)+(+s.profitAmt||0),0);
+  const credit=ledgerBalances().filter(c=>c.bal>0).reduce((a,c)=>a+c.bal,0);
+  const soon=state.checks.filter(c=>!c.paid&&c.kind!=='دریافتنی'&&c.due<=addDays(TODAY,7));
+  const byItem=groupSum(rows,s=>s.name||'بدون نام',s=>+s.amount||0);
+  const canRate=['owner','gm'].includes(me.role);
+  return `
+  <button class="btn" data-go="gsell" style="width:100%">صدور فاکتور یا خرید طلای کهنه</button>
+  <section class="card"><div class="row"><h3>نرخ هر گرم طلای ۱۸ عیار</h3><span class="small muted">${ws.goldRateDate?'به‌روز شده '+rel(ws.goldRateDate):''}</span></div>
+    ${canRate?`<label class="small muted">تومان<input class="inline" style="width:100%;font-size:1.1rem;padding:8px" type="number" min="0" step="1000" value="${goldRate()}" data-wsrate="1" aria-label="نرخ طلا"></label>`:`<div class="val num">${fmtN(goldRate())} تومان</div>`}</section>
+  ${soon.length?`<div class="kpis">${alertKpi('checks','چک و بدهی تا ۷ روز',fmtN(soon.length),fmtT(soon.reduce((a,c)=>a+(+c.amount||0),0))+' تومان')}</div>`:''}
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">فروش ${pLabel()}</span><span class="val">${fmtT(total)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(rows.length)} فاکتور · ${fmtG(grams)} گرم</span></div>
+    <div class="kpi"><span class="lab">اجرت و سود</span><span class="val">${fmtT(margin)}</span><span class="hint">درآمد مغازه از فروش</span></div>
+    <div class="kpi"><span class="lab">خرید طلای کهنه</span><span class="val">${fmtG(bought.reduce((a,s)=>a+(+s.weight||0),0))} گرم</span><span class="hint">${fmtT(bought.reduce((a,s)=>a+(+s.amount||0),0))} تومان</span></div>
+    <button class="kpi" data-go="nasieh" style="text-align:start;cursor:pointer"><span class="lab">طلب نسیه</span><span class="val">${fmtT(credit)}</span><span class="hint">از همه مشتری‌ها</span></button>
+  </div>
+  ${trendCard(gSold(),s=>+s.amount||0)}
+  ${Object.keys(byItem).length?`<section class="card"><div class="row"><h3>فروش به تفکیک جنس</h3><span class="small muted">${pLabel()}</span></div>${sumTbl(byItem,'جنس','فاکتور')}</section>`:''}
+  <div class="row" style="justify-content:flex-start;gap:8px"><button class="chip" data-go="checks">چک‌ها و بدهی‌ها</button></div>`;
+}
+function scrGSell(){
+  const ps=state.products.filter(p=>(+p.stock||0)>0).sort((a,b)=>a.name.localeCompare(b.name,'fa'));
+  const today=state.gsales.filter(s=>s.date===TODAY).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
+  return `
+  <section class="card"><h3>فاکتور فروش</h3><form class="f" data-form="gsale">
+    <label class="full">جنس از ویترین<select id="gs-p" name="pid"><option value="">وارد کردن دستی</option>${ps.map(p=>`<option value="${p.id}">${esc(p.name)} · ${fmtG(p.weight)} گرم</option>`).join('')}</select></label>
+    <label class="full">نام جنس<input id="gs-name" name="name" placeholder="مثلاً انگشتر زنانه"></label>
+    <label>وزن (گرم)<input id="gs-w" name="weight" inputmode="decimal" required></label>
+    <label>عیار<select id="gs-k" name="karat">${opts(KARATS,'750')}</select></label>
+    <label>نرخ هر گرم ۱۸ عیار<input id="gs-rate" name="rate" data-keep="1" type="number" min="0" step="1000" value="${goldRate()||''}" required></label>
+    <label>اجرت ساخت ٪<input id="gs-wage" name="wage" data-keep="1" inputmode="decimal" value="15"></label>
+    <label>سود فروشنده ٪<input id="gs-profit" name="profit" data-keep="1" inputmode="decimal" value="7"></label>
+    <label>مالیات بر ارزش افزوده ٪<input id="gs-tax" name="tax" data-keep="1" inputmode="decimal" value="10"></label>
+    <label>روش پرداخت<select id="gs-m" name="method">${opts(RPAY,'کارت')}</select></label>
+    <label>مشتری<input id="gs-c" name="customer" list="ledgerNames"><datalist id="ledgerNames">${ledgerBalances().map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></label>
+    <div class="full card" id="gs-sum" style="background:var(--bg)">${goldSumHtml()}</div>
+    <button class="btn full">ثبت فاکتور</button></form></section>
+  <details class="add"><summary>خرید طلای کهنه از مشتری</summary><form class="f" data-form="gbuy">
+    <label>وزن (گرم)<input id="gb-w" name="weight" inputmode="decimal" required></label>
+    <label>عیار<select id="gb-k" name="karat">${opts(KARATS,'750')}</select></label>
+    <label>نرخ هر گرم ۱۸ عیار<input id="gb-rate" name="rate" data-keep="1" type="number" min="0" step="1000" value="${goldRate()||''}" required></label>
+    <label>فروشنده طلا<input id="gb-c" name="customer"></label>
+    <label class="full">توضیح<input id="gb-note" name="note" placeholder="مثلاً النگو شکسته"></label>
+    <button class="btn full">ثبت خرید</button></form></details>
+  <section class="card"><div class="row"><h3>امروز</h3><span class="num t">${fmtN(today.filter(s=>s.kind!=='خرید').reduce((a,s)=>a+(+s.amount||0),0))}</span></div>
+    ${today.length?`<ul class="list">${today.map(s=>`<li><div class="grow"><div class="t">${s.kind==='خرید'?'<span class="pill p-warn">خرید</span> ':''}${esc(s.name||'طلای کهنه')} · ${fmtG(s.weight)} گرم ${esc(karatLbl(s.karat))}</div><div class="m">${esc(s.time||'')}${s.method?' · '+esc(s.method):''}${s.customer?' · '+esc(s.customer):''}</div></div><span class="num">${fmtN(s.amount)}</span>${delBtn('gsales',s.id)}</li>`).join('')}</ul>`:empty('امروز هنوز فاکتوری ثبت نشده است.')}</section>`;
+}
+function goldSumHtml(v){
+  v=v||{weight:0,karat:750,rate:goldRate(),wage:15,profit:7,tax:10};
+  const c=goldCalc(v);
+  const r=(k,x)=>`<div class="row"><span class="small muted">${k}</span><span class="num">${fmtN(x)}</span></div>`;
+  return r('ارزش طلا',c.base)+r('اجرت ساخت',c.wageAmt)+r('سود فروشنده',c.profitAmt)+r('مالیات',c.taxAmt)+`<div class="row"><span class="t">مبلغ فاکتور</span><span class="num t">${fmtN(c.amount)} تومان</span></div>`;
+}
+function readGoldForm(){const g=id=>(document.getElementById(id)||{}).value||'';return {weight:g('gs-w'),karat:g('gs-k'),rate:g('gs-rate'),wage:g('gs-wage'),profit:g('gs-profit'),tax:g('gs-tax')}}
+function scrGStock(){
+  const ps=[...state.products].sort((a,b)=>a.name.localeCompare(b.name,'fa'));
+  const pieces=ps.reduce((a,p)=>a+(+p.stock||0),0), grams=ps.reduce((a,p)=>a+(+p.stock||0)*(+p.weight||0),0);
+  const value=ps.reduce((a,p)=>a+(+p.stock||0)*(+p.weight||0)*goldRate()*((+p.karat||750)/750),0);
+  return `
+  <div class="kpis"><div class="kpi"><span class="lab">اجناس ویترین</span><span class="val">${fmtN(pieces)}</span><span class="hint">عدد</span></div><div class="kpi"><span class="lab">وزن کل</span><span class="val">${fmtG(grams)}</span><span class="hint">گرم</span></div><div class="kpi wide"><span class="lab">ارزش طلای ویترین با نرخ امروز</span><span class="val">${fmtT(value)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">بدون اجرت</span></div></div>
+  <details class="add"><summary>افزودن جنس</summary><form class="f" data-form="gitem">
+    <label class="full">نام<input id="gi-name" name="name" required placeholder="مثلاً گردنبند ونیزی"></label>
+    <label>وزن (گرم)<input id="gi-w" name="weight" inputmode="decimal" required></label>
+    <label>عیار<select id="gi-k" name="karat">${opts(KARATS,'750')}</select></label>
+    <label>اجرت ساخت ٪<input id="gi-wage" name="wage" inputmode="decimal" value="15"></label>
+    <label>تعداد<input id="gi-stock" name="stock" type="number" min="0" value="1"></label>
+    <button class="btn full">افزودن</button></form></details>
+  <section class="card"><div class="row"><h3>ویترین و انبار</h3><span class="small muted">${fmtN(ps.length)} قلم</span></div>
+    ${ps.length?`<ul class="list">${ps.map(p=>`<li class="${(+p.stock||0)?'':'done'}"><div class="grow"><div class="t">${esc(p.name)}</div><div class="m">${fmtG(p.weight)} گرم · ${esc(karatLbl(p.karat||750))} · اجرت ${fmtN(p.wage)}٪</div></div>
+      <label class="small muted" style="display:grid;gap:2px">تعداد<input class="inline" style="width:56px" type="number" min="0" value="${+p.stock||0}" data-set="products/${p.id}" data-field="stock"></label>${delBtn('products',p.id)}</li>`).join('')}</ul>`:empty('هنوز جنسی ثبت نشده است.')}</section>`;
+}
+
+// ---------- real estate ----------
+const RE_DEAL=['فروش','رهن و اجاره','پیش‌فروش'];
+const RE_KIND=['آپارتمان','ویلایی','زمین','مغازه','اداری','باغ'];
+const RE_ST=['فعال','در حال مذاکره','قرارداد شد','خارج شد'];
+const CL_ST=['فعال','به نتیجه رسید','منصرف شد'];
+const VIS_ST=['برنامه‌ریزی‌شده','انجام شد، پسندید','انجام شد، نپسندید','لغو'];
+const isRent=x=>x.deal==='رهن و اجاره'||x.want==='رهن و اجاره';
+const lTitle=l=>[l.kind,l.area?fmtN(l.area)+' متری':'',l.region].filter(Boolean).join(' · ');
+const lPrice=l=>isRent(l)?'رهن '+fmtT(l.deposit)+(+l.rent?' · اجاره '+fmtT(l.rent):''):fmtT(l.price)+' تومان';
+const reAgents=()=>state.people.filter(p=>p.role==='agent'||p.role==='owner');
+const mineOnly=()=>me.role==='agent';
+function matchListings(c){
+  return state.listings.filter(l=>l.status==='فعال'&&(isRent(c)?isRent(l):!isRent(l))&&(!c.kind||l.kind===c.kind)&&(!c.region||!l.region||l.region.includes(c.region)||c.region.includes(l.region))
+    &&(isRent(c)?(!+c.deposit||(+l.deposit||0)<=+c.deposit*1.1)&&(!+c.rent||(+l.rent||0)<=+c.rent*1.1):(!+c.budget||(+l.price||0)<=+c.budget*1.1)));
+}
+function matchClients(l){return state.clients.filter(c=>c.status==='فعال'&&matchListings(c).some(x=>x.id===l.id))}
+function scrEDash(){
+  const [f,t]=range();
+  const deals=state.deals.filter(d=>d.date>=f&&d.date<=t);
+  const comm=deals.reduce((a,d)=>a+(+d.commission||0),0);
+  const unpaid=state.deals.filter(d=>!d.paid&&+d.commission);
+  const active=state.listings.filter(l=>l.status==='فعال');
+  const ending=state.deals.filter(d=>d.endDate&&d.endDate>=TODAY&&d.endDate<=addDays(TODAY,45));
+  const visToday=state.visits.filter(v=>v.date===TODAY&&v.result!=='لغو');
+  const byAgent=groupSum(deals,d=>pname(d.agent),d=>+d.commission||0);
+  const byType=groupSum(active,l=>l.deal+' · '+l.kind,l=>isRent(l)?+l.deposit||0:+l.price||0);
+  return `
+  ${visToday.length||ending.length||unpaid.length?`<div class="kpis">${visToday.length?alertKpi('visits','بازدید امروز',fmtN(visToday.length),'از فایل‌ها'):''}${ending.length?alertKpi('edeals','قرارداد اجاره رو به پایان',fmtN(ending.length),'تا ۴۵ روز آینده'):''}${unpaid.length?alertKpi('edeals','کمیسیون دریافت‌نشده',fmtT(unpaid.reduce((a,d)=>a+(+d.commission||0),0)),fmtN(unpaid.length)+' قرارداد'):''}</div>`:''}
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">کمیسیون ${pLabel()}</span><span class="val">${fmtT(comm)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(deals.length)} قرارداد</span></div>
+    <button class="kpi" data-go="listings" style="text-align:start;cursor:pointer"><span class="lab">فایل فعال</span><span class="val">${fmtN(active.length)}</span><span class="hint">${fmtN(active.filter(l=>!isRent(l)).length)} فروش · ${fmtN(active.filter(isRent).length)} اجاره</span></button>
+    <button class="kpi" data-go="buyers" style="text-align:start;cursor:pointer"><span class="lab">مشتری فعال</span><span class="val">${fmtN(state.clients.filter(c=>c.status==='فعال').length)}</span><span class="hint">دنبال ملک</span></button>
+  </div>
+  ${trendCard(state.deals,d=>+d.commission||0,'روند کمیسیون')}
+  ${Object.keys(byAgent).length?`<section class="card"><div class="row"><h3>کمیسیون هر مشاور</h3><span class="small muted">${pLabel()}</span></div>${sumTbl(byAgent,'مشاور','قرارداد')}</section>`:''}
+  <section class="card"><h3>فایل‌های فعال</h3>${sumTbl(byType,'نوع','فایل')}</section>
+  <div class="row" style="justify-content:flex-start;gap:8px"><button class="chip" data-go="edeals">قراردادها</button><button class="chip" data-go="money">هزینه‌ها و حقوق</button></div>`;
+}
+function agentSel(id,name,v){return `<select id="${id}" name="${name}">${opts(reAgents().map(p=>[p.id,p.name]),v||(me.role==='agent'?me.id:''))}</select>`}
+function scrListings(){
+  const q=(ui.q||'').trim(), dl=ui.ldeal||'همه', st=ui.lst||'فعال';
+  let list=state.listings.filter(l=>(dl==='همه'||l.deal===dl)&&(st==='همه'||l.status===st)&&(!ui.lmine||l.agent===me.id));
+  if(q)list=list.filter(l=>[l.code,l.region,l.address,l.owner,l.ownerPhone,l.kind].some(x=>String(x||'').includes(q)));
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0));
+  return `
+  <details class="add"><summary>ثبت فایل جدید</summary><form class="f" data-form="listing">
+    <label>نوع معامله<select id="ls-deal" name="deal">${opts(RE_DEAL,'فروش')}</select></label>
+    <label>نوع ملک<select id="ls-kind" name="kind">${opts(RE_KIND,'آپارتمان')}</select></label>
+    <label>محله<input id="ls-region" name="region" required placeholder="مثلاً سعادت‌آباد"></label>
+    <label>متراژ<input id="ls-area" name="area" type="number" min="0"></label>
+    <label>اتاق<input id="ls-rooms" name="rooms" type="number" min="0"></label>
+    <label>قیمت کل (فروش)<input id="ls-price" name="price" type="number" min="0" step="1000000"></label>
+    <label>رهن<input id="ls-dep" name="deposit" type="number" min="0" step="1000000"></label>
+    <label>اجاره ماهانه<input id="ls-rent" name="rent" type="number" min="0" step="100000"></label>
+    <label>نام مالک<input id="ls-owner" name="owner"></label>
+    <label>موبایل مالک<input id="ls-ophone" name="ownerPhone" inputmode="tel"></label>
+    <label>مشاور${agentSel('ls-agent','agent')}</label>
+    <label class="full">آدرس و توضیح<input id="ls-note" name="note" placeholder="مثلاً طبقه ۳، پارکینگ و انباری"></label>
+    <button class="btn full">ثبت فایل</button></form></details>
+  <div class="chips">${['همه',...RE_DEAL].map(k=>`<button class="chip" data-ldeal="${k}" aria-pressed="${dl===k}">${k}</button>`).join('')}<button class="chip" data-lmine="1" aria-pressed="${!!ui.lmine}">فایل‌های من</button></div>
+  <div class="chips">${['فعال','در حال مذاکره','قرارداد شد','همه'].map(k=>`<button class="chip" data-lst="${k}" aria-pressed="${st===k}">${k}</button>`).join('')}</div>
+  ${searchBox('جستجوی کد، محله یا مالک')}
+  <section class="card"><div class="row"><h3>فایل‌ها</h3><span class="small muted">${fmtN(list.length)} فایل</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,80).map(l=>{const m=l.status==='فعال'?matchClients(l).length:0;return `<li><div class="grow"><div class="t"><span class="small muted">${fmtN(l.code)}</span> ${esc(lTitle(l))}${m?` <span class="pill p-ok">${fmtN(m)} مشتری مناسب</span>`:''}</div>
+      <div class="m">${esc(l.deal)} · ${lPrice(l)}${+l.rooms?' · '+fmtN(l.rooms)+' خواب':''}</div>
+      <div class="m">${l.owner?esc(l.owner)+' ':''}${l.ownerPhone?`<a href="tel:${esc(l.ownerPhone)}" style="color:inherit">${esc(l.ownerPhone)}</a> · `:''}${esc(pname(l.agent))} · ${rel(l.date)}</div>${l.note?`<div class="m">${esc(l.note)}</div>`:''}</div>
+      <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="listings/${l.id}" data-field="status" aria-label="وضعیت">${opts(RE_ST,l.status)}</select>${['owner','gm'].includes(me.role)||l.agent===me.id?delBtn('listings',l.id):''}</div></li>`}).join('')}</ul>`:empty('فایلی با این شرایط نیست.')}</section>`;
+}
+function scrBuyers(){
+  const q=(ui.q||'').trim(), st=ui.cst||'فعال';
+  let list=state.clients.filter(c=>(st==='همه'||c.status===st)&&(!mineOnly()||c.agent===me.id));
+  if(q)list=list.filter(c=>[c.name,c.phone,c.region].some(x=>String(x||'').includes(q)));
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `
+  <details class="add"><summary>ثبت مشتری</summary><form class="f" data-form="buyer">
+    <label>نام<input id="by-name" name="name" required></label>
+    <label>موبایل<input id="by-phone" name="phone" inputmode="tel"></label>
+    <label>دنبال<select id="by-want" name="want">${opts(['خرید','رهن و اجاره'],'خرید')}</select></label>
+    <label>نوع ملک<select id="by-kind" name="kind"><option value="">فرقی نمی‌کند</option>${opts(RE_KIND)}</select></label>
+    <label>محله<input id="by-region" name="region"></label>
+    <label>بودجه خرید<input id="by-budget" name="budget" type="number" min="0" step="1000000"></label>
+    <label>حداکثر رهن<input id="by-dep" name="deposit" type="number" min="0" step="1000000"></label>
+    <label>حداکثر اجاره<input id="by-rent" name="rent" type="number" min="0" step="100000"></label>
+    <label>مشاور${agentSel('by-agent','agent')}</label>
+    <label class="full">توضیح<input id="by-note" name="note" placeholder="مثلاً آسانسور لازم دارد"></label>
+    <button class="btn full">ثبت مشتری</button></form></details>
+  <div class="chips">${['فعال','به نتیجه رسید','منصرف شد','همه'].map(k=>`<button class="chip" data-cst="${k}" aria-pressed="${st===k}">${k}</button>`).join('')}</div>
+  ${searchBox('جستجوی نام، موبایل یا محله')}
+  <section class="card"><div class="row"><h3>مشتریان</h3><span class="small muted">${fmtN(list.length)} نفر</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,80).map(c=>{const m=c.status==='فعال'?matchListings(c):[];return `<li><div class="grow"><div class="t">${esc(c.name)} <span class="small muted">${esc(c.want)}${c.kind?' · '+esc(c.kind):''}${c.region?' · '+esc(c.region):''}</span></div>
+      <div class="m">${c.phone?`<a href="tel:${esc(c.phone)}" style="color:inherit">${esc(c.phone)}</a> · `:''}${isRent(c)?'رهن تا '+fmtT(c.deposit)+(+c.rent?' · اجاره تا '+fmtT(c.rent):''):'بودجه '+fmtT(c.budget)} · ${esc(pname(c.agent))}</div>
+      ${c.note?`<div class="m">${esc(c.note)}</div>`:''}
+      ${m.length?`<div class="m">فایل‌های مناسب: ${m.slice(0,4).map(l=>`<span class="pill p-info">${fmtN(l.code)} · ${esc(l.region||l.kind)}</span>`).join(' ')}</div>`:''}</div>
+      <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="clients/${c.id}" data-field="status" aria-label="وضعیت">${opts(CL_ST,c.status)}</select>${delBtn('clients',c.id)}</div></li>`}).join('')}</ul>`:empty('مشتری‌ای با این شرایط نیست.')}</section>`;
+}
+function scrVisits(){
+  const d=ui.day||TODAY;
+  const mine=v=>!mineOnly()||v.agent===me.id;
+  const list=state.visits.filter(v=>v.date===d&&mine(v)).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const next=state.visits.filter(v=>v.date>TODAY&&mine(v)&&v.result==='برنامه‌ریزی‌شده').length;
+  const ls=state.listings.filter(l=>l.status==='فعال'||l.status==='در حال مذاکره');
+  return `
+  <details class="add"><summary>ثبت بازدید</summary><form class="f" data-form="visit">
+    <label class="full">فایل<select id="vi-l" name="listing" required>${ls.map(l=>`<option value="${l.id}">${fmtN(l.code)} · ${esc(lTitle(l))}</option>`).join('')}</select></label>
+    <label>مشتری<input id="vi-c" name="client" required list="reClients"><datalist id="reClients">${state.clients.filter(c=>c.status==='فعال').map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></label>
+    <label>مشاور${agentSel('vi-agent','agent')}</label>
+    <label>تاریخ<input type="date" id="vi-date" name="date" value="${d}"></label>
+    <label>ساعت<input type="time" id="vi-time" name="time" value="17:00"></label>
+    <label class="full">توضیح<input id="vi-note" name="note"></label>
+    <button class="btn full">ثبت بازدید</button></form></details>
+  <div class="row" style="justify-content:center;gap:10px"><button class="chip" data-day="-1" aria-label="روز قبل">‹ قبل</button><span class="t">${jd(d,{weekday:'long',day:'numeric',month:'long'})}</span><button class="chip" data-day="1" aria-label="روز بعد">بعد ›</button></div>
+  ${d!==TODAY?'<div style="text-align:center"><button class="lnk" data-day="0">برگشت به امروز</button></div>':''}
+  <section class="card"><div class="row"><h3>بازدیدها</h3><span class="small muted">${next?fmtN(next)+' بازدید در روزهای بعد':''}</span></div>
+    ${list.length?`<ul class="list">${list.map(v=>{const l=state.listings.find(x=>x.id===v.listing);const c=state.clients.find(x=>x.name===v.client);return `<li><span class="num t">${esc(v.time||'')}</span><div class="grow"><div class="t">${esc(v.client)}${c&&c.phone?` <a class="small" href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}</div><div class="m">${l?fmtN(l.code)+' · '+esc(lTitle(l)):esc(v.listingTitle||'')} · ${esc(pname(v.agent))}</div>${v.note?`<div class="m">${esc(v.note)}</div>`:''}</div>
+      <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="visits/${v.id}" data-field="result" aria-label="نتیجه">${opts(VIS_ST,v.result)}</select>${delBtn('visits',v.id)}</div></li>`}).join('')}</ul>`:empty('بازدیدی برای این روز ثبت نشده است.')}</section>`;
+}
+function scrEDeals(){
+  const list=state.deals.filter(d=>!mineOnly()||d.agent===me.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const share=d=>Math.round((+d.commission||0)*(+d.agentShare||0)/100);
+  const ms=monthStart(TODAY), month=list.filter(d=>d.date>=ms);
+  const ending=list.filter(d=>d.endDate&&d.endDate>=TODAY&&d.endDate<=addDays(TODAY,45)).sort((a,b)=>a.endDate.localeCompare(b.endDate));
+  const ls=state.listings.filter(l=>l.status!=='خارج شد'&&l.status!=='قرارداد شد');
+  const agent=mineOnly();
+  return `
+  <div class="kpis">${agent?`<div class="kpi wide"><span class="lab">سهم من از کمیسیون ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtT(month.reduce((a,d)=>a+share(d),0))} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(month.length)} قرارداد</span></div>`
+    :`<div class="kpi"><span class="lab">کمیسیون ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtT(month.reduce((a,d)=>a+(+d.commission||0),0))}</span><span class="hint">${fmtN(month.length)} قرارداد</span></div><div class="kpi ${list.some(d=>!d.paid)?'alert':''}"><span class="lab">دریافت‌نشده</span><span class="val">${fmtT(list.filter(d=>!d.paid).reduce((a,d)=>a+(+d.commission||0),0))}</span><span class="hint">کمیسیون</span></div>`}</div>
+  <details class="add"><summary>ثبت قرارداد</summary><form class="f" data-form="deal">
+    <label class="full">فایل<select id="dl-l" name="listing" required>${ls.map(l=>`<option value="${l.id}">${fmtN(l.code)} · ${esc(l.deal)} · ${esc(lTitle(l))}</option>`).join('')}</select></label>
+    <label>طرف قرارداد (خریدار یا مستأجر)<input id="dl-c" name="client" required list="reClients2"><datalist id="reClients2">${state.clients.filter(c=>c.status==='فعال').map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></label>
+    <label>مبلغ معامله یا رهن<input id="dl-amt" name="amount" type="number" min="0" step="1000000"></label>
+    <label>اجاره ماهانه<input id="dl-rent" name="rent" type="number" min="0" step="100000"></label>
+    <label>کمیسیون کل (تومان)<input id="dl-com" name="commission" type="number" min="0" step="100000" required></label>
+    <label>مشاور${agentSel('dl-agent','agent')}</label>
+    <label>سهم مشاور ٪<input id="dl-share" name="agentShare" type="number" min="0" max="100" value="40"></label>
+    <label>تاریخ قرارداد<input type="date" id="dl-date" name="date" value="${TODAY}"></label>
+    <label>پایان قرارداد (اجاره)<input type="date" id="dl-end" name="endDate"></label>
+    <button class="btn full">ثبت قرارداد</button></form></details>
+  ${ending.length?`<section class="card" style="border-color:var(--warn)"><h3>اجاره‌های رو به پایان</h3><ul class="list">${ending.map(d=>`<li><div class="grow"><div class="t">${esc(d.client)}</div><div class="m">${esc(d.title)}</div></div><span class="small">${jd(d.endDate)} · ${rel(d.endDate)}</span></li>`).join('')}</ul><p class="small muted" style="margin:0">برای تمدید یا فایل جدید با مستأجر و مالک تماس بگیر.</p></section>`:''}
+  <section class="card"><h3>قراردادها</h3>${list.length?`<ul class="list">${list.slice(0,60).map(d=>`<li class="${d.paid?'':'late'}">${agent?'':`<input type="checkbox" class="chk" ${d.paid?'checked':''} data-paid="deals/${d.id}" aria-label="کمیسیون دریافت شد">`}<div class="grow"><div class="t">${esc(d.client)} <span class="small muted">${esc(d.kind)}</span></div><div class="m">${esc(d.title)} · ${jd(d.date)}</div><div class="m">${d.kind==='رهن و اجاره'?'رهن '+fmtT(d.amount)+(+d.rent?' · اجاره '+fmtT(d.rent):''):fmtT(d.amount)+' تومان'} · ${esc(pname(d.agent))}</div></div>
+    <div style="display:grid;gap:4px;justify-items:end"><span class="num">${fmtN(agent?share(d):d.commission)}</span><span class="pill ${d.paid?'p-ok':'p-warn'}">${d.paid?'کمیسیون دریافت شد':'دریافت‌نشده'}</span>${agent?'':delBtn('deals',d.id)}</div></li>`).join('')}</ul>`:empty('هنوز قراردادی ثبت نشده است.')}</section>`;
+}
+
 
 // ---------- needs form for businesses not in the samples ----------
 let amOwner=false, needReqs=[], needResult=null;
@@ -926,6 +1178,8 @@ const NEED_SECTIONS={
   'کارهای عقب‌افتاده تیم':'کارها و درخواست‌های تیم با یادآوری','شهریه یا اشتراک‌های سررسیدشده':'فهرست اعضا و شهریه‌های سررسیدشده'};
 function needSuggest(r){
   const has=k=>(r.income||[]).includes(k), t=(r.job||'')+' '+(r.pain||'');
+  if(/طلا|جواهر|سکه/.test(t))return 'gold';
+  if(/املاک|بنگاه|مسکن|مشاور املاک/.test(t))return 'realestate';
   if(has('غذا و نوشیدنی')||/کافه|رستوران|فست|قنادی|آبمیوه|کترینگ/.test(t))return /رستوران|فست|کترینگ/.test(t)?'restaurant':'cafe';
   if(has('تعمیر یا خدمات فنی')||has('پروژه یا قرارداد')||/تعمیر|خدمات|نصب|سرویس/.test(t))return 'repair';
   if(has('خدمت با نوبت یا رزرو')||has('شهریه یا اشتراک ماهانه'))return /پزشک|دندان|کلینیک|مطب|فیزیو|روانشناس|دامپزشک/.test(t)?'clinic':'salon';
@@ -970,7 +1224,7 @@ function scrNeed(){
   </form>`;
 }
 const REQ_PILL={'در انتظار بررسی':'p-warn','در حال برنامه‌ریزی':'p-info','تأیید شد':'p-ok','رد شد':'p-bad'};
-const COVER={'فروش یا درآمد امروز':'all','تعداد مشتری امروز':['salon','clinic','shop','cafe','restaurant','repair'],'نوبت‌ها و رزروهای امروز':['salon','clinic'],'سفارش‌ها یا کارهای در جریان':['shop','cafe','restaurant','repair','store'],'موجودی انبار و کالای رو به اتمام':['shop','retail','cafe','restaurant','repair'],'طلب از مشتری‌ها (نسیه، قسط)':['retail','salon','clinic','repair'],'چک‌ها و بدهی‌ها':['retail'],'هزینه‌ها':'all','سود':['retail','repair'],'عملکرد هر کارمند':['salon','clinic','repair'],'کارهای عقب‌افتاده تیم':'all','شهریه یا اشتراک‌های سررسیدشده':[]};
+const COVER={'فروش یا درآمد امروز':'all','تعداد مشتری امروز':['salon','clinic','shop','cafe','restaurant','repair','realestate'],'نوبت‌ها و رزروهای امروز':['salon','clinic'],'سفارش‌ها یا کارهای در جریان':['shop','cafe','restaurant','repair','store','realestate'],'موجودی انبار و کالای رو به اتمام':['shop','retail','cafe','restaurant','repair','gold'],'طلب از مشتری‌ها (نسیه، قسط)':['retail','salon','clinic','repair','gold'],'چک‌ها و بدهی‌ها':['retail','gold'],'هزینه‌ها':'all','سود':['retail','repair','gold'],'عملکرد هر کارمند':['salon','clinic','repair','realestate'],'کارهای عقب‌افتاده تیم':'all','شهریه یا اشتراک‌های سررسیدشده':[]};
 const covered=(d,base)=>COVER[d]==='all'||(COVER[d]||[]).includes(base);
 function draftPlan(r){
   const base=needSuggest(r), roles={...baseRoles(base),owner:'مالک'}, isAppt=!!APPT_ROLES[base];
@@ -1018,7 +1272,7 @@ async function approveRequest(id){
     if(APPT_ROLES[pl.base]&&pl.labels.staff)pl.roleLabels.staff=pl.labels.staff;
     const jref=await db.collection('jobtypes').add({label:pl.label,base:pl.base,desc:'ساخته‌شده از نیازسنجی «'+(r.job||'')+'»',roleLabels:pl.roleLabels,labels:pl.labels,itemsLabel:pl.itemsLabel,defaults:pl.items,fromRequest:id,createdAt:Date.now()});
     jobTypes=[...jobTypes.filter(j=>j.id!==jref.id),{id:jref.id,label:pl.label,base:pl.base,roleLabels:pl.roleLabels,labels:pl.labels,itemsLabel:pl.itemsLabel,defaults:pl.items}];
-    const w=await createWorkspace({tpl:'jt:'+jref.id,name:r.name||r.job,owner:r.owner||'مالک',ownerUid:r.uid||'',ownerPhone:r.userPhone||'',items:pl.items,note:pl.gaps.length?'در دست ساخت: '+pl.gaps.join('، '):''});
+    const w=await createWorkspace({tpl:'jt:'+jref.id,name:r.name||r.job,owner:r.owner||'مالک',ownerUid:r.uid||'',ownerPhone:r.userPhone||'',items:pl.items,teamSize:{'فقط خودم':'1','۲ تا ۵ نفر':'2-5','۶ تا ۱۵ نفر':'6-20','بیشتر از ۱۵ نفر':'20+'}[r.staff]||'',note:pl.gaps.length?'در دست ساخت: '+pl.gaps.join('، '):''});
     await db.doc('requests/'+id).update({status:'تأیید شد',plan:pl,jobType:jref.id,wsId:w.id,approvedAt:Date.now()});
   },'شغل جدید و پنل «'+(r.name||r.job)+'» ساخته شد');
 }
@@ -1063,11 +1317,15 @@ const TEMPLATES={
   restaurant:{label:'رستوران و فست‌فود',desc:'سفارش سالن، بیرون‌بر و دلیوری، صف آشپزخانه، منو، انبار مواد اولیه، فروش روزانه',defaults:'چلوکباب کوبیده - 420000\nجوجه کباب - 390000\nنوشابه - 35000',staffRole:'waiter',staffLabel:'گارسون',items:'menu',itemsLabel:'منو'},
   repair:{label:'تعمیرگاه و خدمات فنی',desc:'قبض پذیرش دستگاه یا خودرو، وضعیت تعمیر، تعمیرکار مسئول، موعد تحویل، طلب‌ها و انبار قطعات',defaults:'برد تغذیه - 650000\nکمپرسور - 4800000',staffRole:'tech',staffLabel:'تعمیرکار',items:'parts',itemsLabel:'قطعات',deviceLabel:'دستگاه یا خودرو',devicePh:'مثلاً یخچال ساید سامسونگ'},
   retail:{label:'مغازه و سوپرمارکت',desc:'ثبت سریع فروش نقد و کارت، دفتر نسیه، چک‌ها و بدهی به پخش‌کننده‌ها، کالای رو به اتمام',defaults:'شیر یک لیتری - 48000\nنان تست - 65000\nپنیر ۴۰۰ گرمی - 120000',staffRole:'seller',staffLabel:'فروشنده',items:'products',itemsLabel:'کالاها'},
+  gold:{label:'طلافروشی و جواهری',desc:'فاکتور طلا با وزن، عیار، اجرت و نرخ روز، خرید طلای کهنه، ویترین به گرم، نسیه و چک',defaults:'انگشتر زنانه - 3.2\nگردنبند - 5.8\nدستبند - 9.4',staffRole:'seller',staffLabel:'فروشنده',items:'products',itemsLabel:'اجناس ویترین',itemsHint:'نام - وزن به گرم',noItemSettings:true},
+  realestate:{label:'املاک و مشاور املاک',desc:'فایل‌های فروش و اجاره، مشتریان و فایل‌های مناسب هرکدام، بازدیدها، قراردادها و کمیسیون هر مشاور',defaults:'',staffRole:'agent',staffLabel:'مشاور',items:'listings',itemsLabel:'فایل‌ها',noItems:true,noItemSettings:true},
   salon:{label:'سالن زیبایی و آرایشگاه',desc:'نوبت‌دهی، مشتریان، سهم آرایشگرها، یادآوری مشتری‌های برنگشته',defaults:'کوتاهی مو - 450000\nرنگ مو - 2500000\nبراشینگ - 400000\nمانیکور - 500000',staffRole:'staff',staffLabel:'آرایشگر',items:'services',itemsLabel:'خدمات'},
   clinic:{label:'کلینیک و مطب',desc:'نوبت بیماران، پرونده و یادداشت ویزیت، پیگیری ویزیت بعدی، سهم پزشکان',defaults:'ویزیت - 600000\nلیزر - 2500000\nپاکسازی پوست - 1500000',staffRole:'staff',staffLabel:'پزشک',items:'services',itemsLabel:'خدمات'},
 };
 const SOON=['آموزشگاه','باشگاه ورزشی','آژانس و خدمات'];
-let myUid=null, uiView='landing', createType='salon', jobTypes=[];
+let myUid=null, uiView='landing', createType='salon', createTeam='2-5', jobTypes=[];
+const TEAM_SIZES=[['1','فقط خودم'],['2-5','۲ تا ۵ نفر'],['6-20','۶ تا ۲۰ نفر'],['20+','بیشتر از ۲۰ نفر']];
+const teamLbl=k=>(TEAM_SIZES.find(x=>x[0]===k)||[])[1]||'';
 const tplOf=k=>{if(TEMPLATES[k])return {...TEMPLATES[k],base:k};const j=jobTypes.find(x=>'jt:'+x.id===k);if(!j)return {...TEMPLATES.salon,base:'salon'};const b=TEMPLATES[j.base]||TEMPLATES.salon;
   return {...b,base:j.base,label:j.label,desc:j.desc||b.desc,itemsLabel:j.itemsLabel||b.itemsLabel,staffLabel:(j.roleLabels||{})[b.staffRole]||b.staffLabel,defaults:j.defaults||'',jt:j}};
 const allTemplates=()=>[...Object.keys(TEMPLATES),...jobTypes.map(j=>'jt:'+j.id)];
@@ -1075,7 +1333,7 @@ const toEn=s=>String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf
 function parseItems(txt){return String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.split(/\s+[-–]\s+|،|,/);const name=(m[0]||'').trim();const price=parseInt(toEn(m[1]||'').replace(/[^\d]/g,''),10)||0;return {name,price}}).filter(x=>x.name)}
 const wsCard=(w,demo)=>`<button class="card" data-open="${w.id}" style="text-align:start;cursor:pointer">
   <div class="row"><span class="t" style="font-size:1.05rem">${esc(w.name)}</span>${demo?'<span class="pill p-info">نمونه</span>':w._access==='member'?'<span class="pill p-mute">عضو تیم</span>':w._access==='admin'?'<span class="pill p-mute">مدیریت</span>':'<span class="pill p-ok">پنل من</span>'}</div>
-  <div class="m">${esc(w.typeLabel||TEMPLATES[w.type]?.label||'')}${demo?' · '+esc(TEMPLATES[w.type]?.desc||''):''}</div></button>`;
+  <div class="m">${esc(w.typeLabel||TEMPLATES[w.type]?.label||'')}${w.teamSize&&!demo?' · '+esc(teamLbl(w.teamSize)):''}${demo?' · '+esc(TEMPLATES[w.type]?.desc||''):''}</div></button>`;
 function scrLanding(){
   const mine=workspaces.filter(w=>w._access==='owner'||w._access==='member');
   const demos=workspaces.filter(w=>w.example);
@@ -1104,8 +1362,9 @@ function scrCreate(){
       ${allTemplates().map(k=>[k,tplOf(k)]).map(([k,x])=>`<label style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid ${k===createType?'var(--accent)':'var(--line)'};border-radius:10px;background:${k===createType?'var(--accent-soft)':'var(--bg)'};cursor:pointer;color:var(--fg)"><input type="radio" name="type" value="${k}" data-ctype="${k}" ${k===createType?'checked':''} style="width:auto;margin-top:5px"><span><span class="t">${esc(x.label)}${x.jt?' <span class="pill p-ok">جدید</span>':''}</span><span class="m" style="display:block">${esc(x.desc)}</span></span></label>`).join('')}
     </div>
     <label class="full">نام تو (مالک)<input id="cr-owner" name="owner" required placeholder="نام و نام خانوادگی"></label>
-    <label class="full">${t.staffLabel}‌ها (هر نفر در یک خط، اختیاری)<textarea id="cr-staff" name="staff" placeholder="${t.staffLabel} ۱"></textarea></label>
-    <label class="full">${t.itemsLabel} و قیمت (هر کدام در یک خط: نام - قیمت)<textarea id="cr-items" name="items">${esc(t.defaults)}</textarea></label>
+    <label class="full">این کسب‌وکار چند نفره است؟<select id="cr-team" name="teamSize">${opts(TEAM_SIZES,createTeam)}</select></label>
+    ${createTeam==='1'?'':`<label class="full">${t.staffLabel}‌ها (هر نفر در یک خط، اختیاری)<textarea id="cr-staff" name="staff" placeholder="${t.staffLabel} ۱"></textarea></label>`}
+    ${t.noItems?'':`<label class="full">${t.itemsLabel} (هر کدام در یک خط: ${t.itemsHint||'نام - قیمت'})<textarea id="cr-items" name="items">${esc(t.defaults)}</textarea></label>`}
     <button class="btn full">ساخت پنل</button>
     <button type="button" class="lnk full" data-need="1">نوع کسب‌وکارم در این فهرست نیست</button>
     <p class="small muted full" style="margin:0">بعداً می‌توانی اعضای تیم، نقش‌ها و ${t.itemsLabel} را از «تنظیمات» تغییر دهی.</p>
@@ -1135,7 +1394,8 @@ function scrSettings(){
   <div class="row"><h2>تیم و تنظیمات</h2><button class="lnk" data-closeset="1">بازگشت</button></div>
   <section class="card"><h3>کسب‌وکار</h3>
     <label class="small muted">نام<input class="inline" style="width:100%;font-size:.95rem;padding:6px 8px" value="${esc(ws.name)}" data-wsname="1"></label>
-    <div class="small muted">نوع: ${esc(ws.typeLabel||t.label)}</div></section>
+    <div class="small muted">نوع: ${esc(ws.typeLabel||t.label)}</div>
+    <label class="small muted">چند نفره<select class="inline" data-wsteam="1" style="width:100%">${opts([['','انتخاب نشده'],...TEAM_SIZES],ws.teamSize||'')}</select></label></section>
   ${teamGroup('کارمندان',emps,roles,isStore)}
   ${teamGroup('متخصصان و همکاران بیرونی',specs,roles,isStore,'مثلاً عکاس محصول، مشاور مالی، طراح، ادمین اینستاگرام. هر متخصص فقط بخش «کارها» را می‌بیند تا کار و درخواست بگیرد و گزارش بدهد.')}
   <section class="card"><h3>افزودن کارمند یا متخصص</h3><form class="f" data-form="person">
@@ -1144,41 +1404,44 @@ function scrSettings(){
       <label>سمت یا تخصص<input id="pe-title" name="title" placeholder="مثلاً انباردار، عکاس"></label>
       <label>موبایل<input id="pe-phone" name="phone" inputmode="tel"></label>
       <label>نقش در پنل<select id="pe-role" name="role">${opts(roles,t.staffRole)}</select></label>
-      <label>نوع پرداخت<select id="pe-paytype" name="payType">${opts(PAY_TYPES,isProd?'حقوق ماهانه':'درصدی')}</select></label>
-      <label>مبلغ یا درصد<input id="pe-pay" name="pay" type="number" min="0" placeholder="تومان یا درصد"${isProd?'':' value="40"'}></label>
+      <label>نوع پرداخت<select id="pe-paytype" name="payType">${opts(PAY_TYPES,isProd&&ws.type!=='realestate'?'حقوق ماهانه':'درصدی')}</select></label>
+      <label>مبلغ یا درصد<input id="pe-pay" name="pay" type="number" min="0" placeholder="تومان یا درصد"${isProd&&ws.type!=='realestate'?'':' value="40"'}></label>
       ${ws.type==='store'?'<label>شعبه<input id="pe-branch" name="branch" placeholder="برای مالک شعبه"></label>':''}
       <button class="btn full">افزودن به تیم</button></form>
     <p class="small muted" style="margin:0">هر عضو با همان شماره موبایلی که اینجا ثبت می‌کنی وارد اسمارتو می‌شود و فقط بخش‌های نقش خودش را می‌بیند.</p>
   </section>
-  <section class="card"><div class="row"><h3>${ws.itemsLabel||t.itemsLabel}</h3><span class="small muted">${fmtN(items.length)} مورد</span></div>
+  ${t.noItemSettings?'':`<section class="card"><div class="row"><h3>${ws.itemsLabel||t.itemsLabel}</h3><span class="small muted">${fmtN(items.length)} مورد</span></div>
     ${items.length?`<ul class="list">${items.map(x=>`<li><span class="grow t">${esc(x.name)}</span><input class="inline" type="number" min="0" step="10000" value="${+x.price||0}" data-set="${icol}/${x.id}" data-field="price" aria-label="قیمت">${delBtn(icol,x.id)}</li>`).join('')}</ul>`:empty('هنوز موردی ثبت نشده است.')}
     <details class="add"><summary>افزودن</summary><form class="f" data-form="item">
       <label>نام<input id="it-name" name="name" required></label>
       <label>قیمت (تومان)<input id="it-price" name="price" type="number" min="0" step="10000"></label>
       ${['shop','retail','repair'].includes(ws.type)?'<label>موجودی<input id="it-stock" name="stock" type="number" min="0" value="10"></label><label>حداقل موجودی<input id="it-min" name="min" type="number" min="0" value="3"></label>':''}
       <button class="btn full">افزودن</button></form></details>
-  </section>`;
+  </section>`}`;
 }
 async function createWorkspace(o){
   const t=tplOf(o.tpl), type=t.base, j=t.jt, now=Date.now();
   const extra=j?{typeLabel:j.label,jobType:j.id,roleLabels:j.roleLabels||{},labels:j.labels||{},itemsLabel:j.itemsLabel||''}:{};
+  if(o.teamSize)extra.teamSize=o.teamSize;
+  if(type==='gold')extra.goldRate=0;
   const wref=await db.collection('workspaces').add({name:o.name,type,ownerUid:o.ownerUid||'',createdAt:now,...extra});
   const base='workspaces/'+wref.id+'/';
   const owner=await db.collection(base+'people').add({name:o.owner||'مالک',role:'owner',uid:o.ownerUid||'',phone:o.ownerPhone||'',kind:'employee',commission:0,createdAt:now});
   for(const n of String(o.staff||'').split('\n').map(x=>x.trim()).filter(Boolean)) await db.collection(base+'people').add({name:n,role:t.staffRole,kind:'employee',commission:APPT_ROLES[type]?40:0,createdAt:now});
-  for(const it of parseItems(o.items)) await db.collection(base+t.items).add({name:it.name,price:it.price,...(['shop','retail','repair'].includes(type)?{stock:10,min:3}:type==='cafe'||type==='restaurant'?{cat:'سایر',available:true}:{}),createdAt:now});
+  if(type==='gold'){for(const l of String(o.items||'').split('\n').map(x=>x.trim()).filter(Boolean)){const m=l.split(/\s+[-–]\s+|،|,/);if((m[0]||'').trim())await db.collection(base+'products').add({name:m[0].trim(),weight:toNum(m[1]||''),karat:750,wage:15,stock:1,createdAt:now})}}
+  else if(!t.noItems)for(const it of parseItems(o.items)) await db.collection(base+t.items).add({name:it.name,price:it.price,...(['shop','retail','repair'].includes(type)?{stock:10,min:3}:type==='cafe'||type==='restaurant'?{cat:'سایر',available:true}:{}),createdAt:now});
   await db.collection(base+'tasks').add({title:'اعضای تیم و '+t.itemsLabel+' را در تنظیمات کامل کن',from:owner.id,to:owner.id,due:TODAY,repeat:'none',category:'سایر',note:o.note||'',done:false,createdAt:now});
   return {id:wref.id,ownerId:owner.id,ws:{id:wref.id,name:o.name,type,ownerUid:o.ownerUid||'',...extra}};
 }
 async function createBusiness(v){
   const tpl=allTemplates().includes(v.type)?v.type:createType;
-  const r=await createWorkspace({tpl,name:v.name,owner:v.owner,ownerUid:myUid||'',ownerPhone:myPhone||'',staff:v.staff,items:v.items});
+  const r=await createWorkspace({tpl,name:v.name,owner:v.owner,ownerUid:myUid||'',ownerPhone:myPhone||'',staff:v.teamSize==='1'?'':v.staff,items:v.items,teamSize:v.teamSize});
   ls.set('actingAs:'+r.id,r.ownerId);
   openWs(r.ws);
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -1192,19 +1455,19 @@ function renderWs(){
 }
 function renderWho(){
   const sel=document.getElementById('who');
-  const order=['owner','gm','manager','front','reception','cashier','warehouse','support','team','staff','waiter','kitchen','tech','seller','branch','specialist'];
+  const order=['owner','gm','manager','front','reception','cashier','warehouse','support','team','staff','waiter','kitchen','tech','seller','agent','branch','specialist'];
   const ps=[...state.people].sort((a,b)=>order.indexOf(a.role)-order.indexOf(b.role));
   sel.innerHTML=ps.map(p=>`<option value="${p.id}"${me&&p.id===me.id?' selected':''}>${esc(p.name)} · ${roleLabel(p.role)||''}</option>`).join('');
 }
 function render(){
   if(!ws){renderWs();document.getElementById('nav').innerHTML='';const v=document.getElementById('view');const keep=saveForms();if((uiView==='create'||uiView==='need')&&db&&!myUid){loginStep.next=uiView;uiView='login'}
-    v.innerHTML=uiView==='create'?scrCreate():uiView==='need'?scrNeed():uiView==='needDone'?scrNeedDone():uiView==='login'?scrLogin():uiView==='account'?scrAccount():scrLanding();if(keep.__s==='create|'+uiView)restoreForms(keep);return}
+    v.dataset.k='create|'+uiView;v.innerHTML=uiView==='create'?scrCreate():uiView==='need'?scrNeed():uiView==='needDone'?scrNeedDone():uiView==='login'?scrLogin():uiView==='account'?scrAccount():scrLanding();if(keep.__s==='create|'+uiView)restoreForms(keep);return}
   const mine=myUid?state.people.find(p=>p.uid===myUid):null;
   if(!me){if(canPreview()){const saved=ls.get('actingAs:'+ws.id);me=person(saved)||mine||state.people.find(p=>p.role==='gm')||state.people.find(p=>p.role==='owner')||state.people[0]||null}else me=mine||null}
   else me=canPreview()?(person(me.id)||me):(mine||null);
   renderWho();renderWs();
   const v=document.getElementById('view'), nav=document.getElementById('nav');
-  if(!me){v.innerHTML=empty(loaded.has('people')?'تو هنوز عضو این کسب‌وکار نیستی.':'در حال بارگذاری…');nav.innerHTML='';return}
+  if(!me){v.dataset.k='';v.innerHTML=empty(loaded.has('people')?'تو هنوز عضو این کسب‌وکار نیستی.':'در حال بارگذاری…');nav.innerHTML='';return}
   const items=navFor(me.role);
   if(ui.screen==='settings'&&!['owner','gm'].includes(me.role))ui.screen=null;
   if(ui.screen!=='settings'&&!items.some(i=>i[0]===ui.screen)) ui.screen=items[0][0];
@@ -1212,13 +1475,16 @@ function render(){
   nav.innerHTML=items.filter(i=>i[1]).map(([k,l])=>`<button data-screen="${k}"${ui.screen===k?' aria-current="page"':''}>${ICON[k]}<span>${l}</span>${k==='tasks'&&badge?`<span class="badge">${fmtN(badge)}</span>`:''}</button>`).join('');
   const keep=saveForms();
   const qf=document.activeElement&&document.activeElement.id==='q';
+  v.dataset.k=ui.screen+'|'+me.id+'|'+ws.id;
   v.innerHTML=(ws.example&&!amOwner?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>این یک نمونه است و فقط برای تماشاست.</span><button class="chip" data-create="1">پنل خودم را بساز</button></div>`:'')+SCREENS[ui.screen]();
   if(keep.__s===ui.screen+'|'+me.id+'|'+ws.id)restoreForms(keep);
+  const gsum=document.getElementById('gs-sum');if(gsum)gsum.innerHTML=goldSumHtml(readGoldForm());
   if(qf){const q=document.getElementById('q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
 }
-function saveForms(){const o={__s:ws?ui.screen+'|'+(me&&me.id)+'|'+ws.id:'create|'+uiView};document.querySelectorAll('form.f [id]').forEach(i=>o[i.id]=i.type==='checkbox'?{c:i.checked}:i.value);document.querySelectorAll('details.add').forEach((d,i)=>o['__d'+i]=d.open);return o}
+// Form state is keyed by the screen that was on display, so it is only restored onto that same screen.
+function saveForms(){const o={__s:document.getElementById('view').dataset.k||''};document.querySelectorAll('form.f [id]').forEach(i=>o[i.id]=i.type==='checkbox'?{c:i.checked}:i.value);document.querySelectorAll('details.add').forEach((d,i)=>o['__d'+i]=d.open);return o}
 function restoreForms(o){for(const k in o){if(k==='__s')continue;if(k.startsWith('__d')){const d=document.querySelectorAll('details.add')[+k.slice(3)];if(d)d.open=o[k];continue}const el=document.getElementById(k);if(el&&o[k]&&typeof o[k]==='object'){el.checked=o[k].c;continue}if(el&&el.value!==undefined)el.value=o[k]}}
-function resetForm(f){f.querySelectorAll('input:not([type=date]):not([type=time]),textarea').forEach(i=>{i.value=i.type==='number'&&i.name==='qty'?'1':''})}
+function resetForm(f){f.querySelectorAll('input:not([type=date]):not([type=time]):not([data-keep]),textarea').forEach(i=>{i.value=i.type==='number'&&i.name==='qty'?'1':''})}
 
 // ---------- events ----------
 document.getElementById('who').addEventListener('change',e=>{if(!canPreview())return;me=person(e.target.value);ls.set('actingAs:'+ws.id,me?.id||'');ui.screen=null;ui.taskTab='received';ui.taskCat='همه';armed=null;render();window.scrollTo({top:0})});
@@ -1227,7 +1493,7 @@ const V=document.getElementById('view');
 V.addEventListener('click',async e=>{
   const el=e.target.closest('button');if(!el)return;
   const d=el.dataset;
-  if(d.create){if(ws)closeWs();if(!myUid){needLogin('create');return}uiView='create';render();window.scrollTo({top:0});return}
+  if(d.create){if(ws)closeWs();if(!myUid){needLogin('create');return}uiView='create';createTeam='2-5';render();window.scrollTo({top:0});return}
   if(d.login){needLogin(null);return}
   if(d.relogin){loginStep.sent=false;render();return}
   if(d.logout){try{await smarto.logout()}catch(e){}myUid=null;myPhone=null;amOwner=false;renderAcct();smarto.reconnect();subscribeAccountData();uiView='landing';render();toast('از حساب خارج شدی');return}
@@ -1244,6 +1510,10 @@ V.addEventListener('click',async e=>{
   if(d.ost&&!d.go){ui.ost=d.ost;render();return}
   if(d.jst&&!d.go){ui.jst=d.jst;render();return}
   if(d.mcat){ui.mcat=d.mcat;render();return}
+  if(d.ldeal){ui.ldeal=d.ldeal;render();return}
+  if(d.lst){ui.lst=d.lst;render();return}
+  if(d.lmine){ui.lmine=!ui.lmine;render();return}
+  if(d.cst){ui.cst=d.cst;render();return}
   if(d.addm){ui.cart[d.addm]=(ui.cart[d.addm]||0)+1;render();return}
   if(d.cartinc){ui.cart[d.cartinc]=(ui.cart[d.cartinc]||0)+1;render();return}
   if(d.cartdec){ui.cart[d.cartdec]=Math.max(0,(ui.cart[d.cartdec]||0)-1);render();return}
@@ -1267,6 +1537,11 @@ V.addEventListener('click',async e=>{
 V.addEventListener('change',async e=>{
   const el=e.target;
   if(el.dataset.ctype){createType=el.dataset.ctype;const items=document.getElementById('cr-items');const keep=saveForms();keep['cr-items']=tplOf(createType).defaults;render();restoreForms(keep);return}
+  if(el.id==='cr-team'){createTeam=el.value;const keep=saveForms();render();restoreForms(keep);return}
+  if(el.dataset.wsteam){await write(()=>db.doc('workspaces/'+ws.id).update({teamSize:el.value}),'ذخیره شد');return}
+  if(el.dataset.wsrate){await write(()=>db.doc('workspaces/'+ws.id).update({goldRate:+el.value||0,goldRateDate:TODAY}),'نرخ طلا ذخیره شد');return}
+  if(el.id==='gs-p'){const p=state.products.find(x=>x.id===el.value);if(p){const set=(id,v)=>{const i=document.getElementById(id);if(i)i.value=v};set('gs-name',p.name);set('gs-w',p.weight);set('gs-k',String(p.karat||750));set('gs-wage',p.wage??15)}const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm());return}
+  if(el.id&&el.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm());return}
   if(el.dataset.wsname){const nv=el.value.trim();if(nv)await write(()=>db.doc('workspaces/'+ws.id).update({name:nv}),'نام ذخیره شد');return}
   if(el.dataset.avail){await write(()=>D('menu/'+el.dataset.avail).update({available:el.checked,updatedAt:Date.now()}),el.checked?'موجود شد':'ناموجود شد');return}
   if(el.dataset.set&&el.dataset.set.startsWith('forders/')&&el.dataset.field==='pay'){await write(()=>D(el.dataset.set).update({pay:el.value,paid:!!el.value,updatedAt:Date.now()}),el.value?'پرداخت ثبت شد':'پرداخت برداشته شد');return}
@@ -1284,7 +1559,7 @@ V.addEventListener('change',async e=>{
       el.checked?(t.repeat&&t.repeat!=='none'?'انجام شد، نوبت بعدی ساخته شد':'انجام شد'):'دوباره باز شد');}
 });
 V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}},true);
-V.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;render()}});
+V.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
 V.addEventListener('submit',async e=>{
   const f=e.target.closest('form.f');if(!f)return;e.preventDefault();
   if(f.dataset.form==='need'){const fd=new FormData(f);const r={};['job','name','owner','city','branches','staff','pain','repeat','privacy','phone'].forEach(k=>r[k]=String(fd.get(k)||'').trim());['income','roles','channels','daily','now','extra'].forEach(k=>r[k]=fd.getAll(k).map(String));
@@ -1338,6 +1613,26 @@ V.addEventListener('submit',async e=>{
       const fee=+v.fee||0;
       const ok=await write(async()=>{await C('sorders').add({date:TODAY,customer:v.customer,phone:v.phone,city:v.city,channel:v.channel,items,ship:v.ship,fee,status:v.status||'جدید',tracking:'',by:me.id,createdAt:now});
         for(const i of items){const p=state.products.find(x=>x.id===i.pid);if(p)await D('products/'+p.id).update({stock:Math.max(0,(+p.stock||0)-i.qty),updatedAt:now})}},'سفارش ثبت شد');
+      if(ok)resetForm(f);return}
+    case 'gitem':col='products';data={name:v.name,weight:toNum(v.weight),karat:+v.karat||750,wage:toNum(v.wage),stock:+v.stock||0,min:0};break;
+    case 'gsale':{if(!db){toast('اتصال به سرور برقرار نیست');return}
+      const c=goldCalc(v);if(!toNum(v.weight)||!c.amount){toast('وزن و نرخ را بنویس');return}
+      if(v.method==='نسیه'&&!v.customer){toast('برای نسیه نام مشتری را بنویس');return}
+      const p=state.products.find(x=>x.id===v.pid);
+      const ok=await write(async()=>{await C('gsales').add({kind:'فروش',date:TODAY,time:nowTime(),pid:p?p.id:'',name:v.name||(p&&p.name)||'',weight:toNum(v.weight),karat:+v.karat||750,rate:+v.rate||0,wage:toNum(v.wage),profit:toNum(v.profit),tax:toNum(v.tax),wageAmt:c.wageAmt,profitAmt:c.profitAmt,taxAmt:c.taxAmt,amount:c.amount,method:v.method,customer:v.customer||'',by:me.id,createdAt:now});
+        if(v.method==='نسیه')await C('ledger').add({name:v.customer,phone:'',amount:c.amount,date:TODAY,note:'خرید طلا',by:me.id,createdAt:now});
+        if(p)await D('products/'+p.id).update({stock:Math.max(0,(+p.stock||0)-1),updatedAt:now})},'فاکتور '+fmtN(c.amount)+' تومان ثبت شد');
+      if(ok){resetForm(f);render()}return}
+    case 'gbuy':{const w=toNum(v.weight);col='gsales';data={kind:'خرید',date:TODAY,time:nowTime(),name:'طلای کهنه',weight:w,karat:+v.karat||750,rate:+v.rate||0,amount:Math.round(w*(+v.rate||0)*((+v.karat||750)/750)/1000)*1000,customer:v.customer||'',note:v.note||'',by:me.id};if(!data.amount){toast('وزن و نرخ را بنویس');return}msg='خرید '+fmtG(w)+' گرم ثبت شد';break}
+    case 'listing':{const n=state.listings.reduce((a,l)=>Math.max(a,+l.code||0),100)+1;col='listings';data={code:String(n),deal:v.deal,kind:v.kind,region:v.region,area:+v.area||0,rooms:+v.rooms||0,price:+v.price||0,deposit:+v.deposit||0,rent:+v.rent||0,owner:v.owner,ownerPhone:v.ownerPhone,agent:v.agent||me.id,note:v.note,status:'فعال',date:TODAY,by:me.id};msg='فایل '+fmtN(n)+' ثبت شد';break}
+    case 'buyer':col='clients';data={name:v.name,phone:v.phone,want:v.want,kind:v.kind,region:v.region,budget:+v.budget||0,deposit:+v.deposit||0,rent:+v.rent||0,agent:v.agent||me.id,note:v.note,status:'فعال',date:TODAY,by:me.id};msg='مشتری ثبت شد';break;
+    case 'visit':{const l=state.listings.find(x=>x.id===v.listing);if(!l){toast('فایل را انتخاب کن');return}col='visits';data={date:v.date||TODAY,time:v.time,listing:l.id,listingTitle:fmtN(l.code)+' · '+lTitle(l),client:v.client,agent:v.agent||me.id,note:v.note,result:'برنامه‌ریزی‌شده',by:me.id};msg='بازدید ثبت شد';break}
+    case 'deal':{if(!db){toast('اتصال به سرور برقرار نیست');return}
+      const l=state.listings.find(x=>x.id===v.listing);if(!l){toast('فایل را انتخاب کن');return}
+      const cl=state.clients.find(x=>x.name===v.client&&x.status==='فعال');
+      const ok=await write(async()=>{await C('deals').add({date:v.date||TODAY,listing:l.id,title:fmtN(l.code)+' · '+lTitle(l),kind:l.deal,client:v.client,amount:+v.amount||(isRent(l)?+l.deposit:+l.price)||0,rent:+v.rent||(isRent(l)?+l.rent||0:0),commission:+v.commission||0,agent:v.agent||me.id,agentShare:+v.agentShare||0,endDate:v.endDate||'',paid:false,by:me.id,createdAt:now});
+        await D('listings/'+l.id).update({status:'قرارداد شد',updatedAt:now});
+        if(cl)await D('clients/'+cl.id).update({status:'به نتیجه رسید',updatedAt:now})},'قرارداد ثبت شد');
       if(ok)resetForm(f);return}
     case 'client':col='clients';data={name:v.name,phone:v.phone,note:v.note,fileNo:ws.type==='clinic'?String(1000+state.clients.length+1):''};break;
     case 'appt':{
@@ -1407,7 +1702,7 @@ function scrAccount(){
   <button class="btn" data-logout="1" style="justify-self:start;background:var(--bad)">خروج از حساب</button>`;
 }
 function openWs(w){
-  unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=w;ls.set('ws',w.id);resetState();loaded=new Set();me=null;ui.screen=null;ui.taskTab='received';ui.taskCat='همه';ui.day=TODAY;ui.staffF='همه';ui.q='';ui.ost='همه';ui.jst='باز';ui.cart={};ui.mcat='';ui.source='all';armed=null;
+  unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=w;ls.set('ws',w.id);resetState();loaded=new Set();me=null;ui.screen=null;ui.taskTab='received';ui.taskCat='همه';ui.day=TODAY;ui.staffF='همه';ui.q='';ui.ost='همه';ui.jst='باز';ui.cart={};ui.mcat='';ui.source='all';ui.ldeal='همه';ui.lst='فعال';ui.lmine=false;ui.cst='فعال';armed=null;
   const cols=colsFor(w.type);
   render();
   cols.forEach(c=>unsubs.push(C(c).onSnapshot(snap=>{if(!ws||ws.id!==w.id)return;state[c]=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.add(c);if(loaded.size>=2)render()},()=>toast('خطا در خواندن داده‌ها'))));

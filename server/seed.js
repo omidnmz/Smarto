@@ -37,7 +37,7 @@ export async function seedSamples({ reset = false, log = console } = {}) {
       const days = Math.round((today - Date.parse(w.baseDate + 'T00:00:00Z')) / DAY);
       await client.query('delete from docs where path=$1 or path like $2', [wsPath, `${wsPath}/%`]);
       const t = Date.now();
-      await client.query('insert into docs(path,parent,id,data,updated_at) values($1,$2,$3,$4,$5)', [wsPath, 'workspaces', id, w.doc, t]);
+      await client.query('insert into docs(path,parent,id,data,updated_at) values($1,$2,$3,$4,$5)', [wsPath, 'workspaces', id, shiftDates(w.doc, days), t]);
       for (const [col, docs] of Object.entries(w.cols)) {
         const parent = `${wsPath}/${col}`;
         for (const [docId, data] of Object.entries(docs)) {
