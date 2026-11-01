@@ -42,9 +42,13 @@ class Client {
   add = (path, data) => this.call('POST', '/api/col', { path, data });
   patch = (path, data) => this.call('PATCH', '/api/doc', { path, data });
   async login(phone) {
+    const codes = () => [...out.matchAll(new RegExp(`login code for ${phone}: (\\d{5})`, 'g'))];
+    const before = codes().length;
     const r = await this.call('POST', '/api/auth/request', { phone });
     assert.equal(r.status, 200);
-    const m = [...out.matchAll(new RegExp(`login code for ${phone}: (\\d{5})`, 'g'))].pop();
+    // The server logs the code on its own stdout, which can reach us a moment after the HTTP reply.
+    for (let i = 0; i < 50 && codes().length <= before; i++) await new Promise((res) => setTimeout(res, 50));
+    const m = codes().pop();
     const v = await this.call('POST', '/api/auth/verify', { phone, code: m[1] });
     assert.equal(v.status, 200);
     return v.body;
