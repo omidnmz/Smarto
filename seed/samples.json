@@ -20339,6 +20339,941 @@
      }
     }
    }
+  },
+  "cars1": {
+   "baseDate": "2026-11-06",
+   "doc": {
+    "name": "نمایشگاه ماشین نمونه",
+    "order": 12,
+    "type": "cars",
+    "example": true,
+    "createdAt": 1762400000000,
+    "teamSize": "2-5"
+   },
+   "cols": {
+    "people": {
+     "own": {
+      "name": "مجید رحیمی",
+      "role": "owner",
+      "kind": "employee",
+      "title": "مدیر نمایشگاه",
+      "commission": 0,
+      "createdAt": 1762400000000
+     },
+     "s1": {
+      "name": "کامران شاهی",
+      "role": "seller",
+      "kind": "employee",
+      "title": "فروشنده",
+      "payType": "درصدی",
+      "pay": 30,
+      "commission": 30,
+      "createdAt": 1762400000001
+     },
+     "s2": {
+      "name": "بهزاد نوری",
+      "role": "seller",
+      "kind": "employee",
+      "title": "فروشنده",
+      "payType": "درصدی",
+      "pay": 30,
+      "commission": 30,
+      "createdAt": 1762400000002
+     },
+     "pa1": {
+      "name": "حاج اکبر توکلی",
+      "role": "partner",
+      "kind": "employee",
+      "title": "شریک سرمایه‌گذار",
+      "commission": 0,
+      "createdAt": 1762400000003
+     },
+     "ex1": {
+      "name": "آقای فرجی",
+      "role": "specialist",
+      "kind": "specialist",
+      "title": "کارشناس بدنه و فنی",
+      "payType": "پروژه‌ای",
+      "pay": 0,
+      "commission": 0,
+      "createdAt": 1762400000004
+     }
+    },
+    "cars": {
+     "car00": {
+      "code": "101",
+      "make": "ایران‌خودرو",
+      "model": "دنا پلاس توربو",
+      "year": 1402,
+      "km": 18000,
+      "color": "خاکستری",
+      "body": "تصادفی",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 1044000000,
+      "price": 1150000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-09-06",
+        "by": "own"
+       },
+       {
+        "title": "کارواش و پولیش",
+        "amount": 2000000,
+        "date": "2026-09-06",
+        "by": "own"
+       },
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-09-06",
+        "by": "own"
+       }
+      ],
+      "note": "بیمه تا اسفند",
+      "status": "موجود",
+      "date": "2026-09-04",
+      "by": "own"
+     },
+     "car01": {
+      "code": "102",
+      "make": "ایران‌خودرو",
+      "model": "تارا اتوماتیک",
+      "year": 1403,
+      "km": 42000,
+      "color": "سفید صدفی",
+      "body": "چند لکه رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 1157000000,
+      "price": 1250000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "صافکاری",
+        "amount": 12000000,
+        "date": "2026-11-05",
+        "by": "own"
+       }
+      ],
+      "note": "",
+      "status": "رزرو",
+      "date": "2026-11-03",
+      "by": "own"
+     },
+     "car02": {
+      "code": "103",
+      "make": "سایپا",
+      "model": "شاهین",
+      "year": 1402,
+      "km": 65000,
+      "color": "خاکستری",
+      "body": "تصادفی",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 708000000,
+      "price": 780000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-11-01",
+        "by": "own"
+       }
+      ],
+      "note": "تک‌سرنشین",
+      "status": "موجود",
+      "date": "2026-10-30",
+      "by": "own"
+     },
+     "car03": {
+      "code": "104",
+      "make": "پژو",
+      "model": "۲۰۷ دنده‌ای",
+      "year": 1401,
+      "km": 42000,
+      "color": "سفید صدفی",
+      "body": "چند لکه رنگ",
+      "own": "امانی",
+      "buyPrice": 0,
+      "price": 890000000,
+      "consignor": "آقای بهرامی",
+      "consignorPhone": "09124100939",
+      "plate": "",
+      "partners": [],
+      "expenses": [],
+      "note": "",
+      "status": "فروخته شد",
+      "date": "2026-10-31",
+      "by": "own",
+      "soldPrice": 880000000,
+      "soldOn": "2026-11-04"
+     },
+     "car04": {
+      "code": "105",
+      "make": "پژو",
+      "model": "پارس",
+      "year": 1400,
+      "km": 0,
+      "color": "سفید",
+      "body": "چند لکه رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 709000000,
+      "price": 760000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "صافکاری",
+        "amount": 12000000,
+        "date": "2026-10-26",
+        "by": "own"
+       },
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-10-26",
+        "by": "own"
+       }
+      ],
+      "note": "بیمه تا اسفند",
+      "status": "موجود",
+      "date": "2026-10-24",
+      "by": "own"
+     },
+     "car05": {
+      "code": "106",
+      "make": "هیوندای",
+      "model": "النترا",
+      "year": 2016,
+      "km": 18000,
+      "color": "سفید",
+      "body": "چند لکه رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 1948000000,
+      "price": 2100000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [
+       {
+        "id": "pa1",
+        "share": 50
+       }
+      ],
+      "expenses": [
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-10-18",
+        "by": "own"
+       },
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-10-18",
+        "by": "own"
+       }
+      ],
+      "note": "بیمه تا اسفند",
+      "status": "فروخته شد",
+      "date": "2026-10-16",
+      "by": "own",
+      "soldPrice": 2100000000,
+      "soldOn": "2026-10-28"
+     },
+     "car06": {
+      "code": "107",
+      "make": "تویوتا",
+      "model": "کمری",
+      "year": 2015,
+      "km": 0,
+      "color": "سفید صدفی",
+      "body": "چند لکه رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 2350000000,
+      "price": 2600000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [
+       {
+        "id": "pa1",
+        "share": 50
+       }
+      ],
+      "expenses": [
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-10-28",
+        "by": "own"
+       }
+      ],
+      "note": "تک‌سرنشین",
+      "status": "موجود",
+      "date": "2026-10-26",
+      "by": "own"
+     },
+     "car07": {
+      "code": "108",
+      "make": "کیا",
+      "model": "سراتو",
+      "year": 2017,
+      "km": 98000,
+      "color": "خاکستری",
+      "body": "یک لکه رنگ",
+      "own": "امانی",
+      "buyPrice": 0,
+      "price": 1850000000,
+      "consignor": "آقای زارعی",
+      "consignorPhone": "09124102191",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "کارواش و پولیش",
+        "amount": 2000000,
+        "date": "2026-10-19",
+        "by": "own"
+       }
+      ],
+      "note": "تک‌سرنشین",
+      "status": "فروخته شد",
+      "date": "2026-09-16",
+      "by": "own",
+      "soldPrice": 1850000000,
+      "soldOn": "2026-10-04"
+     },
+     "car08": {
+      "code": "109",
+      "make": "ام‌وی‌ام",
+      "model": "X55 پرو",
+      "year": 1402,
+      "km": 0,
+      "color": "سفید",
+      "body": "بدون رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 1480000000,
+      "price": 1600000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-10-03",
+        "by": "own"
+       },
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-10-03",
+        "by": "own"
+       }
+      ],
+      "note": "تک‌سرنشین",
+      "status": "موجود",
+      "date": "2026-10-01",
+      "by": "own"
+     },
+     "car09": {
+      "code": "110",
+      "make": "رنو",
+      "model": "تندر ۹۰",
+      "year": 1398,
+      "km": 98000,
+      "color": "سفید صدفی",
+      "body": "بدون رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 576000000,
+      "price": 640000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-09-27",
+        "by": "own"
+       }
+      ],
+      "note": "بیمه تا اسفند",
+      "status": "فروخته شد",
+      "date": "2026-09-25",
+      "by": "own",
+      "soldPrice": 630000000,
+      "soldOn": "2026-10-22"
+     },
+     "car10": {
+      "code": "111",
+      "make": "سایپا",
+      "model": "کوییک",
+      "year": 1401,
+      "km": 18000,
+      "color": "سفید",
+      "body": "بدون رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 485000000,
+      "price": 520000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "کارواش و پولیش",
+        "amount": 2000000,
+        "date": "2026-09-28",
+        "by": "own"
+       },
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-09-28",
+        "by": "own"
+       },
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-09-28",
+        "by": "own"
+       }
+      ],
+      "note": "",
+      "status": "موجود",
+      "date": "2026-09-26",
+      "by": "own"
+     },
+     "car11": {
+      "code": "112",
+      "make": "چری",
+      "model": "تیگو ۷",
+      "year": 1401,
+      "km": 65000,
+      "color": "نقره‌ای",
+      "body": "بدون رنگ",
+      "own": "امانی",
+      "buyPrice": 0,
+      "price": 1750000000,
+      "consignor": "آقای بهرامی",
+      "consignorPhone": "09124103443",
+      "plate": "",
+      "partners": [],
+      "expenses": [],
+      "note": "",
+      "status": "موجود",
+      "date": "2026-10-13",
+      "by": "own"
+     },
+     "car12": {
+      "code": "113",
+      "make": "هیوندای",
+      "model": "توسان",
+      "year": 2017,
+      "km": 42000,
+      "color": "خاکستری",
+      "body": "تصادفی",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 2895000000,
+      "price": 3100000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [
+       {
+        "id": "pa1",
+        "share": 50
+       }
+      ],
+      "expenses": [
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-11-05",
+        "by": "own"
+       },
+       {
+        "title": "آگهی دیوار",
+        "amount": 1000000,
+        "date": "2026-11-05",
+        "by": "own"
+       },
+       {
+        "title": "صافکاری",
+        "amount": 12000000,
+        "date": "2026-11-05",
+        "by": "own"
+       }
+      ],
+      "note": "تک‌سرنشین",
+      "status": "موجود",
+      "date": "2026-11-03",
+      "by": "own"
+     },
+     "car13": {
+      "code": "114",
+      "make": "ایران‌خودرو",
+      "model": "سمند",
+      "year": 1399,
+      "km": 65000,
+      "color": "خاکستری",
+      "body": "چند لکه رنگ",
+      "own": "خرید نمایشگاه",
+      "buyPrice": 551000000,
+      "price": 590000000,
+      "consignor": "",
+      "consignorPhone": "",
+      "plate": "",
+      "partners": [],
+      "expenses": [
+       {
+        "title": "سرویس و روغن",
+        "amount": 4000000,
+        "date": "2026-10-29",
+        "by": "own"
+       }
+      ],
+      "note": "",
+      "status": "فروخته شد",
+      "date": "2026-09-27",
+      "by": "own",
+      "soldPrice": 570000000,
+      "soldOn": "2026-10-11"
+     }
+    },
+    "clients": {
+     "ld00": {
+      "name": "آقای قنبری",
+      "phone": "09196300000",
+      "want": "دنا تارا",
+      "budget": 1300000000,
+      "yearMin": 1401,
+      "agent": "s1",
+      "note": "ماشین خودش را معاوضه می‌کند",
+      "status": "فعال",
+      "date": "2026-10-25",
+      "by": "own",
+      "createdAt": 1762400000000
+     },
+     "ld01": {
+      "name": "خانم صالحی",
+      "phone": "09196300541",
+      "want": "سراتو النترا",
+      "budget": 2300000000,
+      "yearMin": 0,
+      "agent": "s1",
+      "note": "وام دارد",
+      "status": "فعال",
+      "date": "2026-10-17",
+      "by": "own",
+      "createdAt": 1762400000001
+     },
+     "ld02": {
+      "name": "آقای امیری",
+      "phone": "09196301082",
+      "want": "شاهین ۲۰۷",
+      "budget": 900000000,
+      "yearMin": 1400,
+      "agent": "s1",
+      "note": "ماشین خودش را معاوضه می‌کند",
+      "status": "فعال",
+      "date": "2026-10-14",
+      "by": "own",
+      "createdAt": 1762400000002
+     },
+     "ld03": {
+      "name": "دکتر حیدری",
+      "phone": "09196301623",
+      "want": "کمری توسان",
+      "budget": 3200000000,
+      "yearMin": 0,
+      "agent": "s2",
+      "note": "",
+      "status": "فعال",
+      "date": "2026-10-29",
+      "by": "own",
+      "createdAt": 1762400000003
+     },
+     "ld04": {
+      "name": "آقای محمدی",
+      "phone": "09196302164",
+      "want": "",
+      "budget": 700000000,
+      "yearMin": 0,
+      "agent": "s1",
+      "note": "",
+      "status": "فعال",
+      "date": "2026-11-06",
+      "by": "own",
+      "createdAt": 1762400000004
+     },
+     "ld05": {
+      "name": "خانم کریمی",
+      "phone": "09196302705",
+      "want": "تیگو X55",
+      "budget": 1900000000,
+      "yearMin": 1401,
+      "agent": "s1",
+      "note": "وام دارد",
+      "status": "فعال",
+      "date": "2026-10-12",
+      "by": "own",
+      "createdAt": 1762400000005
+     },
+     "ld06": {
+      "name": "آقای یزدانی",
+      "phone": "09196303246",
+      "want": "پارس سمند",
+      "budget": 800000000,
+      "yearMin": 1398,
+      "agent": "s1",
+      "note": "وام دارد",
+      "status": "فعال",
+      "date": "2026-10-18",
+      "by": "own",
+      "createdAt": 1762400000006
+     }
+    },
+    "visits": {
+     "v00": {
+      "date": "2026-10-31",
+      "time": "19:30",
+      "car": "car11",
+      "carTitle": "112 · تیگو ۷",
+      "client": "آقای محمدی",
+      "agent": "s1",
+      "note": "",
+      "result": "نپسندید",
+      "by": "own",
+      "createdAt": 1762400000000
+     },
+     "v01": {
+      "date": "2026-10-31",
+      "time": "18:00",
+      "car": "car02",
+      "carTitle": "103 · شاهین",
+      "client": "آقای محمدی",
+      "agent": "s1",
+      "note": "",
+      "result": "پسندید",
+      "by": "own",
+      "createdAt": 1762400000001
+     },
+     "v02": {
+      "date": "2026-11-02",
+      "time": "11:00",
+      "car": "car02",
+      "carTitle": "103 · شاهین",
+      "client": "خانم کریمی",
+      "agent": "s1",
+      "note": "",
+      "result": "نپسندید",
+      "by": "own",
+      "createdAt": 1762400000002
+     },
+     "v03": {
+      "date": "2026-11-02",
+      "time": "16:30",
+      "car": "car08",
+      "carTitle": "109 · X55 پرو",
+      "client": "خانم کریمی",
+      "agent": "s1",
+      "note": "",
+      "result": "نپسندید",
+      "by": "own",
+      "createdAt": 1762400000003
+     },
+     "v04": {
+      "date": "2026-11-03",
+      "time": "16:30",
+      "car": "car10",
+      "carTitle": "111 · کوییک",
+      "client": "آقای یزدانی",
+      "agent": "s1",
+      "note": "",
+      "result": "پسندید",
+      "by": "own",
+      "createdAt": 1762400000004
+     },
+     "v05": {
+      "date": "2026-11-03",
+      "time": "19:30",
+      "car": "car02",
+      "carTitle": "103 · شاهین",
+      "client": "آقای قنبری",
+      "agent": "s1",
+      "note": "",
+      "result": "پسندید",
+      "by": "own",
+      "createdAt": 1762400000005
+     },
+     "v06": {
+      "date": "2026-11-04",
+      "time": "19:30",
+      "car": "car00",
+      "carTitle": "101 · دنا پلاس توربو",
+      "client": "خانم کریمی",
+      "agent": "s1",
+      "note": "",
+      "result": "پسندید",
+      "by": "own",
+      "createdAt": 1762400000006
+     },
+     "v07": {
+      "date": "2026-11-07",
+      "time": "18:00",
+      "car": "car02",
+      "carTitle": "103 · شاهین",
+      "client": "آقای امیری",
+      "agent": "s1",
+      "note": "",
+      "result": "برنامه‌ریزی‌شده",
+      "by": "own",
+      "createdAt": 1762400000007
+     },
+     "v08": {
+      "date": "2026-11-07",
+      "time": "16:30",
+      "car": "car10",
+      "carTitle": "111 · کوییک",
+      "client": "دکتر حیدری",
+      "agent": "s2",
+      "note": "",
+      "result": "برنامه‌ریزی‌شده",
+      "by": "own",
+      "createdAt": 1762400000008
+     },
+     "v09": {
+      "date": "2026-11-08",
+      "time": "19:30",
+      "car": "car02",
+      "carTitle": "103 · شاهین",
+      "client": "خانم صالحی",
+      "agent": "s1",
+      "note": "",
+      "result": "برنامه‌ریزی‌شده",
+      "by": "own",
+      "createdAt": 1762400000009
+     }
+    },
+    "cdeals": {
+     "cd00": {
+      "date": "2026-11-04",
+      "car": "car03",
+      "title": "104 · پژو · ۲۰۷ دنده‌ای · 1401 · سفید صدفی",
+      "buyer": "آقای سلیمانی",
+      "phone": "09355200000",
+      "price": 880000000,
+      "method": "نقد",
+      "commission": 18000000,
+      "profit": 18000000,
+      "agent": "s1",
+      "agentShare": 30,
+      "docs": {
+       "fines": true,
+       "insurance": true,
+       "plate": false,
+       "transfer": false
+      },
+      "by": "own",
+      "createdAt": 1762400000000
+     },
+     "cd01": {
+      "date": "2026-10-28",
+      "car": "car05",
+      "title": "106 · هیوندای · النترا · 2016 · سفید",
+      "buyer": "خانم جعفری",
+      "phone": "09355200977",
+      "price": 2100000000,
+      "method": "نقد و چک",
+      "commission": 25000000,
+      "profit": 172000000,
+      "agent": "s2",
+      "agentShare": 30,
+      "docs": {
+       "fines": true,
+       "insurance": true,
+       "plate": false,
+       "transfer": false
+      },
+      "by": "own",
+      "createdAt": 1762400000001
+     },
+     "cd02": {
+      "date": "2026-10-22",
+      "car": "car09",
+      "title": "110 · رنو · تندر ۹۰ · 1398 · سفید صدفی",
+      "buyer": "آقای میرزایی",
+      "phone": "09355201954",
+      "price": 630000000,
+      "method": "نقد",
+      "commission": 10000000,
+      "profit": 60000000,
+      "agent": "s1",
+      "agentShare": 30,
+      "docs": {
+       "fines": true,
+       "insurance": true,
+       "plate": true,
+       "transfer": false
+      },
+      "by": "own",
+      "createdAt": 1762400000002
+     },
+     "cd03": {
+      "date": "2026-10-11",
+      "car": "car13",
+      "title": "114 · ایران‌خودرو · سمند · 1399 · خاکستری",
+      "buyer": "آقای رستمی",
+      "phone": "09355202931",
+      "price": 570000000,
+      "method": "چک",
+      "commission": 8000000,
+      "profit": 23000000,
+      "agent": "s2",
+      "agentShare": 30,
+      "docs": {
+       "fines": true,
+       "insurance": true,
+       "plate": true,
+       "transfer": true
+      },
+      "by": "own",
+      "createdAt": 1762400000003
+     },
+     "cd04": {
+      "date": "2026-10-04",
+      "car": "car07",
+      "title": "108 · کیا · سراتو · 2017 · خاکستری",
+      "buyer": "خانم وحیدی",
+      "phone": "09355203908",
+      "price": 1850000000,
+      "method": "نقد",
+      "commission": 30000000,
+      "profit": 28000000,
+      "agent": "s1",
+      "agentShare": 30,
+      "docs": {
+       "fines": true,
+       "insurance": true,
+       "plate": true,
+       "transfer": true
+      },
+      "by": "own",
+      "createdAt": 1762400000004
+     }
+    },
+    "checks": {
+     "ch0": {
+      "party": "خانم جعفری (خریدار النترا)",
+      "amount": 800000000,
+      "due": "2026-11-10",
+      "kind": "دریافتنی",
+      "note": "چک دوم",
+      "paid": false,
+      "createdAt": 1762400000000
+     },
+     "ch1": {
+      "party": "آقای رستمی (خریدار سمند)",
+      "amount": 300000000,
+      "due": "2026-11-24",
+      "kind": "دریافتنی",
+      "note": "",
+      "paid": false,
+      "createdAt": 1762400000001
+     },
+     "ch2": {
+      "party": "آقای کاظمی (امانی)",
+      "amount": 850000000,
+      "due": "2026-11-08",
+      "kind": "پرداختنی",
+      "note": "تسویه با صاحب ۲۰۷",
+      "paid": false,
+      "createdAt": 1762400000002
+     }
+    },
+    "tasks": {
+     "t0": {
+      "title": "عکاسی و آگهی دیوار برای ماشین‌های جدید",
+      "from": "own",
+      "to": "s2",
+      "due": "2026-11-06",
+      "repeat": "none",
+      "category": "فروش",
+      "note": "",
+      "done": false,
+      "createdAt": 1762400000000
+     },
+     "t1": {
+      "title": "کارشناسی بدنه توسان",
+      "from": "own",
+      "to": "ex1",
+      "due": "2026-11-07",
+      "repeat": "none",
+      "category": "تعمیر و آماده‌سازی",
+      "note": "",
+      "done": false,
+      "createdAt": 1762400000001
+     },
+     "t2": {
+      "title": "پیگیری انتقال سند سمند",
+      "from": "own",
+      "to": "s1",
+      "due": "2026-11-06",
+      "repeat": "none",
+      "category": "انتقال سند",
+      "note": "",
+      "done": false,
+      "createdAt": 1762400000002
+     },
+     "t3": {
+      "title": "کاهش قیمت ماشین‌های بالای ۴۵ روز",
+      "from": "own",
+      "to": "own",
+      "due": "2026-11-08",
+      "repeat": "weekly",
+      "category": "فروش",
+      "note": "",
+      "done": false,
+      "createdAt": 1762400000003
+     }
+    },
+    "costs": {
+     "k0": {
+      "title": "اجاره نمایشگاه",
+      "amount": 180000000,
+      "category": "اجاره",
+      "date": "2026-10-29",
+      "by": "own",
+      "createdAt": 1762400000000
+     },
+     "k1": {
+      "title": "آگهی دیوار و باما",
+      "amount": 9000000,
+      "category": "تبلیغات",
+      "date": "2026-11-03",
+      "by": "own",
+      "createdAt": 1762400000001
+     }
+    }
+   }
   }
  }
 }

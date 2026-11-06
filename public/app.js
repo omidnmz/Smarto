@@ -40,6 +40,12 @@ const ICON={
   visits:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M12 13v4M10 15h4"/></svg>',
   edeals:'<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
   plans:'<svg viewBox="0 0 24 24"><path d="M7 3c-2.5 0-4 2-4 4.5 0 2 1 3.5 1.5 6S5 21 7 21c1.5 0 1.7-4 3-5.5.6-.7 1.4-.7 2 0 1.3 1.5 1.5 5.5 3 5.5 2 0 2-5 2.5-7.5S21 9.5 21 7.5C21 5 19.5 3 17 3c-2 0-3 1-5 1S9 3 7 3Z"/></svg>',
+  cdash:'<svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
+  ccars:'<svg viewBox="0 0 24 24"><path d="M5 17h14M3 13l2-6h14l2 6v4h-2M5 17H3v-4"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/></svg>',
+  leads:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .7 3.4 2.6 4 5.5"/></svg>',
+  cvisits:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M4.5 16l5.8-3M19.5 16l-5.8-3"/></svg>',
+  cdeals:'<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
+  pshare:'<svg viewBox="0 0 24 24"><path d="M12 3v9l7 4"/><circle cx="12" cy="12" r="9"/></svg>',
   payments:'<svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
 };
 const NAV={
@@ -62,24 +68,26 @@ const REPAIR_ROLES={owner:'مالک',reception:'پذیرش',tech:'تعمیرکا
 const RETAIL_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
 const GOLD_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
 const RE_ROLES={owner:'مدیر املاک',agent:'مشاور',specialist:'متخصص'};
+const CAR_ROLES={owner:'مدیر نمایشگاه',seller:'فروشنده',partner:'شریک',specialist:'کارشناس فنی'};
 const PAY_TYPES=['حقوق ماهانه','درصدی','پروژه‌ای','ساعتی'];
 const LBL={salon:{client:'مشتری',clients:'مشتریان',staff:'آرایشگر',note:'یادداشت (مثلاً فرمول رنگ)'},clinic:{client:'بیمار',clients:'بیماران',staff:'پزشک',note:'یادداشت ویزیت'},dental:{client:'بیمار',clients:'بیماران',staff:'دندانپزشک',note:'یادداشت درمان'}};
 const APPT_ST=['رزرو','تأیید شده','انجام‌شده','لغو','نیامد'];
-const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',salon:'سالن زیبایی',clinic:'کلینیک'};
+const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',cars:'نمایشگاه ماشین',salon:'سالن زیبایی',clinic:'کلینیک'};
 const STORE_COLS=['people','products','sales','orders','payments','tasks','ideas','content','costs','salaries'];
 const APPT_COLS=['people','services','clients','appointments','tasks','ideas','costs','salaries'];
 const DENTAL_COLS=[...APPT_COLS,'plans'];
+const CAR_COLS=['people','cars','clients','visits','cdeals','checks','tasks','ideas','costs','salaries'];
 const SHOP_COLS=['people','products','sorders','tasks','ideas','costs','salaries'];
 const FOOD_COLS=['people','menu','forders','inventory','tasks','ideas','costs','salaries'];
 const REPAIR_COLS=['people','jobs','parts','tasks','ideas','costs','salaries'];
 const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas','costs','salaries'];
 const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
 const RE_COLS=['people','listings','clients','visits','deals','tasks','ideas','costs','salaries'];
-const colsFor=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS}[t]||APPT_COLS);
+const colsFor=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS}[t]||APPT_COLS);
 let ws=null, workspaces=[], unsubs=[];
 const L=k=>(ws&&ws.labels&&ws.labels[k])||(LBL[ws&&ws.type]||LBL.salon)[k];
 const rolesOf=()=>({...baseRoles(ws.type),...(ws.roleLabels||{})});
-const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES}[type]||APPT_ROLES[type]||{});
+const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES,cars:CAR_ROLES}[type]||APPT_ROLES[type]||{});
 const roleLabel=r=>rolesOf()[r]||r;
 function navFor(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='store')return NAV[r]||NAV.team;
@@ -103,6 +111,10 @@ function navFor(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='gold'){
     if(r==='owner')return [['ghome','فروش'],['gstock','ویترین'],['nasieh','نسیه'],['money','مالی'],['tasks','کارها'],['gsell','',1],['checks','',1]];
     return [['gsell','فاکتور'],['gstock','ویترین'],['nasieh','نسیه'],['tasks','کارها']];}
+  if(ws.type==='cars'){
+    if(r==='owner')return [['cdash','داشبورد'],['ccars','ماشین‌ها'],['leads','مشتریان'],['cdeals','فروش'],['tasks','کارها'],['cvisits','',1],['checks','',1],['money','',1]];
+    if(r==='partner')return [['pshare','سهم من'],['ccars','ماشین‌ها'],['tasks','کارها']];
+    return [['ccars','ماشین‌ها'],['leads','مشتریان'],['cvisits','تست‌درایو'],['cdeals','فروش'],['tasks','کارها']];}
   if(ws.type==='realestate'){
     if(r==='owner')return [['edash','داشبورد'],['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['tasks','کارها'],['edeals','',1],['money','',1]];
     return [['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['edeals','قرارداد'],['tasks','کارها']];}
@@ -115,7 +127,7 @@ function navFor(r){if(r==='specialist')return [['tasks','کارها']];
   return [['myappts','نوبت‌های من'],['earn','درآمد من'],['tasks','کارها']];}
 const P=x=>'workspaces/'+ws.id+'/'+x;
 const D=x=>db.doc(P(x)), C=x=>db.collection(P(x));
-const catsFor=()=>ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:ws.type==='gold'?['فروش','ویترین و ساخت','نسیه و چک','مالی','سایر']:ws.type==='realestate'?['فایل‌ها','مشتریان','بازدید','قرارداد','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
+const catsFor=()=>ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:ws.type==='gold'?['فروش','ویترین و ساخت','نسیه و چک','مالی','سایر']:ws.type==='cars'?['خرید ماشین','فروش','تعمیر و آماده‌سازی','انتقال سند','مالی','سایر']:ws.type==='realestate'?['فایل‌ها','مشتریان','بازدید','قرارداد','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
 const CENTRAL='مرکزی';
 const CHANNELS=['حضوری','سایت','اینستاگرام'];
 const ORDER_ST=['ثبت‌شده','در حال آماده‌سازی','ارسال‌شده','تحویل‌شده'];
@@ -126,7 +138,7 @@ const REPEAT={none:'یک‌بار',daily:'روزانه',weekly:'هفتگی',mont
 const COST_CATS=['خرید و تأمین','حمل‌ونقل','قبوض','اجاره','تبلیغات','پذیرایی','سایر'];
 const JMONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 
-const state={};const resetState=()=>[...new Set([...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS])].forEach(c=>state[c]=[]);resetState();
+const state={};const resetState=()=>[...new Set([...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS,...CAR_COLS])].forEach(c=>state[c]=[]);resetState();
 const ui={day:null,staffF:'همه',q:'',period:'today',source:'all',from:'',to:'',taskTab:'received',taskCat:'همه',moneyTab:'costs',salMonth:null,contentSt:'همه'};
 let db=null, me=null, armed=null, loaded=new Set();
 
@@ -1216,8 +1228,163 @@ function scrPlans(){
       ${['owner','gm'].includes(me.role)?`<div class="row" style="justify-content:flex-end">${delBtn('plans',p.id)}</div>`:''}</section>`}).join(''):empty('طرح درمانی با این شرایط نیست.')}`;
 }
 
+// ---------- car dealership ----------
+const CAR_ST=['موجود','رزرو','فروخته شد','خارج شد'];
+const CAR_BODY=['بدون رنگ','یک لکه رنگ','چند لکه رنگ','دور رنگ','تصادفی','تعویض قطعه'];
+const CAR_OWN=['خرید نمایشگاه','امانی'];
+const CAR_PAY=['نقد','چک','اقساط','نقد و چک'];
+const CAR_DOCS=[['fines','خلافی'],['insurance','بیمه'],['plate','تعویض پلاک'],['transfer','انتقال سند']];
+const LONG_DAYS=45;
+const carTitle=c=>[c.make,c.model,c.year?fmtN(c.year).replace(/٬/g,''):'',c.color].filter(Boolean).join(' · ');
+const carExp=c=>(c.expenses||[]).reduce((a,x)=>a+(+x.amount||0),0);
+const carCost=c=>c.own==='امانی'?carExp(c):(+c.buyPrice||0)+carExp(c);
+const daysOn=c=>Math.max(0,Math.round((new Date(TODAY)-new Date(c.date||TODAY))/864e5));
+const seesMoney=()=>['owner','gm','partner'].includes(me.role);
+const myShare=c=>{const p=(c.partners||[]).find(x=>x.id===me.id);return p?(+p.share||0)/100:0};
+const dealProfit=d=>+d.profit||0;
+function carMatches(l){const words=String(l.want||'').split(/\s+/).filter(w=>w.length>1);
+  return state.cars.filter(c=>c.status==='موجود'&&(!words.length||words.some(w=>(c.make+' '+c.model).includes(w)))&&(!+l.budget||(+c.price||0)<=+l.budget*1.1)&&(!+l.yearMin||(+c.year||0)>=+l.yearMin))}
+function carLeads(c){return state.clients.filter(l=>l.status==='فعال'&&carMatches(l).some(x=>x.id===c.id))}
+function scrCDash(){
+  const [f,t]=range();
+  const deals=state.cdeals.filter(d=>d.date>=f&&d.date<=t);
+  const lot=state.cars.filter(c=>c.status==='موجود'||c.status==='رزرو');
+  const capital=lot.filter(c=>c.own!=='امانی').reduce((a,c)=>a+carCost(c),0);
+  const old=lot.filter(c=>daysOn(c)>LONG_DAYS);
+  const avgDays=lot.length?Math.round(lot.reduce((a,c)=>a+daysOn(c),0)/lot.length):0;
+  const soon=state.checks.filter(c=>!c.paid&&c.due<=addDays(TODAY,7));
+  const openDocs=state.cdeals.filter(d=>CAR_DOCS.some(([k])=>!(d.docs||{})[k]));
+  const byAgent=groupSum(deals,d=>pname(d.agent),dealProfit);
+  return `
+  ${old.length||soon.length||openDocs.length?`<div class="kpis">${old.length?alertKpi('ccars','ماشین خوابیده',fmtN(old.length),'بیش از '+fmtN(LONG_DAYS)+' روز در نمایشگاه'):''}${soon.length?alertKpi('checks','چک تا ۷ روز',fmtN(soon.length),fmtT(soon.reduce((a,c)=>a+(+c.amount||0),0))+' تومان'):''}${openDocs.length?alertKpi('cdeals','انتقال ناتمام',fmtN(openDocs.length),'خلافی، بیمه، پلاک یا سند'):''}</div>`:''}
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">سود ${pLabel()}</span><span class="val">${fmtT(deals.reduce((a,d)=>a+dealProfit(d),0))} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(deals.length)} ماشین فروخته شد · ${fmtT(deals.reduce((a,d)=>a+(+d.price||0),0))} فروش</span></div>
+    <button class="kpi" data-go="ccars" style="text-align:start;cursor:pointer"><span class="lab">ماشین در نمایشگاه</span><span class="val">${fmtN(lot.length)}</span><span class="hint">${fmtN(lot.filter(c=>c.own==='امانی').length)} امانی · میانگین ${fmtN(avgDays)} روز</span></button>
+    <div class="kpi"><span class="lab">سرمایه در ماشین‌ها</span><span class="val">${fmtT(capital)}</span><span class="hint">خرید و هزینه‌ها</span></div>
+  </div>
+  ${trendCard(state.cdeals,dealProfit,'روند سود')}
+  ${Object.keys(byAgent).length?`<section class="card"><div class="row"><h3>فروش هر فروشنده</h3><span class="small muted">${pLabel()}</span></div>${sumTbl(byAgent,'فروشنده','ماشین')}</section>`:''}
+  <div class="row" style="justify-content:flex-start;gap:8px"><button class="chip" data-go="cvisits">تست‌درایوها</button><button class="chip" data-go="checks">چک‌ها</button><button class="chip" data-go="money">هزینه‌ها و حقوق</button></div>`;
+}
+function partnerFields(){const ps=state.people.filter(p=>p.role==='partner');if(!ps.length)return '';
+  return [1,2].map(n=>`<label>شریک ${fmtN(n)}<select id="ca-p${n}" name="p${n}"><option value="">—</option>${opts(ps.map(p=>[p.id,p.name]))}</select></label><label>سهم شریک ${fmtN(n)} ٪<input id="ca-s${n}" name="s${n}" type="number" min="0" max="100"></label>`).join('')}
+function scrCCars(){
+  const st=ui.cst2||'موجود', q=(ui.q||'').trim(), money=seesMoney();
+  let list=state.cars.filter(c=>(st==='همه'||c.status===st||(st==='موجود'&&c.status==='رزرو'))&&(me.role!=='partner'||myShare(c)));
+  if(q)list=list.filter(c=>[c.code,c.make,c.model,c.color,c.plate,c.consignor].some(x=>String(x||'').includes(q)));
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `
+  ${me.role!=='partner'?`<details class="add"><summary>ورود ماشین جدید</summary><form class="f" data-form="car">
+    <label>برند<input id="ca-make" name="make" required placeholder="مثلاً پژو"></label>
+    <label>مدل<input id="ca-model" name="model" required placeholder="مثلاً ۲۰۷ دنده‌ای"></label>
+    <label>سال ساخت<input id="ca-year" name="year" type="number" min="1300" max="2100" placeholder="1401"></label>
+    <label>کارکرد (کیلومتر)<input id="ca-km" name="km" type="number" min="0" step="1000"></label>
+    <label>رنگ<input id="ca-color" name="color"></label>
+    <label>بدنه<select id="ca-body" name="body">${opts(CAR_BODY,'بدون رنگ')}</select></label>
+    <label>نوع<select id="ca-own" name="own">${opts(CAR_OWN,'خرید نمایشگاه')}</select></label>
+    <label>قیمت خرید<input id="ca-buy" name="buyPrice" type="number" min="0" step="1000000"></label>
+    <label>قیمت فروش (آگهی)<input id="ca-price" name="price" type="number" min="0" step="1000000" required></label>
+    <label>صاحب ماشین امانی<input id="ca-cons" name="consignor"></label>
+    <label>موبایل صاحب<input id="ca-cphone" name="consignorPhone" inputmode="tel"></label>
+    <label>پلاک<input id="ca-plate" name="plate"></label>
+    ${partnerFields()}
+    <label class="full">توضیح<input id="ca-note" name="note" placeholder="مثلاً لاستیک نو، بیمه تا اسفند"></label>
+    <button class="btn full">ثبت ماشین</button></form></details>`:''}
+  <div class="chips">${['موجود','فروخته شد','خارج شد','همه'].map(k=>`<button class="chip" data-cst2="${k}" aria-pressed="${st===k}">${k}</button>`).join('')}</div>
+  ${searchBox('جستجوی مدل، رنگ، پلاک یا کد')}
+  ${list.length?list.slice(0,60).map(c=>{const d=daysOn(c),m=c.status==='موجود'?carLeads(c).length:0,exp=c.expenses||[];
+    return `<section class="card"><div class="row"><div><div class="t"><span class="small muted">${fmtN(c.code)}</span> ${esc(carTitle(c))}</div><div class="m">${c.km?fmtN(c.km)+' کیلومتر · ':''}${esc(c.body||'')}${c.plate?' · '+esc(c.plate):''}</div></div>
+      <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="cars/${c.id}" data-field="status" aria-label="وضعیت"${me.role==='partner'?' disabled':''}>${opts(CAR_ST,c.status)}</select>${c.status==='موجود'||c.status==='رزرو'?`<span class="pill ${d>LONG_DAYS?'p-bad':'p-mute'}">${fmtN(d)} روز</span>`:''}</div></div>
+      <div class="row small"><span>قیمت فروش <b class="num">${fmtT(c.price)}</b></span>${money&&c.own!=='امانی'?`<span class="muted">تمام‌شده ${fmtT(carCost(c))}</span>`:''}${c.own==='امانی'?`<span class="pill p-info">امانی${c.consignor?' · '+esc(c.consignor):''}</span>`:''}${m?`<span class="pill p-ok">${fmtN(m)} مشتری مناسب</span>`:''}</div>
+      ${(c.partners||[]).length&&money?`<div class="m">شریک‌ها: ${c.partners.map(p=>esc(pname(p.id))+' '+fmtN(p.share)+'٪').join('، ')}</div>`:''}
+      ${money&&exp.length?`<div class="m">هزینه‌ها: ${exp.map(x=>esc(x.title)+' '+fmtT(x.amount)).join('، ')}</div>`:''}
+      ${c.note?`<div class="m">${esc(c.note)}</div>`:''}
+      ${me.role!=='partner'&&c.status!=='فروخته شد'?`<div class="row" style="justify-content:flex-start;gap:6px"><input class="inline" id="cx-t-${c.id}" placeholder="هزینه (مثلاً صافکاری)" style="flex:2"><input class="inline" id="cx-a-${c.id}" type="number" min="0" step="100000" placeholder="مبلغ" style="flex:1"><button class="chip" data-cexp="${c.id}">ثبت هزینه</button></div>
+      <div class="row" style="justify-content:space-between"><button class="btn" style="padding:6px 14px" data-sellcar="${c.id}">ثبت فروش</button>${['owner','gm'].includes(me.role)?delBtn('cars',c.id):''}</div>`:''}</section>`}).join(''):empty('ماشینی با این شرایط نیست.')}`;
+}
+function scrLeads(){
+  const q=(ui.q||'').trim(), st=ui.cst||'فعال';
+  let list=state.clients.filter(c=>(st==='همه'||c.status===st)&&(me.role!=='seller'||c.agent===me.id));
+  if(q)list=list.filter(c=>[c.name,c.phone,c.want].some(x=>String(x||'').includes(q)));
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `
+  <details class="add"><summary>ثبت مشتری</summary><form class="f" data-form="lead">
+    <label>نام<input id="ld-name" name="name" required></label>
+    <label>موبایل<input id="ld-phone" name="phone" inputmode="tel"></label>
+    <label>دنبال چه ماشینی<input id="ld-want" name="want" placeholder="مثلاً تارا یا دنا"></label>
+    <label>بودجه<input id="ld-budget" name="budget" type="number" min="0" step="10000000"></label>
+    <label>حداقل سال<input id="ld-year" name="yearMin" type="number" min="1300" max="2100"></label>
+    <label>فروشنده<select id="ld-agent" name="agent">${opts(state.people.filter(p=>['owner','seller'].includes(p.role)).map(p=>[p.id,p.name]),me.role==='seller'?me.id:'')}</select></label>
+    <label class="full">توضیح<input id="ld-note" name="note" placeholder="مثلاً ماشین خودش را هم معاوضه می‌کند"></label>
+    <button class="btn full">ثبت مشتری</button></form></details>
+  <div class="chips">${['فعال','خرید کرد','منصرف شد','همه'].map(k=>`<button class="chip" data-cst="${k}" aria-pressed="${st===k}">${k}</button>`).join('')}</div>
+  ${searchBox('جستجوی نام، موبایل یا ماشین')}
+  <section class="card"><div class="row"><h3>مشتریان</h3><span class="small muted">${fmtN(list.length)} نفر</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,80).map(l=>{const m=l.status==='فعال'?carMatches(l):[];return `<li><div class="grow"><div class="t">${esc(l.name)} <span class="small muted">${esc(l.want||'هر ماشینی')}</span></div>
+      <div class="m">${l.phone?`<a href="tel:${esc(l.phone)}" style="color:inherit">${esc(l.phone)}</a> · `:''}${+l.budget?'تا '+fmtT(l.budget):'بودجه نامشخص'}${+l.yearMin?' · از سال '+String(l.yearMin):''} · ${esc(pname(l.agent))}</div>
+      ${l.note?`<div class="m">${esc(l.note)}</div>`:''}
+      ${m.length?`<div class="m">ماشین‌های مناسب: ${m.slice(0,4).map(c=>`<span class="pill p-info">${fmtN(c.code)} · ${esc(c.model)}</span>`).join(' ')}</div>`:''}</div>
+      <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="clients/${l.id}" data-field="status" aria-label="وضعیت">${opts(['فعال','خرید کرد','منصرف شد'],l.status)}</select>${delBtn('clients',l.id)}</div></li>`}).join('')}</ul>`:empty('مشتری‌ای با این شرایط نیست.')}</section>`;
+}
+function scrCVisits(){
+  const d=ui.day||TODAY, mine=v=>me.role!=='seller'||v.agent===me.id;
+  const list=state.visits.filter(v=>v.date===d&&mine(v)).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const cars=state.cars.filter(c=>c.status==='موجود'||c.status==='رزرو');
+  return `
+  <details class="add"><summary>ثبت بازدید یا تست‌درایو</summary><form class="f" data-form="cvisit">
+    <label class="full">ماشین<select id="cv-car" name="car" required>${cars.map(c=>`<option value="${c.id}">${fmtN(c.code)} · ${esc(carTitle(c))}</option>`).join('')}</select></label>
+    <label>مشتری<input id="cv-c" name="client" required list="cvClients"><datalist id="cvClients">${state.clients.filter(c=>c.status==='فعال').map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></label>
+    <label>تاریخ<input type="date" id="cv-date" name="date" value="${d}"></label>
+    <label>ساعت<input type="time" id="cv-time" name="time" value="17:00"></label>
+    <label class="full">توضیح<input id="cv-note" name="note"></label>
+    <button class="btn full">ثبت</button></form></details>
+  <div class="row" style="justify-content:center;gap:10px"><button class="chip" data-day="-1" aria-label="روز قبل">‹ قبل</button><span class="t">${jd(d,{weekday:'long',day:'numeric',month:'long'})}</span><button class="chip" data-day="1" aria-label="روز بعد">بعد ›</button></div>
+  ${d!==TODAY?'<div style="text-align:center"><button class="lnk" data-day="0">برگشت به امروز</button></div>':''}
+  <section class="card"><h3>بازدید و تست‌درایو</h3>${list.length?`<ul class="list">${list.map(v=>{const c=state.cars.find(x=>x.id===v.car);return `<li><span class="num t">${esc(v.time||'')}</span><div class="grow"><div class="t">${esc(v.client)}</div><div class="m">${c?fmtN(c.code)+' · '+esc(carTitle(c)):esc(v.carTitle||'')} · ${esc(pname(v.agent))}</div>${v.note?`<div class="m">${esc(v.note)}</div>`:''}</div>
+    <div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="visits/${v.id}" data-field="result" aria-label="نتیجه">${opts(['برنامه‌ریزی‌شده','پسندید','نپسندید','لغو'],v.result)}</select>${delBtn('visits',v.id)}</div></li>`}).join('')}</ul>`:empty('بازدیدی برای این روز ثبت نشده است.')}</section>`;
+}
+function scrCDeals(){
+  const seller=me.role==='seller', money=seesMoney();
+  const list=state.cdeals.filter(d=>!seller||d.agent===me.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const cars=state.cars.filter(c=>c.status==='موجود'||c.status==='رزرو');
+  const pre=cars.find(c=>c.id===ui.sellCar)||cars[0];
+  const ms=monthStart(TODAY), month=list.filter(d=>d.date>=ms);
+  const share=d=>Math.round((+d.commission||0)*(+d.agentShare||0)/100);
+  return `
+  <div class="kpis">${seller?`<div class="kpi wide"><span class="lab">سهم من در ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtT(month.reduce((a,d)=>a+share(d),0))} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(month.length)} فروش</span></div>`
+    :`<div class="kpi"><span class="lab">فروش ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtN(month.length)}</span><span class="hint">ماشین</span></div><div class="kpi"><span class="lab">سود ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtT(month.reduce((a,d)=>a+dealProfit(d),0))}</span><span class="hint">تومان</span></div>`}</div>
+  <details class="add"${ui.sellCar?' open':''}><summary>ثبت فروش</summary><form class="f" data-form="cdeal">
+    <label class="full">ماشین<select id="cd-car" name="car" required>${cars.map(c=>`<option value="${c.id}"${pre&&c.id===pre.id?' selected':''}>${fmtN(c.code)} · ${esc(carTitle(c))} · ${fmtT(c.price)}</option>`).join('')}</select></label>
+    <label>خریدار<input id="cd-buyer" name="buyer" required list="cdClients"><datalist id="cdClients">${state.clients.filter(c=>c.status==='فعال').map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></label>
+    <label>موبایل خریدار<input id="cd-phone" name="phone" inputmode="tel"></label>
+    <label>قیمت فروش<input id="cd-price" name="price" type="number" min="0" step="1000000" value="${pre?+pre.price||'':''}"></label>
+    <label>نحوه پرداخت<select id="cd-pay" name="method">${opts(CAR_PAY,'نقد')}</select></label>
+    <label>کمیسیون (از هر دو طرف)<input id="cd-com" name="commission" type="number" min="0" step="100000"></label>
+    <label>فروشنده<select id="cd-agent" name="agent">${opts(state.people.filter(p=>['owner','seller'].includes(p.role)).map(p=>[p.id,p.name]),seller?me.id:'')}</select></label>
+    <label>سهم فروشنده از کمیسیون ٪<input id="cd-share" name="agentShare" type="number" min="0" max="100" value="30"></label>
+    <label>تاریخ<input type="date" id="cd-date" name="date" value="${TODAY}"></label>
+    <p class="small muted full" style="margin:0">اگر بخشی از پول چک است، چک‌ها را در بخش «چک‌ها» با نوع دریافتنی ثبت کن تا سررسیدشان یادآوری شود.</p>
+    <button class="btn full">ثبت فروش</button></form></details>
+  <section class="card"><h3>فروش‌ها</h3>${list.length?`<ul class="list">${list.slice(0,60).map(d=>{const docs=d.docs||{},left=CAR_DOCS.filter(([k])=>!docs[k]);return `<li style="align-items:flex-start"><div class="grow"><div class="t">${esc(d.title)}</div>
+    <div class="m">${esc(d.buyer)}${d.phone?' · '+esc(d.phone):''} · ${jd(d.date)} · ${esc(d.method||'')}</div>
+    <div class="m">${fmtT(d.price)} تومان${money?` · <b>سود ${fmtT(dealProfit(d))}</b>`:''} · ${esc(pname(d.agent))}${seller?' · سهم من '+fmtT(share(d)):''}</div>
+    <div class="row" style="justify-content:flex-start;gap:4px;margin-top:4px">${CAR_DOCS.map(([k,l])=>`<label class="chip" style="display:flex;gap:4px;align-items:center"><input type="checkbox" style="width:auto;margin:0" ${docs[k]?'checked':''} data-cdoc="${d.id}|${k}">${l}</label>`).join('')}</div>
+    ${left.length?`<div class="m" style="color:var(--warn)">مانده: ${left.map(x=>x[1]).join('، ')}</div>`:''}</div>${['owner','gm'].includes(me.role)?delBtn('cdeals',d.id):''}</li>`}).join('')}</ul>`:empty('هنوز فروشی ثبت نشده است.')}</section>`;
+}
+function scrPShare(){
+  const mine=state.cars.filter(c=>myShare(c));
+  const lot=mine.filter(c=>c.status==='موجود'||c.status==='رزرو');
+  const capital=lot.reduce((a,c)=>a+carCost(c)*myShare(c),0);
+  const sold=state.cdeals.map(d=>({d,c:state.cars.find(c=>c.id===d.car)})).filter(x=>x.c&&myShare(x.c));
+  const profit=sold.reduce((a,x)=>a+dealProfit(x.d)*myShare(x.c),0);
+  return `
+  <div class="kpis"><div class="kpi"><span class="lab">سرمایه من در ماشین‌ها</span><span class="val">${fmtT(capital)}</span><span class="hint">${fmtN(lot.length)} ماشین</span></div><div class="kpi"><span class="lab">سود من</span><span class="val">${fmtT(profit)}</span><span class="hint">${fmtN(sold.length)} ماشین فروخته شد</span></div></div>
+  <section class="card"><h3>ماشین‌های شراکتی</h3>${mine.length?`<ul class="list">${mine.map(c=>{const s=sold.find(x=>x.c.id===c.id);return `<li><div class="grow"><div class="t">${esc(carTitle(c))}</div><div class="m">سهم من ${fmtN(Math.round(myShare(c)*100))}٪ · ${esc(c.status)}${s?' · سود من '+fmtT(dealProfit(s.d)*myShare(c)):' · '+fmtN(daysOn(c))+' روز در نمایشگاه'}</div></div><span class="num">${fmtT(carCost(c)*myShare(c))}</span></li>`}).join('')}</ul>`:empty('در ماشینی شریک نیستی.')}</section>`;
+}
+
 // ---------- needs form for businesses not in the samples ----------
-let amOwner=false, needReqs=[], needResult=null;
+let amOwner=false, needReqs=[], needResult=null, needJob='';
 const NQ={
   income:['فروش کالا در مغازه','فروش آنلاین (اینستاگرام، سایت)','خدمت با نوبت یا رزرو','خدمت بدون نوبت (مراجعه حضوری)','پروژه یا قرارداد','تعمیر یا خدمات فنی','غذا و نوشیدنی','شهریه یا اشتراک ماهانه','اجاره دادن وسیله یا مکان'],
   roles:['مدیر یا سرپرست','پذیرش یا منشی','صندوقدار','فروشنده','کارشناس یا متخصص فنی','انباردار','راننده یا پیک','حسابدار','ادمین شبکه‌های اجتماعی','همکار بیرونی یا پاره‌وقت'],
@@ -1234,6 +1401,7 @@ function needSuggest(r){
   const has=k=>(r.income||[]).includes(k), t=(r.job||'')+' '+(r.pain||'');
   if(/طلا|جواهر|سکه/.test(t))return 'gold';
   if(/املاک|بنگاه|مسکن|مشاور املاک/.test(t))return 'realestate';
+  if(/نمایشگاه ماشین|نمایشگاه خودرو|اتوگالری|خرید و فروش خودرو|ماشین/.test(t))return 'cars';
   if(has('غذا و نوشیدنی')||/کافه|رستوران|فست|قنادی|آبمیوه|کترینگ/.test(t))return /رستوران|فست|کترینگ/.test(t)?'restaurant':'cafe';
   if(has('تعمیر یا خدمات فنی')||has('پروژه یا قرارداد')||/تعمیر|خدمات|نصب|سرویس/.test(t))return 'repair';
   if(has('خدمت با نوبت یا رزرو')||has('شهریه یا اشتراک ماهانه'))return /دندان/.test(t)?'dental':/پزشک|کلینیک|مطب|فیزیو|روانشناس|دامپزشک/.test(t)?'clinic':'salon';
@@ -1249,7 +1417,7 @@ function scrNeed(){
   <p class="muted" style="margin:0">به این سؤال‌ها جواب بده تا بفهمیم پنل تو باید چه بخش‌هایی داشته باشد. حدود سه دقیقه طول می‌کشد.</p>
   <form class="f card" data-form="need" style="padding:14px">
     ${qHead(1,'کسب‌وکارت چیست؟')}
-    <label class="full">نوع شغل<input id="nd-job" name="job" required placeholder="مثلاً آموزشگاه موسیقی، باشگاه، آژانس املاک"></label>
+    <label class="full">نوع شغل<input id="nd-job" name="job" required placeholder="مثلاً آموزشگاه موسیقی، باشگاه، کارخانه لبنیات" value="${esc(needJob)}"></label>
     <label>نام کسب‌وکار<input id="nd-name" name="name"></label>
     <label>نام و نام خانوادگی تو<input id="nd-owner" name="owner" required></label>
     <label>شهر<input id="nd-city" name="city"></label>
@@ -1372,6 +1540,7 @@ const TEMPLATES={
   repair:{label:'تعمیرگاه و خدمات فنی',desc:'قبض پذیرش دستگاه یا خودرو، وضعیت تعمیر، تعمیرکار مسئول، موعد تحویل، طلب‌ها و انبار قطعات',defaults:'برد تغذیه - 650000\nکمپرسور - 4800000',staffRole:'tech',staffLabel:'تعمیرکار',items:'parts',itemsLabel:'قطعات',deviceLabel:'دستگاه یا خودرو',devicePh:'مثلاً یخچال ساید سامسونگ'},
   retail:{label:'مغازه و سوپرمارکت',desc:'ثبت سریع فروش نقد و کارت، دفتر نسیه، چک‌ها و بدهی به پخش‌کننده‌ها، کالای رو به اتمام',defaults:'شیر یک لیتری - 48000\nنان تست - 65000\nپنیر ۴۰۰ گرمی - 120000',staffRole:'seller',staffLabel:'فروشنده',items:'products',itemsLabel:'کالاها'},
   gold:{label:'طلافروشی و جواهری',desc:'فاکتور طلا با وزن، عیار، اجرت و نرخ روز، خرید طلای کهنه، ویترین به گرم، نسیه و چک',defaults:'انگشتر زنانه - 3.2\nگردنبند - 5.8\nدستبند - 9.4',staffRole:'seller',staffLabel:'فروشنده',items:'products',itemsLabel:'اجناس ویترین',itemsHint:'نام - وزن به گرم',noItemSettings:true},
+  cars:{label:'نمایشگاه ماشین',desc:'ماشین‌های موجود و امانی، روزهای خوابیده، هزینه و سود هر ماشین، سهم شریک‌ها، مشتری‌ها و ماشین مناسبشان، فروش با چک و قسط و کارهای انتقال سند',defaults:'',staffRole:'seller',staffLabel:'فروشنده',items:'cars',itemsLabel:'ماشین‌ها',noItems:true,noItemSettings:true},
   realestate:{label:'املاک و مشاور املاک',desc:'فایل‌های فروش و اجاره، مشتریان و فایل‌های مناسب هرکدام، بازدیدها، قراردادها و کمیسیون هر مشاور',defaults:'',staffRole:'agent',staffLabel:'مشاور',items:'listings',itemsLabel:'فایل‌ها',noItems:true,noItemSettings:true},
   salon:{label:'سالن زیبایی و آرایشگاه',desc:'نوبت‌دهی، مشتریان، سهم آرایشگرها، یادآوری مشتری‌های برنگشته',defaults:'کوتاهی مو - 450000\nرنگ مو - 2500000\nبراشینگ - 400000\nمانیکور - 500000',staffRole:'staff',staffLabel:'آرایشگر',items:'services',itemsLabel:'خدمات'},
   dental:{label:'کلینیک دندانپزشکی',desc:'نوبت بیماران، طرح درمان با شماره دندان، پیش‌پرداخت و قسط، مانده هر بیمار، سهم هر دندانپزشک',defaults:'معاینه و مشاوره - 500000\nجرم‌گیری - 1200000\nترمیم کامپوزیت - 2800000\nعصب‌کشی - 4500000\nروکش زیرکونیا - 9000000\nایمپلنت - 35000000',staffRole:'staff',staffLabel:'دندانپزشک',items:'services',itemsLabel:'خدمات'},
@@ -1429,7 +1598,7 @@ function scrLanding(){
     :`<button class="card login-card" data-login="1"><span class="t">قبلاً پنل ساخته‌ای یا عضو تیمی هستی؟</span><span class="btn ghost">ورود با موبایل</span></button>`}
   ${others.length?`<details class="card"><summary class="row" style="cursor:pointer"><span class="t">همه کسب‌وکارهای سامانه</span><span class="small muted">${fmtN(others.length)}</span></summary><div class="tiles">${others.map(w=>wsTile(w,false)).join('')}</div></details>`:''}
   <section class="lsec" id="samples"><div class="sec-head"><span class="eyebrow">نمونه‌های زنده</span><h2>پنل کسب‌وکار خودت را امتحان کن</h2><p class="muted">روی هر کدام بزن و از چشم مالک، منشی، فروشنده یا هر نقش دیگر ببین. بدون ثبت‌نام.</p></div>
-    <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}</div></section>
+    <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}${factoryTile()}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">چرا اسمارتو</span><h2>همه چیز سر جای خودش</h2></div>
     <div class="feats">${FEATURES.map(([ic,t,d])=>`<div class="feat"><span class="fi">${ICON[ic]}</span><h3>${t}</h3><p>${d}</p></div>`).join('')}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">شروع</span><h2>سه قدم تا پنل خودت</h2></div>
@@ -1439,6 +1608,8 @@ function scrLanding(){
   ${myRequests()}
   ${needInbox()}`;
 }
+const FACTORY={label:'کارخانه و تولیدی',desc:'سفارش تولید، مواد اولیه، کنترل کیفیت، شیفت‌ها، تعمیرات دستگاه‌ها و طلب از مشتری‌ها؛ برای هر کارخانه جداگانه طراحی می‌شود.'};
+const factoryTile=()=>`<button class="tile" data-need="factory"><span class="ti" style="--h:#334155"><svg viewBox="0 0 24 24"><path d="M3 21V10l6 4V10l6 4V6l6 3v12z"/><path d="M7 18h2M12 18h2M17 18h2"/></svg></span><span class="tile-b"><span class="row" style="justify-content:flex-start;gap:6px"><span class="t">${FACTORY.label}</span><span class="pill p-warn">اختصاصی</span></span><span class="m">${FACTORY.desc}</span></span></button>`;
 function wsTile(w,demo){
   const t=TEMPLATES[w.type]||{};
   const badge=demo?'<span class="pill p-info">نمونه</span>':w._access==='member'?'<span class="pill p-mute">عضو تیم</span>':w._access==='admin'?'<span class="pill p-mute">مدیریت</span>':'<span class="pill p-ok">پنل من</span>';
@@ -1459,6 +1630,7 @@ function scrCreate(){
     ${createTeam==='1'?'':`<label class="full">${t.staffLabel}‌ها (هر نفر در یک خط، اختیاری)<textarea id="cr-staff" name="staff" placeholder="${t.staffLabel} ۱"></textarea></label>`}
     ${t.noItems?'':`<label class="full">${t.itemsLabel} (هر کدام در یک خط: ${t.itemsHint||'نام - قیمت'})<textarea id="cr-items" name="items">${esc(t.defaults)}</textarea></label>`}
     <button class="btn full">ساخت پنل</button>
+    <button type="button" class="tile full" data-need="factory" style="grid-template-columns:auto 1fr">${factoryTile().replace(/^<button[^>]*>|<\/button>$/g,'')}</button>
     <button type="button" class="lnk full" data-need="1">نوع کسب‌وکارم در این فهرست نیست</button>
     <p class="small muted full" style="margin:0">بعداً می‌توانی اعضای تیم، نقش‌ها و ${t.itemsLabel} را از «تنظیمات» تغییر دهی.</p>
   </form>`;
@@ -1534,7 +1706,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -1548,7 +1720,7 @@ function renderWs(){
 }
 function renderWho(){
   const sel=document.getElementById('who');
-  const order=['owner','gm','manager','front','reception','cashier','warehouse','support','team','staff','waiter','kitchen','tech','seller','agent','branch','specialist'];
+  const order=['owner','gm','manager','front','reception','cashier','warehouse','support','team','staff','waiter','kitchen','tech','seller','agent','partner','branch','specialist'];
   const ps=[...state.people].sort((a,b)=>order.indexOf(a.role)-order.indexOf(b.role));
   sel.innerHTML=ps.map(p=>`<option value="${p.id}"${me&&p.id===me.id?' selected':''}>${esc(p.name)} · ${roleLabel(p.role)||''}</option>`).join('');
 }
@@ -1591,7 +1763,7 @@ V.addEventListener('click',async e=>{
   if(d.relogin){loginStep.sent=false;render();return}
   if(d.logout){try{await smarto.logout()}catch(e){}myUid=null;myPhone=null;amOwner=false;renderAcct();smarto.reconnect();subscribeAccountData();uiView='landing';render();toast('از حساب خارج شدی');return}
   if(d.landing){uiView='landing';render();window.scrollTo({top:0});return}
-  if(d.need){if(!myUid){needLogin('need');return}uiView='need';render();window.scrollTo({top:0});return}
+  if(d.need){needJob=d.need==='factory'?'کارخانه':'';if(!myUid){needLogin('need');return}uiView='need';render();if(needJob){const j=document.getElementById('nd-job');if(j&&!j.value)j.value=needJob}window.scrollTo({top:0});return}
   if(d.planstatus){const [id,st]=d.planstatus.split('|');const pl=readPlan(id);try{await db.doc('requests/'+id).update({status:st,...(pl?{plan:pl}:{}),updatedAt:Date.now()});toast(st==='رد شد'?'درخواست رد شد':'وضعیت ذخیره شد')}catch(e){toast('ذخیره نشد')}return}
   if(d.approve){await approveRequest(d.approve);return}
   if(d.delreq){if(armed!=='req/'+d.delreq){armed='req/'+d.delreq;render();return}armed=null;try{await db.doc('requests/'+d.delreq).delete();toast('حذف شد')}catch(e){toast('حذف نشد')}return}
@@ -1608,6 +1780,11 @@ V.addEventListener('click',async e=>{
   if(d.lmine){ui.lmine=!ui.lmine;render();return}
   if(d.cst){ui.cst=d.cst;render();return}
   if(d.pst){ui.pst=d.pst;render();return}
+  if(d.cst2){ui.cst2=d.cst2;render();return}
+  if(d.sellcar){ui.sellCar=d.sellcar;ui.screen='cdeals';render();window.scrollTo({top:0});return}
+  if(d.cexp){const c=state.cars.find(x=>x.id===d.cexp);const t=(document.getElementById('cx-t-'+d.cexp)||{}).value||'';const a=+((document.getElementById('cx-a-'+d.cexp)||{}).value)||0;
+    if(!c||!a){toast('مبلغ هزینه را بنویس');return}
+    await write(()=>D('cars/'+c.id).update({expenses:[...(c.expenses||[]),{title:t.trim()||'هزینه',amount:a,date:TODAY,by:me.id}],updatedAt:Date.now()}),'هزینه ثبت شد');return}
   if(d.planpay){const p=state.plans.find(x=>x.id===d.planpay);const inp=document.getElementById('pay-'+d.planpay);const amt=+(inp&&inp.value)||0;if(!p||!amt){toast('مبلغ را بنویس');return}
     await write(()=>D('plans/'+p.id).update({payments:[...(p.payments||[]),{date:TODAY,amount:amt,by:me.id}],updatedAt:Date.now()}),'پرداخت '+fmtN(amt)+' ثبت شد');return}
   if(d.addm){ui.cart[d.addm]=(ui.cart[d.addm]||0)+1;render();return}
@@ -1634,6 +1811,9 @@ V.addEventListener('change',async e=>{
   const el=e.target;
   if(el.dataset.ctype){createType=el.dataset.ctype;const items=document.getElementById('cr-items');const keep=saveForms();keep['cr-items']=tplOf(createType).defaults;render();restoreForms(keep);return}
   if(el.id==='cr-team'){createTeam=el.value;const keep=saveForms();render();restoreForms(keep);return}
+  if(el.dataset.cdoc){const [id,k]=el.dataset.cdoc.split('|');const d=state.cdeals.find(x=>x.id===id);if(!d)return;
+    await write(()=>D('cdeals/'+id).update({docs:{...(d.docs||{}),[k]:el.checked},updatedAt:Date.now()}),el.checked?'انجام شد':'برگشت');return}
+  if(el.id==='cd-car'){const c=state.cars.find(x=>x.id===el.value);const pr=document.getElementById('cd-price');if(c&&pr)pr.value=+c.price||'';return}
   if(el.dataset.planitem){const [id,k]=el.dataset.planitem.split('|');const p=state.plans.find(x=>x.id===id);if(!p)return;const items=(p.items||[]).map((x,i)=>i===+k?{...x,done:el.checked}:x);
     const all=items.length&&items.every(x=>x.done);
     await write(()=>D('plans/'+id).update({items,...(all&&p.status==='در حال درمان'?{status:'تمام‌شده'}:{}),updatedAt:Date.now()}),el.checked?(all?'همه درمان‌ها انجام شد':'انجام شد'):'برگشت');return}
@@ -1713,6 +1893,19 @@ V.addEventListener('submit',async e=>{
       const ok=await write(async()=>{await C('sorders').add({date:TODAY,customer:v.customer,phone:v.phone,city:v.city,channel:v.channel,items,ship:v.ship,fee,status:v.status||'جدید',tracking:'',by:me.id,createdAt:now});
         for(const i of items){const p=state.products.find(x=>x.id===i.pid);if(p)await D('products/'+p.id).update({stock:Math.max(0,(+p.stock||0)-i.qty),updatedAt:now})}},'سفارش ثبت شد');
       if(ok)resetForm(f);return}
+    case 'car':{const n=state.cars.reduce((a,c)=>Math.max(a,+c.code||0),100)+1;const partners=[1,2].map(k=>({id:v['p'+k],share:+v['s'+k]||0})).filter(x=>x.id&&x.share);
+      col='cars';data={code:String(n),make:v.make,model:v.model,year:+toEn(v.year)||0,km:+v.km||0,color:v.color,body:v.body,own:v.own,buyPrice:+v.buyPrice||0,price:+v.price||0,consignor:v.consignor||'',consignorPhone:v.consignorPhone||'',plate:v.plate||'',partners,expenses:[],note:v.note||'',status:'موجود',date:TODAY,by:me.id};msg='ماشین '+fmtN(n)+' ثبت شد';break}
+    case 'lead':col='clients';data={name:v.name,phone:v.phone,want:v.want,budget:+v.budget||0,yearMin:+toEn(v.yearMin)||0,agent:v.agent||me.id,note:v.note,status:'فعال',date:TODAY,by:me.id};msg='مشتری ثبت شد';break;
+    case 'cvisit':{const c=state.cars.find(x=>x.id===v.car);if(!c){toast('ماشین را انتخاب کن');return}col='visits';data={date:v.date||TODAY,time:v.time,car:c.id,carTitle:fmtN(c.code)+' · '+carTitle(c),client:v.client,agent:me.id,note:v.note,result:'برنامه‌ریزی‌شده',by:me.id};msg='ثبت شد';break}
+    case 'cdeal':{if(!db){toast('اتصال به سرور برقرار نیست');return}
+      const c=state.cars.find(x=>x.id===v.car);if(!c){toast('ماشین را انتخاب کن');return}
+      const price=+v.price||+c.price||0, com=+v.commission||0;
+      const profit=c.own==='امانی'?com-carExp(c):price-carCost(c)+com;
+      const lead=state.clients.find(x=>x.name===v.buyer&&x.status==='فعال');
+      const ok=await write(async()=>{await C('cdeals').add({date:v.date||TODAY,car:c.id,title:fmtN(c.code)+' · '+carTitle(c),buyer:v.buyer,phone:v.phone||(lead&&lead.phone)||'',price,method:v.method,commission:com,profit,agent:v.agent||me.id,agentShare:+v.agentShare||0,docs:{},by:me.id,createdAt:now});
+        await D('cars/'+c.id).update({status:'فروخته شد',soldPrice:price,soldOn:v.date||TODAY,updatedAt:now});
+        if(lead)await D('clients/'+lead.id).update({status:'خرید کرد',updatedAt:now})},'فروش ثبت شد');
+      if(ok){ui.sellCar=null;resetForm(f)}return}
     case 'plan':{if(!db){toast('اتصال به سرور برقرار نیست');return}
       const items=parsePlanItems(v.items);if(!items.length){toast('حداقل یک درمان بنویس');return}
       const ok=await write(async()=>{let c=state.clients.find(x=>x.name===v.client);let cid=c&&c.id;
@@ -1807,7 +2000,7 @@ function scrAccount(){
   <button class="btn" data-logout="1" style="justify-self:start;background:var(--bad)">خروج از حساب</button>`;
 }
 function openWs(w){
-  unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=w;ls.set('ws',w.id);resetState();loaded=new Set();me=null;ui.screen=null;ui.taskTab='received';ui.taskCat='همه';ui.day=TODAY;ui.staffF='همه';ui.q='';ui.ost='همه';ui.jst='باز';ui.cart={};ui.mcat='';ui.source='all';ui.ldeal='همه';ui.lst='فعال';ui.lmine=false;ui.cst='فعال';ui.pst='در حال درمان';armed=null;
+  unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=w;ls.set('ws',w.id);resetState();loaded=new Set();me=null;ui.screen=null;ui.taskTab='received';ui.taskCat='همه';ui.day=TODAY;ui.staffF='همه';ui.q='';ui.ost='همه';ui.jst='باز';ui.cart={};ui.mcat='';ui.source='all';ui.ldeal='همه';ui.lst='فعال';ui.lmine=false;ui.cst='فعال';ui.pst='در حال درمان';ui.cst2='موجود';ui.sellCar=null;armed=null;
   const cols=colsFor(w.type);
   render();
   cols.forEach(c=>unsubs.push(C(c).onSnapshot(snap=>{if(!ws||ws.id!==w.id)return;state[c]=snap.docs.map(d=>({id:d.id,...d.data()}));loaded.add(c);if(loaded.size>=2)render()},()=>toast('خطا در خواندن داده‌ها'))));
