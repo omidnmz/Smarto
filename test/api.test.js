@@ -19,7 +19,7 @@ before(async () => {
   await c.query('drop table if exists sessions, otps, users, docs cascade');
   await c.end();
   srv = spawn(process.execPath, ['server/index.js'], {
-    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '' },
+    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '0' },
   });
   srv.stdout.on('data', (d) => { out += d; });
   srv.stderr.on('data', (d) => { out += d; });
@@ -143,4 +143,34 @@ test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => 
     assert.equal((await owner.call('DELETE', `/api/doc?path=workspaces/${wsId}`)).status, 200);
     assert.equal((await staff.get(`workspaces/${wsId}/tasks`)).status, 403);
   });
+});
+
+test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const port = 3998;
+  let log = '';
+  const s2 = spawn(process.execPath, ['server/index.js'], {
+    env: { ...process.env, DATABASE_URL: DB, PORT: String(port), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '' },
+  });
+  s2.stdout.on('data', (d) => { log += d; });
+  s2.stderr.on('data', (d) => { log += d; });
+  try {
+    for (let i = 0; i < 50 && !log.includes('Server listening'); i++) await new Promise((r) => setTimeout(r, 100));
+    const post = (url, body) => fetch(`http://127.0.0.1:${port}${url}`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-smarto': '1' }, body: JSON.stringify(body),
+    }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
+
+    const req = await post('/api/auth/request', { phone: '09123334444' });
+    assert.equal(req.body.phoneLogin, true);
+    assert.equal((await post('/api/auth/verify', { phone: '09123334444', code: '09123334445' })).status, 400);
+    const ok = await post('/api/auth/verify', { phone: '09123334444', code: '۰۹۱۲۳۳۳۴۴۴۴' });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.isAdmin, false);
+
+    // The admin still needs the real code.
+    const a = await post('/api/auth/request', { phone: ADMIN });
+    assert.notEqual(a.body.phoneLogin, true);
+    assert.equal((await post('/api/auth/verify', { phone: ADMIN, code: ADMIN })).status, 400);
+  } finally {
+    s2.kill();
+  }
 });

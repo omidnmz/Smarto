@@ -1846,11 +1846,11 @@ V.addEventListener('submit',async e=>{
     if(db){try{await db.collection('requests').add(r)}catch(err){}}
     uiView='needDone';render();window.scrollTo({top:0});return}
   if(f.dataset.form==='otp'){const phone=String(new FormData(f).get('phone')||'').trim();
-    try{await smarto.requestCode(phone);loginStep.phone=phone;loginStep.sent=true;render();document.getElementById('lg-code')?.focus()}
+    try{const r=await smarto.requestCode(phone);loginStep.phone=phone;loginStep.sent=true;loginStep.pl=!!r?.phoneLogin;render();document.getElementById('lg-code')?.focus()}
     catch(err){toast(err.code==='bad_phone'?'شماره موبایل درست نیست':err.code==='wait'?'کمی صبر کن و دوباره بخواه':err.code==='sms_failed'?'پیامک ارسال نشد، دوباره امتحان کن':'خطا، دوباره امتحان کن')}return}
   if(f.dataset.form==='verify'){const code=String(new FormData(f).get('code')||'').trim();
     try{await smarto.verify(loginStep.phone,code);toast('خوش آمدی');await afterLogin()}
-    catch(err){toast(err.code==='wrong_code'?'کد اشتباه است':err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
+    catch(err){toast(err.code==='wrong_code'?(loginStep.pl?'شماره را درست تکرار کن':'کد اشتباه است'):err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
   const v={};new FormData(f).forEach((x,k)=>v[k]=String(x).trim());
   const now=Date.now();let col,data,msg='ثبت شد';
   switch(f.dataset.form){
@@ -1983,8 +1983,10 @@ function scrLogin(){
   <div class="row"><h2>ورود یا ثبت‌نام</h2><button class="lnk" data-landing="1">انصراف</button></div>
   <p class="muted" style="margin:0">با شماره موبایلت وارد شو. اگر صاحب کسب‌وکار شماره‌ات را در تیم ثبت کرده باشد، بعد از ورود پنل آن کسب‌وکار را هم می‌بینی.</p>
   ${loginStep.sent?`<form class="f card" data-form="verify" style="padding:14px">
-      <p class="full small muted" style="margin:0">کد ۵ رقمی به ${esc(loginStep.phone)} پیامک شد.</p>
-      <label class="full">کد ورود<input id="lg-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="5" required></label>
+      ${loginStep.pl?`<p class="full small muted" style="margin:0">فعلاً ورود بدون پیامک است: همان شماره موبایلت را دوباره بنویس.</p>
+      <label class="full">رمز (همان شماره موبایل)<input id="lg-code" name="code" inputmode="tel" placeholder="0912…" required></label>`
+      :`<p class="full small muted" style="margin:0">کد ۵ رقمی به ${esc(loginStep.phone)} پیامک شد.</p>
+      <label class="full">کد ورود<input id="lg-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="5" required></label>`}
       <button class="btn full">ورود</button>
       <button type="button" class="lnk full" data-relogin="1">تغییر شماره یا ارسال دوباره</button></form>`
   :`<form class="f card" data-form="otp" style="padding:14px">

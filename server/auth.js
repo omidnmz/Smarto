@@ -11,6 +11,13 @@ const RESEND_AFTER = 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const pepper = () => process.env.SESSION_SECRET || 'dev-secret';
 
+// Temporary login while SMS is not set up: anyone except an admin can sign in by typing
+// their own phone number as the code. It switches itself off once both Kavenegar settings
+// exist, and PHONE_LOGIN=0 turns it off sooner.
+export const phoneLogin = () =>
+  process.env.PHONE_LOGIN !== '0' && !(process.env.KAVENEGAR_API_KEY && process.env.KAVENEGAR_TEMPLATE);
+const phoneLoginFor = (phone) => phoneLogin() && !isAdmin({ phone });
+
 export async function currentUser(req) {
   const tok = req.cookies?.[COOKIE];
   if (!tok) return null;
@@ -46,6 +53,7 @@ export function authRoutes(app) {
     const phone = normalizePhone(req.body?.phone);
     if (!phone) return reply.code(400).send({ error: 'bad_phone' });
     if (!ipAllowed(req.ip)) return reply.code(429).send({ error: 'too_many' });
+    if (phoneLoginFor(phone)) return { ok: true, phoneLogin: true };
     const prev = await q('select sent_at from otps where phone=$1', [phone]);
     if (prev.rows[0] && Date.now() - Number(prev.rows[0].sent_at) < RESEND_AFTER) {
       return reply.code(429).send({ error: 'wait', retryIn: Math.ceil((RESEND_AFTER - (Date.now() - Number(prev.rows[0].sent_at))) / 1000) });
@@ -63,15 +71,20 @@ export function authRoutes(app) {
   app.post('/api/auth/verify', perPhone(10), async (req, reply) => {
     const phone = normalizePhone(req.body?.phone);
     const code = String(req.body?.code || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).trim();
-    if (!phone || !/^\d{5}$/.test(code)) return reply.code(400).send({ error: 'bad_code' });
-    const r = await q('select * from otps where phone=$1', [phone]);
-    const o = r.rows[0];
-    if (!o || Number(o.expires_at) < Date.now() || o.attempts >= MAX_ATTEMPTS) return reply.code(400).send({ error: 'expired' });
-    if (o.code_hash !== sha256(phone + code + pepper())) {
-      await q('update otps set attempts=attempts+1 where phone=$1', [phone]);
-      return reply.code(400).send({ error: 'wrong_code' });
+    if (!phone) return reply.code(400).send({ error: 'bad_code' });
+    if (phoneLoginFor(phone)) {
+      if (normalizePhone(code) !== phone) return reply.code(400).send({ error: 'wrong_code' });
+    } else {
+      if (!/^\d{5}$/.test(code)) return reply.code(400).send({ error: 'bad_code' });
+      const r = await q('select * from otps where phone=$1', [phone]);
+      const o = r.rows[0];
+      if (!o || Number(o.expires_at) < Date.now() || o.attempts >= MAX_ATTEMPTS) return reply.code(400).send({ error: 'expired' });
+      if (o.code_hash !== sha256(phone + code + pepper())) {
+        await q('update otps set attempts=attempts+1 where phone=$1', [phone]);
+        return reply.code(400).send({ error: 'wrong_code' });
+      }
+      await q('delete from otps where phone=$1', [phone]);
     }
-    await q('delete from otps where phone=$1', [phone]);
     let u = (await q('select id, phone from users where phone=$1', [phone])).rows[0];
     if (!u) {
       u = { id: newId(), phone };
