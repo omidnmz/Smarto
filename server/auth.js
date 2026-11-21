@@ -22,7 +22,7 @@ export async function currentUser(req) {
   const tok = req.cookies?.[COOKIE];
   if (!tok) return null;
   const r = await q(
-    `select u.id, u.phone from sessions s join users u on u.id=s.user_id where s.token_hash=$1 and s.expires_at>$2`,
+    `select u.id, u.phone from sessions s join users u on u.id=s.user_id where s.token_hash=$1 and s.expires_at>$2 and not u.blocked`,
     [sha256(tok + pepper()), Date.now()],
   );
   return r.rows[0] || null;
@@ -85,11 +85,13 @@ export function authRoutes(app) {
       }
       await q('delete from otps where phone=$1', [phone]);
     }
-    let u = (await q('select id, phone from users where phone=$1', [phone])).rows[0];
+    let u = (await q('select id, phone, blocked from users where phone=$1', [phone])).rows[0];
+    if (u?.blocked) return reply.code(403).send({ error: 'blocked' });
     if (!u) {
       u = { id: newId(), phone };
       await q('insert into users(id,phone,created_at) values($1,$2,$3)', [u.id, phone, Date.now()]);
     }
+    await q('update users set last_login=$2 where id=$1', [u.id, Date.now()]);
     const tok = randomToken();
     await q('insert into sessions(token_hash,user_id,expires_at) values($1,$2,$3)', [sha256(tok + pepper()), u.id, Date.now() + SESSION_DAYS * 864e5]);
     await linkInvites(u);

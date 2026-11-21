@@ -75,7 +75,7 @@ const LBL={salon:{client:'مشتری',clients:'مشتریان',staff:'آرایش
 const APPT_ST=['رزرو','تأیید شده','انجام‌شده','لغو','نیامد'];
 const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',cars:'نمایشگاه ماشین',salon:'سالن زیبایی',clinic:'کلینیک'};
 const STORE_COLS=['people','products','sales','orders','payments','tasks','ideas','content','costs','salaries'];
-const APPT_COLS=['people','services','clients','appointments','tasks','ideas','costs','salaries'];
+const APPT_COLS=['people','services','clients','appointments','inventory','purchases','tasks','ideas','costs','salaries'];
 const DENTAL_COLS=[...APPT_COLS,'plans'];
 const CAR_COLS=['people','cars','clients','visits','cdeals','checks','tasks','ideas','costs','salaries'];
 const SHOP_COLS=['people','products','sorders','tasks','ideas','costs','salaries'];
@@ -110,20 +110,20 @@ function navFor(r){if(r==='specialist')return [['tasks','کارها']];
     if(r==='owner')return [['rhome','فروش'],['nasieh','نسیه'],['stock','انبار'],['money','مالی'],['tasks','کارها'],['rsell','',1],['checks','',1]];
     return [['rsell','فروش'],['nasieh','نسیه'],['stock','انبار'],['tasks','کارها']];}
   if(ws.type==='gold'){
-    if(r==='owner')return [['ghome','فروش'],['gstock','ویترین'],['nasieh','نسیه'],['money','مالی'],['tasks','کارها'],['gsell','',1],['checks','',1]];
+    if(r==='owner')return [['ghome','فروش'],['gstock','ویترین'],['nasieh','نسیه'],['money','مالی'],['tasks','کارها'],['gsell','',1],['checks','',1],['gprofit','',1]];
     return [['gsell','فاکتور'],['gstock','ویترین'],['nasieh','نسیه'],['tasks','کارها']];}
   if(ws.type==='cars'){
-    if(r==='owner')return [['cdash','داشبورد'],['ccars','ماشین‌ها'],['leads','مشتریان'],['cdeals','فروش'],['tasks','کارها'],['cvisits','',1],['checks','',1],['money','',1]];
+    if(r==='owner')return [['cdash','داشبورد'],['ccars','ماشین‌ها'],['leads','مشتریان'],['cdeals','فروش'],['tasks','کارها'],['cvisits','',1],['checks','',1],['money','',1],['cprofit','',1]];
     if(r==='partner')return [['pshare','سهم من'],['ccars','ماشین‌ها'],['tasks','کارها']];
     return [['ccars','ماشین‌ها'],['leads','مشتریان'],['cvisits','تست‌درایو'],['cdeals','فروش'],['tasks','کارها']];}
   if(ws.type==='realestate'){
     if(r==='owner')return [['edash','داشبورد'],['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['tasks','کارها'],['edeals','',1],['money','',1]];
     return [['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['edeals','قرارداد'],['tasks','کارها']];}
   if(ws.type==='dental'){
-    if(r==='owner')return [['income','درآمد'],['appts','نوبت‌ها'],['plans','طرح درمان'],['clients','بیماران'],['money','مالی'],['tasks','کارها']];
+    if(r==='owner')return [['income','درآمد'],['appts','نوبت‌ها'],['plans','طرح درمان'],['clients','بیماران'],['money','مالی'],['tasks','کارها'],['cost','',1]];
     if(r==='front')return [['appts','نوبت‌ها'],['plans','طرح درمان'],['clients','بیماران'],['tasks','کارها']];
     return [['myappts','نوبت‌های من'],['plans','بیماران من'],['earn','درآمد من'],['tasks','کارها']];}
-  if(r==='owner')return [['income','درآمد'],['appts','نوبت‌ها'],['clients',L('clients')],['money','مالی'],['tasks','کارها']];
+  if(r==='owner')return [['income','درآمد'],['appts','نوبت‌ها'],['clients',L('clients')],['money','مالی'],['tasks','کارها'],['cost','',1]];
   if(r==='front')return [['appts','نوبت‌ها'],['clients',L('clients')],['tasks','کارها']];
   return [['myappts','نوبت‌های من'],['earn','درآمد من'],['tasks','کارها']];}
 const P=x=>'workspaces/'+ws.id+'/'+x;
@@ -533,7 +533,8 @@ function scrIncome(){
     ${cr.length?`<div class="bars" role="img" aria-label="نمودار درآمد">${b.keys.map((k,i)=>`<div class="bar ${k===b.now?'now':''}" title="${fmtN(sums[k]||0)} تومان"><span>${sums[k]&&b.keys.length<=16?(sums[k]/1e6).toLocaleString('fa-IR',{maximumFractionDigits:0}):''}</span><i style="height:${Math.round((sums[k]||0)/max*90)}px"></i><span>${i%step===0||k===b.now?esc(b.label(k)):''}</span></div>`).join('')}</div>`:empty('در این بازه درآمدی ثبت نشده است.')}
   </section>
   <section class="card"><h3>به تفکیک ${L('staff')}</h3>${tbl(byS,L('staff'))}</section>
-  <section class="card"><h3>به تفکیک خدمت</h3>${tbl(bySv,'خدمت')}</section>`;
+  <section class="card"><h3>به تفکیک خدمت</h3>${tbl(bySv,'خدمت')}</section>
+  ${me.role==='owner'?`<button class="card" data-go="cost" style="text-align:start;cursor:pointer"><div class="row"><span class="t">مواد مصرفی و هزینه هر خدمت</span>${isPaid()?(lowInv().length?`<span class="pill p-bad">${fmtN(lowInv().length)} ماده رو به اتمام</span>`:'<span class="lnk">باز کن</span>'):'<span class="pill p-info">Pro</span>'}</div></button>`:''}`;
 }
 
 function scrEarn(){
@@ -807,23 +808,37 @@ const subU=u=>SUBU[String(u||'').trim()]||[String(u||'').trim()||'عدد',1];
 const invItem=id=>state.inventory.find(x=>x.id===id);
 const lineCost=l=>{const i=invItem(l.iid);return i?(+l.qty||0)*(+i.cost||0):0};
 const recipeCost=m=>(m.recipe||[]).reduce((a,l)=>a+lineCost(l),0);
-const costTarget=()=>+ws.costTarget||30;
+const isFood=()=>ws&&(ws.type==='cafe'||ws.type==='restaurant');
+// Cafés and restaurants cost their menu items; salons and clinics cost each service's supplies.
+const costSrc=()=>isFood()?{col:'menu',items:state.menu,word:'آیتم',list:'منو',title:'کاست کنترل',pct:'فود کاست',def:30}
+  :{col:'services',items:state.services,word:'خدمت',list:'خدمات',title:'مواد مصرفی',pct:'سهم مواد',def:15};
+const costTarget=()=>+ws.costTarget||costSrc().def;
+// What was sold in a period, as lines of {mid, qty, price}.
+const soldLines=(f,t)=>isFood()?state.forders.filter(o=>o.date>=f&&o.date<=t&&fValid(o)).flatMap(o=>o.items||[])
+  :state.appointments.filter(a=>a.date>=f&&a.date<=t&&a.status==='انجام‌شده').map(a=>({mid:a.serviceId,qty:1,price:+a.price||0}));
 const fcPct=m=>+m.price>0&&(m.recipe||[]).length?recipeCost(m)/m.price*100:null;
-const overTarget=()=>state.menu.filter(m=>{const p=fcPct(m);return p!==null&&p>costTarget()});
+const overTarget=()=>costSrc().items.filter(m=>{const p=fcPct(m);return p!==null&&p>costTarget()});
 const lowInv=()=>state.inventory.filter(x=>(+x.stock||0)<=(+x.min||0));
 const fmtQ=n=>(+n||0).toLocaleString('fa-IR',{maximumFractionDigits:2});
 const pctPill=m=>{const p=fcPct(m);if(p===null)return '<span class="pill p-mute">بدون دستور</span>';return `<span class="pill ${p>costTarget()?'p-bad':'p-ok'}">${fmtQ(p)}٪</span>`};
+const SUP_FEATS=[
+  ['مواد مصرفی هر خدمت','مثلاً رنگ مو = ۶۰ گرم رنگ + ۹۰ میلی‌لیتر اکسیدان + دستکش؛ هزینه مواد هر خدمت خودش حساب می‌شود.'],
+  ['سهم مواد و هشدار','سهم مواد از قیمت هر خدمت، با هشدار وقتی از سقف بالاتر برود و قیمت پیشنهادی.'],
+  ['خرید و انبار خودکار','خرید مواد را ثبت کن؛ با هر نوبت «انجام‌شده» موجودی خودش کم می‌شود و کمبودها هشدار می‌دهند.'],
+];
 const COST_FEATS=[
   ['دستور تهیه هر آیتم','مثلاً لاته = ۱۸ گرم قهوه + ۲۰۰ میلی‌لیتر شیر + لیوان؛ بهای تمام‌شده هر آیتم خودش حساب می‌شود.'],
   ['درصد فود کاست و هشدار','سهم مواد از قیمت فروش هر آیتم، با هشدار وقتی از سقف (مثلاً ۳۰٪) بالاتر برود و قیمت پیشنهادی.'],
   ['خرید و انبار خودکار','خرید مواد اولیه را ثبت کن؛ با هر فروش موجودی خودش کم می‌شود و کمبودها هشدار می‌دهند.'],
 ];
-function costLocked(){
+const costLocked=()=>isFood()?proLocked('کاست کنترل','بدان هر فنجان و هر پرس واقعاً چقدر برایت تمام می‌شود و سودت کجا گم می‌شود.',COST_FEATS)
+  :proLocked('مواد مصرفی','بدان هر خدمت واقعاً چقدر مواد می‌برد و کدام خدمت کم‌سود است.',SUP_FEATS);
+function proLocked(title,lead,feats){
   const pending=needReqs.find(r=>r.kind==='upgrade'&&r.wsId===ws.id&&!['تأیید شد','رد شد'].includes(r.status));
   const owner=me.role==='owner';
-  return `<section class="card" style="border-color:var(--accent)"><div class="row"><h3>کاست کنترل</h3><span class="pill p-info">Pro و VIP</span></div>
-    <p class="small muted" style="margin:0">بدان هر فنجان و هر پرس واقعاً چقدر برایت تمام می‌شود و سودت کجا گم می‌شود.</p>
-    <ul class="list">${COST_FEATS.map(([t,d])=>`<li><div class="grow"><div class="t">🔒 ${t}</div><div class="m">${d}</div></div></li>`).join('')}</ul>
+  return `<section class="card" style="border-color:var(--accent)"><div class="row"><h3>${title}</h3><span class="pill p-info">Pro و VIP</span></div>
+    <p class="small muted" style="margin:0">${lead}</p>
+    <ul class="list">${feats.map(([t,d])=>`<li><div class="grow"><div class="t">🔒 ${t}</div><div class="m">${d}</div></div></li>`).join('')}</ul>
     ${pending?`<div class="note">درخواست ارتقا به ${PLANS[pending.plan]||'Pro'} فرستاده شد و به‌زودی فعال می‌شود.</div>`
       :owner?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgrade="pro">ارتقا به Pro</button><button class="chip" data-upgrade="vip">ارتقا به VIP</button></div>`
       :'<div class="note">این بخش در پلن Pro و VIP است. برای فعال شدن به مالک بگو.</div>'}
@@ -833,41 +848,41 @@ function scrCost(){
   if(!isPaid())return costLocked();
   const canEdit=['owner','gm','manager'].includes(me.role);
   const tab=['items','buy','stock'].includes(ui.costTab)?ui.costTab:'items';
-  const [f,t]=range();
-  const rows=state.forders.filter(o=>o.date>=f&&o.date<=t&&fValid(o));
-  const sales=rows.reduce((a,o)=>a+itemsTotal(o),0);
-  const menuById=Object.fromEntries(state.menu.map(m=>[m.id,m]));
-  const cogs=rows.reduce((a,o)=>a+(o.items||[]).reduce((b,i)=>{const m=menuById[i.mid];return b+(m?recipeCost(m)*(+i.qty||0):0)},0),0);
-  const over=overTarget(), low=lowInv(), noRecipe=state.menu.filter(m=>!(m.recipe||[]).length).length;
+  const [f,t]=range(), src=costSrc();
+  const lines=soldLines(f,t);
+  const sales=lines.reduce((a,i)=>a+(+i.qty||0)*(+i.price||0),0);
+  const byId=Object.fromEntries(src.items.map(m=>[m.id,m]));
+  const cogs=lines.reduce((a,i)=>{const m=byId[i.mid];return a+(m?recipeCost(m)*(+i.qty||0):0)},0);
+  const over=overTarget(), low=lowInv(), noRecipe=src.items.filter(m=>!(m.recipe||[]).length).length;
   const value=state.inventory.reduce((a,x)=>a+Math.max(0,+x.stock||0)*(+x.cost||0),0);
   const pct=sales?cogs/sales*100:0;
   return `
-  ${over.length||low.length?`<div class="kpis">${over.length?alertKpi('cost','بالای سقف فود کاست',fmtN(over.length),'آیتم منو',' data-ctab="items"'):''}${low.length?alertKpi('cost','مواد رو به اتمام',fmtN(low.length),'قلم، نیاز به خرید',' data-ctab="stock"'):''}</div>`:''}
+  ${over.length||low.length?`<div class="kpis">${over.length?alertKpi('cost','بالای سقف '+src.pct,fmtN(over.length),src.word+' '+src.list,' data-ctab="items"'):''}${low.length?alertKpi('cost','مواد رو به اتمام',fmtN(low.length),'قلم، نیاز به خرید',' data-ctab="stock"'):''}</div>`:''}
   ${periodSeg()}
   <div class="kpis">
-    <div class="kpi wide ${pct>costTarget()?'alert':''}"><span class="lab">فود کاست ${pLabel()}</span><span class="val">${sales?fmtQ(pct)+'٪':'—'}</span><span class="hint">${fmtT(cogs)} تومان مواد از ${fmtT(sales)} تومان فروش · سقف ${fmtN(costTarget())}٪</span></div>
+    <div class="kpi wide ${pct>costTarget()?'alert':''}"><span class="lab">${src.pct} ${pLabel()}</span><span class="val">${sales?fmtQ(pct)+'٪':'—'}</span><span class="hint">${fmtT(cogs)} تومان مواد از ${fmtT(sales)} تومان ${isFood()?'فروش':'درآمد'} · سقف ${fmtN(costTarget())}٪</span></div>
     <div class="kpi"><span class="lab">سود ناخالص</span><span class="val">${fmtT(sales-cogs)}</span><span class="hint">تومان، بعد از مواد</span></div>
     <div class="kpi"><span class="lab">ارزش انبار</span><span class="val">${fmtT(value)}</span><span class="hint">تومان</span></div>
   </div>
-  <div class="seg" role="group">${[['items','بهای منو'],['buy','خرید مواد'],['stock','انبار و قیمت']].map(([k,l])=>`<button data-ctab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>
-  ${tab==='items'?costItems(canEdit,noRecipe):tab==='buy'?costBuy(canEdit):invSection('inventory','مواد اولیه، موجودی و قیمت واحد',false,true)}`;
+  <div class="seg" role="group">${[['items',isFood()?'بهای منو':'هزینه خدمات'],['buy','خرید مواد'],['stock','انبار و قیمت']].map(([k,l])=>`<button data-ctab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>
+  ${tab==='items'?costItems(canEdit,noRecipe):tab==='buy'?costBuy(canEdit):invSection('inventory',isFood()?'مواد اولیه، موجودی و قیمت واحد':'مواد مصرفی، موجودی و قیمت واحد',false,true)}`;
 }
 function costItems(canEdit,noRecipe){
-  const T=costTarget(), inv=[...state.inventory].sort((a,b)=>String(a.name).localeCompare(String(b.name),'fa'));
-  const list=[...state.menu].sort((a,b)=>(fcPct(b)??-1)-(fcPct(a)??-1));
-  return `<section class="card"><div class="row"><h3>سقف فود کاست</h3>${canEdit?`<label class="small muted" style="display:flex;gap:6px;align-items:center">درصد<input class="inline" style="width:64px" type="number" min="1" max="100" value="${T}" data-wscost="1" aria-label="سقف فود کاست"></label>`:`<span class="num">${fmtN(T)}٪</span>`}</div>
-    <p class="small muted" style="margin:0">اگر سهم مواد اولیه از قیمت فروش آیتمی بیشتر از این شود، قرمز می‌شود. برای کافه معمولاً ۲۵ تا ۳۰ و برای رستوران ۲۸ تا ۳۵ درصد است.${noRecipe?` ${fmtN(noRecipe)} آیتم هنوز دستور تهیه ندارد.`:''}</p></section>
-  ${!inv.length?`<div class="note">اول مواد اولیه را در «انبار و قیمت» یا با «خرید مواد» ثبت کن تا بتوانی دستور تهیه بنویسی.</div>`:''}
+  const T=costTarget(), src=costSrc(), inv=[...state.inventory].sort((a,b)=>String(a.name).localeCompare(String(b.name),'fa'));
+  const list=[...src.items].sort((a,b)=>(fcPct(b)??-1)-(fcPct(a)??-1));
+  return `<section class="card"><div class="row"><h3>سقف ${src.pct}</h3>${canEdit?`<label class="small muted" style="display:flex;gap:6px;align-items:center">درصد<input class="inline" style="width:64px" type="number" min="1" max="100" value="${T}" data-wscost="1" aria-label="سقف"></label>`:`<span class="num">${fmtN(T)}٪</span>`}</div>
+    <p class="small muted" style="margin:0">${isFood()?'اگر سهم مواد اولیه از قیمت فروش آیتمی بیشتر از این شود، قرمز می‌شود. برای کافه معمولاً ۲۵ تا ۳۰ و برای رستوران ۲۸ تا ۳۵ درصد است.':'اگر سهم مواد مصرفی از قیمت خدمتی بیشتر از این شود، قرمز می‌شود. برای بیشتر خدمات سالن و کلینیک ۱۰ تا ۲۰ درصد معمول است.'}${noRecipe?` ${fmtN(noRecipe)} ${src.word} هنوز ${isFood()?'دستور تهیه':'فهرست مواد'} ندارد.`:''}</p></section>
+  ${!inv.length?`<div class="note">اول مواد را در «انبار و قیمت» یا با «خرید مواد» ثبت کن تا بتوانی ${isFood()?'دستور تهیه':'مواد هر خدمت'} را بنویسی.</div>`:''}
   ${list.map(m=>{const c=recipeCost(m),p=fcPct(m),rc=m.recipe||[];
-    return `<details class="card"${ui.openRecipe===m.id?' open':''} data-recipebox="${m.id}"><summary class="row" style="cursor:pointer"><div><div class="t">${esc(m.name)}</div><div class="m">فروش ${fmtN(m.price)}${rc.length?' · مواد '+fmtN(c)+' · سود '+fmtN((+m.price||0)-c):''}</div></div>${pctPill(m)}</summary>
-      ${rc.length?`<ul class="list">${rc.map((l,k)=>{const i=invItem(l.iid),[su,f]=subU(i&&i.unit);return `<li><span class="grow">${i?esc(i.name):'<span class="muted">قلم حذف‌شده</span>'}</span><span class="small muted">${fmtQ((+l.qty||0)*f)} ${esc(su)}</span><span class="num small">${fmtN(lineCost(l))}</span>${canEdit?`<button class="lnk del" data-rcdel="${m.id}|${k}">حذف</button>`:''}</li>`}).join('')}</ul>`:empty('دستور تهیه ثبت نشده است.')}
+    return `<details class="card"${ui.openRecipe===m.id?' open':''} data-recipebox="${m.id}"><summary class="row" style="cursor:pointer"><div><div class="t">${esc(m.name)}</div><div class="m">فروش ${fmtN(m.price)}${rc.length?' · مواد '+fmtN(c)+' · '+(isFood()?'سود ':'بعد از مواد ')+fmtN((+m.price||0)-c):''}</div></div>${pctPill(m)}</summary>
+      ${rc.length?`<ul class="list">${rc.map((l,k)=>{const i=invItem(l.iid),[su,f]=subU(i&&i.unit);return `<li><span class="grow">${i?esc(i.name):'<span class="muted">قلم حذف‌شده</span>'}</span><span class="small muted">${fmtQ((+l.qty||0)*f)} ${esc(su)}</span><span class="num small">${fmtN(lineCost(l))}</span>${canEdit?`<button class="lnk del" data-rcdel="${m.id}|${k}">حذف</button>`:''}</li>`}).join('')}</ul>`:empty(isFood()?'دستور تهیه ثبت نشده است.':'مواد این خدمت ثبت نشده است.')}
       ${p!==null&&p>T?`<div class="small" style="color:var(--bad)">برای رسیدن به ${fmtN(T)}٪ قیمت فروش باید حدود ${fmtN(Math.ceil(c/(T/100)/1000)*1000)} تومان باشد، یا مقدار مواد کمتر شود.</div>`:''}
       ${rc.some(l=>{const i=invItem(l.iid);return i&&!(+i.cost)})?'<div class="small muted">قیمت واحد بعضی مواد ثبت نشده؛ با «خرید مواد» یا در «انبار و قیمت» واردش کن.</div>':''}
       ${canEdit&&inv.length?`<form class="f" data-form="recipe" style="margin-top:6px"><input type="hidden" name="mid" value="${m.id}">
         <label>ماده<select id="rc-i-${m.id}" name="iid">${inv.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(subU(i.unit)[0])})</option>`).join('')}</select></label>
-        <label>مقدار در هر آیتم<input id="rc-q-${m.id}" name="qty" type="number" min="0" step="any" required placeholder="مثلاً ۱۸"></label>
-        <button class="btn full">افزودن به دستور</button></form>`:''}
-    </details>`}).join('')||empty('منو خالی است.')}`;
+        <label>مقدار در هر ${src.word}<input id="rc-q-${m.id}" name="qty" type="number" min="0" step="any" required placeholder="مثلاً ۱۸"></label>
+        <button class="btn full">${isFood()?'افزودن به دستور':'افزودن به مواد خدمت'}</button></form>`:''}
+    </details>`}).join('')||empty(src.list+' خالی است.')}`;
 }
 function costBuy(canEdit){
   const inv=[...state.inventory].sort((a,b)=>String(a.name).localeCompare(String(b.name),'fa'));
@@ -1087,6 +1102,7 @@ function scrGHome(){
   </div>
   ${trendCard(gSold(),s=>+s.amount||0)}
   ${Object.keys(byItem).length?`<section class="card"><div class="row"><h3>فروش به تفکیک جنس</h3><span class="small muted">${pLabel()}</span></div>${sumTbl(byItem,'جنس','فاکتور')}</section>`:''}
+  ${me.role==='owner'||me.role==='gm'?`<button class="card" data-go="gprofit" style="text-align:start;cursor:pointer"><div class="row"><span class="t">سود واقعی فاکتورها و نوسان نرخ</span>${isPaid()?'<span class="lnk">باز کن</span>':'<span class="pill p-info">Pro</span>'}</div></button>`:''}
   <div class="row" style="justify-content:flex-start;gap:8px"><button class="chip" data-go="checks">چک‌ها و بدهی‌ها</button></div>`;
 }
 function scrGSell(){
@@ -1135,9 +1151,10 @@ function scrGStock(){
     <label>عیار<select id="gi-k" name="karat">${opts(KARATS,'750')}</select></label>
     <label>اجرت ساخت ٪<input id="gi-wage" name="wage" inputmode="decimal" value="15"></label>
     <label>تعداد<input id="gi-stock" name="stock" type="number" min="0" value="1"></label>
+    ${isPaid()?`<label>نرخ خرید هر گرم ۱۸ عیار<input id="gi-br" name="buyRate" type="number" min="0" step="1000" value="${goldRate()||''}"></label><label>اجرت پرداختی به سازنده ٪<input id="gi-bw" name="buyWage" inputmode="decimal" value="${makerWage()}"></label>`:''}
     <button class="btn full">افزودن</button></form></details>
   <section class="card"><div class="row"><h3>ویترین و انبار</h3><span class="small muted">${fmtN(ps.length)} قلم</span></div>
-    ${ps.length?`<ul class="list">${ps.map(p=>`<li class="${(+p.stock||0)?'':'done'}"><div class="grow"><div class="t">${esc(p.name)}</div><div class="m">${fmtG(p.weight)} گرم · ${esc(karatLbl(p.karat||750))} · اجرت ${fmtN(p.wage)}٪</div></div>
+    ${ps.length?`<ul class="list">${ps.map(p=>`<li class="${(+p.stock||0)?'':'done'}"><div class="grow"><div class="t">${esc(p.name)}</div><div class="m">${fmtG(p.weight)} گرم · ${esc(karatLbl(p.karat||750))} · اجرت ${fmtN(p.wage)}٪${isPaid()&&+p.buyRate?' · خرید '+fmtN(p.buyRate)+(p.buyWage!==undefined?' با اجرت '+fmtQ(p.buyWage)+'٪':''):''}</div></div>
       <label class="small muted" style="display:grid;gap:2px">تعداد<input class="inline" style="width:56px" type="number" min="0" value="${+p.stock||0}" data-set="products/${p.id}" data-field="stock"></label>${delBtn('products',p.id)}</li>`).join('')}</ul>`:empty('هنوز جنسی ثبت نشده است.')}</section>`;
 }
 
@@ -1369,6 +1386,7 @@ function scrCDash(){
   </div>
   ${trendCard(state.cdeals,dealProfit,'روند سود')}
   ${Object.keys(byAgent).length?`<section class="card"><div class="row"><h3>فروش هر فروشنده</h3><span class="small muted">${pLabel()}</span></div>${sumTbl(byAgent,'فروشنده','ماشین')}</section>`:''}
+  <button class="card" data-go="cprofit" style="text-align:start;cursor:pointer"><div class="row"><span class="t">سود واقعی هر ماشین و خواب سرمایه</span>${isPaid()?'<span class="lnk">باز کن</span>':'<span class="pill p-info">Pro</span>'}</div></button>
   <div class="row" style="justify-content:flex-start;gap:8px"><button class="chip" data-go="cvisits">تست‌درایوها</button><button class="chip" data-go="checks">چک‌ها</button><button class="chip" data-go="money">هزینه‌ها و حقوق</button></div>`;
 }
 function partnerFields(){const ps=state.people.filter(p=>p.role==='partner');if(!ps.length)return '';
@@ -1485,6 +1503,123 @@ function scrPShare(){
   return `
   <div class="kpis"><div class="kpi"><span class="lab">سرمایه من در ماشین‌ها</span><span class="val">${fmtT(capital)}</span><span class="hint">${fmtN(lot.length)} ماشین</span></div><div class="kpi"><span class="lab">سود من</span><span class="val">${fmtT(profit)}</span><span class="hint">${fmtN(sold.length)} ماشین فروخته شد</span></div></div>
   <section class="card"><h3>ماشین‌های شراکتی</h3>${mine.length?`<ul class="list">${mine.map(c=>{const s=sold.find(x=>x.c.id===c.id);return `<li><div class="grow"><div class="t">${esc(carTitle(c))}</div><div class="m">سهم من ${fmtN(Math.round(myShare(c)*100))}٪ · ${esc(c.status)}${s?' · سود من '+fmtT(dealProfit(s.d)*myShare(c)):' · '+fmtN(daysOn(c))+' روز در نمایشگاه'}</div></div><span class="num">${fmtT(carCost(c)*myShare(c))}</span></li>`}).join('')}</ul>`:empty('در ماشینی شریک نیستی.')}</section>`;
+}
+
+// ---------- real profit (Pro/VIP): car dealership and gold shop ----------
+const CAR_FEATS=[
+  ['سود واقعی هر ماشین','سود بعد از سهم فروشنده و هزینه خواب سرمایه، نه فقط قیمت فروش منهای خرید.'],
+  ['هزینه خواب سرمایه','هر روز که ماشین در نمایشگاه می‌ماند، با نرخ ماهانه‌ای که خودت می‌گذاری از سودت کم می‌شود.'],
+  ['کف قیمت ماشین‌های موجود','کمترین قیمتی که امروز زیانده نیست، و هشدار ماشین‌هایی که خواب سرمایه سودشان را خورده.'],
+];
+const GOLD_FEATS=[
+  ['سود واقعی هر فاکتور','فروش منهای قیمت خرید طلا و اجرتی که به سازنده داده‌ای؛ مالیات جدا می‌شود.'],
+  ['سود فروش و سود نوسان','جدا می‌شود چقدر از اجرت و سود فروش آمده و چقدر از بالا رفتن نرخ طلا بعد از خرید.'],
+  ['ارزش واقعی ویترین','سود یا زیان طلای ویترین با نرخ امروز نسبت به نرخ خریدش.'],
+];
+const capRate=()=>ws.capRate===undefined||ws.capRate===''?3:+ws.capRate||0;
+const daysBetween=(a,b)=>Math.max(0,Math.round((new Date((b||TODAY)+'T12:00:00')-new Date((a||b||TODAY)+'T12:00:00'))/864e5));
+const capCost=(c,days)=>c.own==='امانی'?0:Math.round(carCost(c)*capRate()/100*days/30);
+function dealReal(d){const c=state.cars.find(x=>x.id===d.car);const days=c?daysBetween(c.date,d.date):0;
+  const agent=Math.round((+d.commission||0)*(+d.agentShare||0)/100), cap=c?capCost(c,days):0;
+  return {c,days,agent,cap,gross:dealProfit(d),real:dealProfit(d)-agent-cap}}
+function scrCProfit(){
+  if(!isPaid())return proLocked('سود واقعی ماشین‌ها','ببین هر ماشین بعد از سهم فروشنده و خواب سرمایه واقعاً چقدر سود داده.',CAR_FEATS);
+  const [f,t]=range(), canEdit=['owner','gm'].includes(me.role);
+  const deals=state.cdeals.filter(d=>d.date>=f&&d.date<=t).map(d=>({d,...dealReal(d)})).sort((a,b)=>a.real-b.real);
+  const lot=state.cars.filter(c=>(c.status==='موجود'||c.status==='رزرو')&&c.own!=='امانی').map(c=>{const days=daysOn(c),cap=capCost(c,days),floor=carCost(c)+cap;return {c,days,cap,floor,exp:(+c.price||0)-floor}}).sort((a,b)=>a.exp-b.exp);
+  const sum=(a,k)=>a.reduce((x,y)=>x+y[k],0), losing=lot.filter(x=>x.exp<=0);
+  const avgDays=deals.length?Math.round(sum(deals,'days')/deals.length):0;
+  return `
+  ${losing.length?`<div class="kpis"><div class="kpi alert wide"><span class="lab">ماشین زیانده با قیمت فعلی</span><span class="val">${fmtN(losing.length)}</span><span class="hint">خواب سرمایه سودشان را خورده؛ قیمت را بازبینی کن</span></div></div>`:''}
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">سود واقعی ${pLabel()}</span><span class="val">${fmtT(sum(deals,'real'))} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">سود ظاهری ${fmtT(sum(deals,'gross'))} · ${fmtN(deals.length)} ماشین</span></div>
+    <div class="kpi"><span class="lab">خواب سرمایه</span><span class="val">${fmtT(sum(deals,'cap'))}</span><span class="hint">میانگین ${fmtN(avgDays)} روز تا فروش</span></div>
+    <div class="kpi"><span class="lab">سهم فروشنده‌ها</span><span class="val">${fmtT(sum(deals,'agent'))}</span><span class="hint">از کمیسیون</span></div>
+  </div>
+  <section class="card"><div class="row"><h3>هزینه خواب سرمایه</h3>${canEdit?`<label class="small muted" style="display:flex;gap:6px;align-items:center">درصد در ماه<input class="inline" style="width:64px" type="number" min="0" max="20" step="0.1" value="${capRate()}" data-wsnum="capRate" aria-label="نرخ ماهانه"></label>`:`<span class="num">${fmtQ(capRate())}٪ در ماه</span>`}</div>
+    <p class="small muted" style="margin:0">پولی که در ماشین خوابیده اگر جای دیگری بود سود می‌داد. با سود سپرده یا بازار، معمولاً ۲ تا ۳ درصد در ماه است.</p></section>
+  <section class="card"><div class="row"><h3>فروش‌ها، از کم‌سودترین</h3><span class="small muted">${pLabel()}</span></div>
+    ${deals.length?`<ul class="list">${deals.map(x=>`<li><div class="grow"><div class="t">${esc(x.d.title)}</div><div class="m">${fmtN(x.days)} روز در نمایشگاه · سود ظاهری ${fmtT(x.gross)}${x.agent?' · فروشنده '+fmtT(x.agent):''}${x.cap?' · خواب سرمایه '+fmtT(x.cap):''}</div></div><div style="display:grid;justify-items:end;gap:2px"><span class="num" style="color:${x.real<0?'var(--bad)':'inherit'}">${fmtT(x.real)}</span>${x.days?`<span class="small muted">${fmtT(x.real/Math.max(1,x.days))} در روز</span>`:''}</div></li>`).join('')}</ul>`:empty('در این بازه فروشی نیست.')}</section>
+  <section class="card"><div class="row"><h3>ماشین‌های موجود</h3><span class="small muted">کف قیمت امروز</span></div>
+    ${lot.length?`<ul class="list">${lot.map(x=>`<li class="${x.exp<=0?'late':''}"><div class="grow"><div class="t"><span class="small muted">${fmtN(x.c.code)}</span> ${esc(carTitle(x.c))}</div><div class="m">${fmtN(x.days)} روز · تمام‌شده ${fmtT(carCost(x.c))} + خواب سرمایه ${fmtT(x.cap)} · آگهی ${fmtT(x.c.price)}</div></div><div style="display:grid;justify-items:end;gap:2px"><span class="num">${fmtT(x.floor)}</span><span class="small" style="color:${x.exp<=0?'var(--bad)':'var(--muted)'}">${x.exp<=0?'زیان '+fmtT(-x.exp):'سود '+fmtT(x.exp)}</span></div></li>`).join('')}</ul>`:empty('ماشین خرید نمایشگاهی در نمایشگاه نیست.')}</section>`;
+}
+const makerWage=()=>ws.goldMakerWage===undefined||ws.goldMakerWage===''?7:+ws.goldMakerWage||0;
+// A sale's real profit: what the customer paid without tax, minus the gold at its buying rate and the maker's charge.
+function goldReal(s){const k=(+s.karat||750)/750, w=+s.weight||0, sold=+s.rate||0, bought=+s.buyRate||sold;
+  const gold=w*k*bought, maker=gold*((s.buyWage===undefined||s.buyWage===''?makerWage():+s.buyWage)/100);
+  const margin=(+s.wageAmt||0)+(+s.profitAmt||0)-maker, swing=w*k*(sold-bought);
+  return {margin:Math.round(margin),swing:Math.round(swing),real:Math.round(margin+swing),known:!!+s.buyRate}}
+function scrGProfit(){
+  if(!isPaid())return proLocked('سود واقعی طلافروشی','ببین از هر فاکتور بعد از قیمت خرید طلا و اجرت سازنده واقعاً چقدر می‌ماند.',GOLD_FEATS);
+  const [f,t]=range(), canEdit=['owner','gm'].includes(me.role);
+  const rows=gSold().filter(s=>s.date>=f&&s.date<=t).map(s=>({s,...goldReal(s)})).sort((a,b)=>(b.s.date||'').localeCompare(a.s.date||'')||(b.s.time||'').localeCompare(a.s.time||''));
+  const sum=k=>rows.reduce((a,x)=>a+x[k],0), unknown=rows.filter(x=>!x.known).length;
+  const showcase=state.products.filter(p=>+p.buyRate&&(+p.stock||0)>0);
+  const unreal=showcase.reduce((a,p)=>a+(+p.stock||0)*(+p.weight||0)*((+p.karat||750)/750)*(goldRate()-(+p.buyRate||0)),0);
+  return `
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">سود واقعی ${pLabel()}</span><span class="val">${fmtT(sum('real'))} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(rows.length)} فاکتور · بدون مالیات</span></div>
+    <div class="kpi"><span class="lab">از اجرت و سود فروش</span><span class="val">${fmtT(sum('margin'))}</span><span class="hint">بعد از اجرت سازنده</span></div>
+    <div class="kpi ${sum('swing')<0?'alert':''}"><span class="lab">از نوسان نرخ</span><span class="val">${fmtT(sum('swing'))}</span><span class="hint">نرخ فروش نسبت به خرید</span></div>
+    ${showcase.length?`<div class="kpi"><span class="lab">سود ویترین با نرخ امروز</span><span class="val">${fmtT(unreal)}</span><span class="hint">${fmtN(showcase.length)} جنس با نرخ خرید</span></div>`:''}
+  </div>
+  <section class="card"><div class="row"><h3>اجرت پرداختی به سازنده</h3>${canEdit?`<label class="small muted" style="display:flex;gap:6px;align-items:center">درصد<input class="inline" style="width:64px" type="number" min="0" max="50" step="0.5" value="${makerWage()}" data-wsnum="goldMakerWage" aria-label="اجرت سازنده"></label>`:`<span class="num">${fmtQ(makerWage())}٪</span>`}</div>
+    <p class="small muted" style="margin:0">برای اجناسی که نرخ خرید و اجرت سازنده‌شان را در «ویترین» ننوشته‌ای، همین درصد و نرخ روز فروش حساب می‌شود.${unknown?` ${fmtN(unknown)} فاکتور این بازه این‌طور حساب شده.`:''}</p></section>
+  <section class="card"><div class="row"><h3>فاکتورها</h3><span class="small muted">${pLabel()}</span></div>
+    ${rows.length?`<ul class="list">${rows.slice(0,60).map(x=>`<li><div class="grow"><div class="t">${esc(x.s.name||'—')} · ${fmtG(x.s.weight)} گرم</div><div class="m">${jd(x.s.date)} · فروش ${fmtN(x.margin)}${x.swing?' · نوسان '+fmtN(x.swing):''}${x.known?'':' · <span class="muted">نرخ خرید ثبت نشده</span>'}</div></div><span class="num" style="color:${x.real<0?'var(--bad)':'inherit'}">${fmtN(x.real)}</span></li>`).join('')}</ul>`:empty('در این بازه فاکتوری نیست.')}</section>`;
+}
+
+// ---------- platform admin panel ----------
+let adm=null, admBusy=false;
+async function loadAdmin(){if(!amOwner||admBusy)return;admBusy=true;try{adm=await smarto.admin.overview()}catch(e){toast('اطلاعات مدیریت خوانده نشد')}admBusy=false;if(uiView==='admin'&&!ws)render()}
+const tsDay=t=>t?iso(t):'';
+const ago=t=>t?rel(iso(t)):'هرگز';
+function scrAdmin(){
+  if(!amOwner)return empty('این بخش فقط برای مدیر سامانه است.');
+  if(!adm){loadAdmin();return `<div class="row"><h2>مدیریت سامانه</h2><button class="lnk" data-landing="1">بازگشت</button></div>${empty('در حال بارگذاری…')}`}
+  const tab=ui.admTab||'home', q=(ui.admQ||'').trim();
+  const real=adm.workspaces.filter(w=>!w.example), wsById=Object.fromEntries(adm.workspaces.map(w=>[w.id,w]));
+  const week=Date.now()-7*864e5;
+  const pending=needReqs.filter(r=>!['تأیید شد','رد شد'].includes(r.status)).length;
+  const head=`<div class="row"><h2>مدیریت سامانه</h2><div class="row" style="gap:8px"><button class="chip" data-admreload="1">به‌روزرسانی</button><button class="lnk" data-landing="1">بازگشت</button></div></div>
+  <div class="seg" role="group">${[['home','خلاصه'],['users','کاربران'],['panels','پنل‌ها'],['reqs','درخواست‌ها'+(pending?' ('+fmtN(pending)+')':'')]].map(([k,l])=>`<button data-admtab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
+  const search=ph=>`<input id="admq" type="search" value="${esc(ui.admQ||'')}" placeholder="${ph}" style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--fg);width:100%" aria-label="جستجو">`;
+  if(tab==='home'){
+    const byType={};real.forEach(w=>{const k=w.typeLabel||TYPE_LABEL[w.type]||w.type;(byType[k]=byType[k]||{n:0,a:0}).n++;if(w.lastActive>week)byType[k].a++});
+    const paid=real.filter(w=>w.plan==='pro'||w.plan==='vip');
+    return head+`<div class="kpis">
+      <button class="kpi" data-admtab="users" style="text-align:start;cursor:pointer"><span class="lab">کاربران</span><span class="val">${fmtN(adm.users.length)}</span><span class="hint">${fmtN(adm.users.filter(u=>u.createdAt>week).length)} نفر در ۷ روز اخیر</span></button>
+      <button class="kpi" data-admtab="panels" style="text-align:start;cursor:pointer"><span class="lab">پنل‌ها</span><span class="val">${fmtN(real.length)}</span><span class="hint">${fmtN(real.filter(w=>w.lastActive>week).length)} فعال در ۷ روز اخیر</span></button>
+      <div class="kpi"><span class="lab">Pro و VIP</span><span class="val">${fmtN(paid.length)}</span><span class="hint">${fmtN(paid.filter(w=>w.plan==='vip').length)} VIP</span></div>
+      ${pending?alertKpi('','درخواست منتظر',fmtN(pending),'شغل جدید یا ارتقا',' data-admtab="reqs"'):''}
+    </div>
+    <section class="card"><h3>پنل‌ها به تفکیک شغل</h3>${Object.keys(byType).length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>شغل</th><th>پنل</th><th>فعال ۷ روز</th></tr></thead><tbody>${Object.entries(byType).sort((a,b)=>b[1].n-a[1].n).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${fmtN(v.n)}</td><td class="num">${fmtN(v.a)}</td></tr>`).join('')}</tbody></table></div>`:empty('هنوز پنلی ساخته نشده است.')}</section>
+    <section class="card"><h3>تازه‌ترین پنل‌ها</h3>${real.length?`<ul class="list">${[...real].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,8).map(admWsRow).join('')}</ul>`:empty('پنلی نیست.')}</section>`;
+  }
+  if(tab==='users'){
+    const list=adm.users.filter(u=>!q||toEn(u.phone).includes(toEn(q))||u.panels.some(p=>String(wsById[p.ws]?.name||'').includes(q)));
+    return head+search('جستجوی شماره یا نام کسب‌وکار')+`<section class="card"><div class="row"><h3>کاربران</h3><span class="small muted">${fmtN(list.length)} نفر${adm.users.some(u=>u.blocked)?' · '+fmtN(adm.users.filter(u=>u.blocked).length)+' مسدود':''}</span></div>
+      ${list.length?`<ul class="list">${list.slice(0,150).map(u=>`<li class="${u.blocked?'done':''}"><div class="grow"><div class="t"><span class="num">${esc(u.phone)}</span> ${u.admin?'<span class="pill p-info">مدیر سامانه</span>':''}${u.blocked?'<span class="pill p-bad">مسدود</span>':''}</div>
+        <div class="m">عضو از ${jd(tsDay(u.createdAt))} · آخرین ورود ${ago(u.lastLogin)}</div>
+        ${u.panels.length?`<div class="m">${u.panels.map(p=>{const w=wsById[p.ws];return w?`<button class="pill p-mute" data-open="${w.id}" style="border:0;cursor:pointer">${esc(w.name)} · ${esc(p.role==='owner'?'مالک':p.role||'')}</button>`:''}).join(' ')}</div>`:'<div class="m muted">هنوز پنلی ندارد</div>'}</div>
+        ${u.admin?'':`<button class="lnk ${u.blocked?'':'del'} ${armed==='blk/'+u.id?'armed':''}" data-admblock="${u.id}">${u.blocked?'رفع مسدودی':armed==='blk/'+u.id?'مسدود شود؟':'مسدود کردن'}</button>`}</li>`).join('')}</ul>`:empty('کاربری پیدا نشد.')}</section>
+      <p class="small muted" style="margin:0">حساب مسدود از همه دستگاه‌ها خارج می‌شود و دیگر نمی‌تواند وارد شود. پنل‌ها و داده‌هایش پاک نمی‌شوند.</p>`;
+  }
+  if(tab==='panels'){
+    const pf=ui.admPlan||'همه';
+    const list=real.filter(w=>(pf==='همه'||w.plan===pf)&&(!q||String(w.name||'').includes(q)||toEn(w.ownerPhone).includes(toEn(q)))).sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));
+    return head+search('جستجوی نام کسب‌وکار یا شماره مالک')+`<div class="chips">${[['همه','همه'],['basic','پایه'],['pro','Pro'],['vip','VIP']].map(([k,l])=>`<button class="chip" data-admplan="${k}" aria-pressed="${pf===k}">${l} (${fmtN(k==='همه'?real.length:real.filter(w=>w.plan===k).length)})</button>`).join('')}</div>
+      <section class="card"><div class="row"><h3>پنل‌ها</h3><span class="small muted">${fmtN(list.length)} پنل · به ترتیب آخرین فعالیت</span></div>${list.length?`<ul class="list">${list.slice(0,150).map(admWsRow).join('')}</ul>`:empty('پنلی پیدا نشد.')}</section>`;
+  }
+  return head+(upgradeInbox()+needInbox()||empty('درخواستی نیست.'));
+}
+function admWsRow(w){
+  return `<li><div class="grow"><div class="t">${esc(w.name||'بی‌نام')} <span class="small muted">${esc(w.typeLabel||TYPE_LABEL[w.type]||w.type||'')}</span></div>
+    <div class="m">${w.ownerPhone?'<span class="num">'+esc(w.ownerPhone)+'</span> · ':''}${fmtN(w.people)} نفر · ساخته ${jd(tsDay(w.createdAt))} · فعالیت ${ago(w.lastActive)}</div>
+    <div class="row" style="justify-content:flex-start;gap:6px;margin-top:4px"><select class="inline" data-admsetplan="${w.id}" aria-label="پلن">${opts(Object.entries(PLANS),w.plan==='pro'||w.plan==='vip'?w.plan:'basic')}</select><button class="chip" data-open="${w.id}">باز کردن</button>
+    <button class="lnk del ${armed==='admdel/'+w.id?'armed':''}" data-admdel="${w.id}">${armed==='admdel/'+w.id?'همه داده‌ها پاک شود؟':'حذف پنل'}</button></div></div></li>`;
 }
 
 // ---------- needs form for businesses not in the samples ----------
@@ -1701,6 +1836,7 @@ function scrLanding(){
   ${myUid?`<section class="lsec"><div class="row"><h2>کسب‌وکارهای من</h2><button class="chip" data-create="1">+ پنل جدید</button></div>
     ${mine.length?`<div class="tiles">${mine.map(w=>wsTile(w,false)).join('')}</div>`:empty('هنوز پنلی نساخته‌ای. با «ساخت پنل رایگان» اولین پنل را بساز.')}</section>`
     :`<button class="card login-card" data-login="1"><span class="t">قبلاً پنل ساخته‌ای یا عضو تیمی هستی؟</span><span class="btn ghost">ورود با موبایل</span></button>`}
+  ${amOwner?`<button class="card" data-admin="1" style="text-align:start;cursor:pointer;border-color:var(--accent)"><div class="row"><span class="t">پنل مدیریت سامانه</span><span class="small muted">کاربران، پنل‌ها، پلن‌ها${needReqs.some(r=>!['تأیید شد','رد شد'].includes(r.status))?' · <span class="pill p-warn">درخواست منتظر</span>':''}</span></div></button>`:''}
   ${others.length?`<details class="card"><summary class="row" style="cursor:pointer"><span class="t">همه کسب‌وکارهای سامانه</span><span class="small muted">${fmtN(others.length)}</span></summary><div class="tiles">${others.map(w=>wsTile(w,false)).join('')}</div></details>`:''}
   <section class="lsec" id="samples"><div class="sec-head"><span class="eyebrow">نمونه‌های زنده</span><h2>پنل کسب‌وکار خودت را امتحان کن</h2><p class="muted">روی هر کدام بزن و از چشم مالک، منشی، فروشنده یا هر نقش دیگر ببین. بدون ثبت‌نام.</p></div>
     <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}${factoryTile()}</div></section>
@@ -1719,7 +1855,7 @@ function scrLanding(){
 }
 const PLAN_CARDS=[
   {name:'پایه',badge:'رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">ساخت پنل رایگان</button>'},
-  {name:'Pro',badge:'مدیریت تخصصی',hot:1,desc:'ابزارهای تخصصی صنف تو، برای وقتی که می‌خواهی سود را دقیق کنترل کنی.',items:['کاست کنترل کافه و رستوران: دستور تهیه، بهای تمام‌شده و درصد فود کاست هر آیتم','هشدار وقتی هزینه مواد از سقف بالاتر برود','خرید مواد اولیه و انبار که با هر فروش خودش کم می‌شود','امکانات تخصصی صنف‌های دیگر به‌زودی'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» فعال می‌شود.</span>'},
+  {name:'Pro',badge:'مدیریت تخصصی',hot:1,desc:'ابزارهای تخصصی صنف تو، برای وقتی که می‌خواهی سود را دقیق کنترل کنی.',items:['کاست کنترل کافه و رستوران: دستور تهیه، بهای تمام‌شده و درصد فود کاست هر آیتم','هشدار وقتی هزینه مواد از سقف بالاتر برود','خرید مواد اولیه و انبار که با هر فروش خودش کم می‌شود','سالن زیبایی و کلینیک: مواد مصرفی هر خدمت که با هر نوبت انجام‌شده از انبار کم می‌شود','نمایشگاه ماشین: سود واقعی هر ماشین بعد از خواب سرمایه و سهم فروشنده','طلافروشی: سود واقعی هر فاکتور، جدا از سود نوسان نرخ طلا'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» فعال می‌شود.</span>'},
   {name:'VIP',badge:'همراهی ویژه',desc:'همه امکانات Pro، به‌همراه راه‌اندازی و پشتیبانی نزدیک.',items:['همه امکانات Pro','کمک در راه‌اندازی و ورود اطلاعات','پشتیبانی در اولویت'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» درخواست بده.</span>'},
 ];
 const FACTORY={label:'کارخانه و تولیدی',desc:'سفارش تولید، مواد اولیه، کنترل کیفیت، شیفت‌ها، تعمیرات دستگاه‌ها و طلب از مشتری‌ها؛ برای هر کارخانه جداگانه طراحی می‌شود.'};
@@ -1821,7 +1957,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,cost:scrCost,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -1841,7 +1977,7 @@ function renderWho(){
 }
 function render(){
   if(!ws){renderWs();document.getElementById('nav').innerHTML='';const v=document.getElementById('view');const keep=saveForms();if((uiView==='create'||uiView==='need')&&db&&!myUid){loginStep.next=uiView;uiView='login'}
-    v.dataset.k='create|'+uiView;v.classList.toggle('wide',!ws&&!['create','need','needDone','login','account'].includes(uiView));v.innerHTML=uiView==='create'?scrCreate():uiView==='need'?scrNeed():uiView==='needDone'?scrNeedDone():uiView==='login'?scrLogin():uiView==='account'?scrAccount():scrLanding();if(keep.__s==='create|'+uiView)restoreForms(keep);return}
+    v.dataset.k='create|'+uiView;v.classList.toggle('wide',!ws&&!['create','need','needDone','login','account','admin'].includes(uiView));v.innerHTML=uiView==='create'?scrCreate():uiView==='need'?scrNeed():uiView==='needDone'?scrNeedDone():uiView==='login'?scrLogin():uiView==='account'?scrAccount():uiView==='admin'?scrAdmin():scrLanding();if(keep.__s==='create|'+uiView)restoreForms(keep);return}
   const mine=myUid?state.people.find(p=>p.uid===myUid):null;
   if(!me){if(canPreview()){const saved=ls.get('actingAs:'+ws.id);me=person(saved)||mine||state.people.find(p=>p.role==='gm')||state.people.find(p=>p.role==='owner')||state.people[0]||null}else me=mine||null}
   else me=canPreview()?(person(me.id)||me):(mine||null);
@@ -1877,6 +2013,15 @@ V.addEventListener('click',async e=>{
   if(d.login){needLogin(null);return}
   if(d.relogin){loginStep.sent=false;render();return}
   if(d.logout){try{await smarto.logout()}catch(e){}myUid=null;myPhone=null;amOwner=false;renderAcct();smarto.reconnect();subscribeAccountData();uiView='landing';render();toast('از حساب خارج شدی');return}
+  if(d.admin){uiView='admin';adm=null;ui.admQ='';render();window.scrollTo({top:0});return}
+  if(d.admreload){adm=null;render();return}
+  if(d.admtab){ui.admTab=d.admtab;ui.admQ='';armed=null;render();return}
+  if(d.admplan){ui.admPlan=d.admplan;render();return}
+  if(d.admblock){const u=adm&&adm.users.find(x=>x.id===d.admblock);if(!u)return;
+    if(!u.blocked&&armed!=='blk/'+u.id){armed='blk/'+u.id;render();return}armed=null;
+    try{await smarto.admin.block(u.id,!u.blocked);u.blocked=!u.blocked;toast(u.blocked?'حساب '+u.phone+' مسدود شد':'مسدودی برداشته شد')}catch(e){toast('انجام نشد')}render();return}
+  if(d.admdel){if(armed!=='admdel/'+d.admdel){armed='admdel/'+d.admdel;render();return}armed=null;
+    const ok=await write(()=>db.doc('workspaces/'+d.admdel).delete(),'پنل حذف شد');if(ok&&adm){adm.workspaces=adm.workspaces.filter(w=>w.id!==d.admdel);render()}return}
   if(d.landing){uiView='landing';render();window.scrollTo({top:0});return}
   if(d.need){needJob=d.need==='factory'?'کارخانه':'';if(!myUid){needLogin('need');return}uiView='need';render();if(needJob){const j=document.getElementById('nd-job');if(j&&!j.value)j.value=needJob}window.scrollTo({top:0});return}
   if(d.planstatus){const [id,st]=d.planstatus.split('|');const pl=readPlan(id);try{await db.doc('requests/'+id).update({status:st,...(pl?{plan:pl}:{}),updatedAt:Date.now()});toast(st==='رد شد'?'درخواست رد شد':'وضعیت ذخیره شد')}catch(e){toast('ذخیره نشد')}return}
@@ -1891,8 +2036,8 @@ V.addEventListener('click',async e=>{
   if(d.jst&&!d.go){ui.jst=d.jst;render();return}
   if(d.mcat){ui.mcat=d.mcat;render();return}
   if(d.ctab&&!d.go){ui.costTab=d.ctab;render();return}
-  if(d.rcdel){const [id,k]=d.rcdel.split('|');const m=state.menu.find(x=>x.id===id);if(!m)return;ui.openRecipe=id;
-    await write(()=>D('menu/'+id).update({recipe:(m.recipe||[]).filter((_,i)=>i!==+k),updatedAt:Date.now()}),'از دستور حذف شد');return}
+  if(d.rcdel){const [id,k]=d.rcdel.split('|');const src=costSrc(),m=src.items.find(x=>x.id===id);if(!m)return;ui.openRecipe=id;
+    await write(()=>D(src.col+'/'+id).update({recipe:(m.recipe||[]).filter((_,i)=>i!==+k),updatedAt:Date.now()}),'از دستور حذف شد');return}
   if(d.upgrade){if(!myUid){needLogin(null);return}if(ws.example){toast('این نمونه فقط برای تماشاست');return}
     try{const r=await db.collection('requests').add({kind:'upgrade',job:'ارتقای پنل به '+PLANS[d.upgrade],name:ws.name,wsId:ws.id,plan:d.upgrade,owner:me.name,createdAt:Date.now()});
       needReqs=[...needReqs,{id:r.id,kind:'upgrade',wsId:ws.id,plan:d.upgrade,uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست ارتقا فرستاده شد')}catch(e){toast('فرستاده نشد، دوباره امتحان کن')}return}
@@ -1940,7 +2085,9 @@ V.addEventListener('change',async e=>{
   if(el.dataset.planitem){const [id,k]=el.dataset.planitem.split('|');const p=state.plans.find(x=>x.id===id);if(!p)return;const items=(p.items||[]).map((x,i)=>i===+k?{...x,done:el.checked}:x);
     const all=items.length&&items.every(x=>x.done);
     await write(()=>D('plans/'+id).update({items,...(all&&p.status==='در حال درمان'?{status:'تمام‌شده'}:{}),updatedAt:Date.now()}),el.checked?(all?'همه درمان‌ها انجام شد':'انجام شد'):'برگشت');return}
-  if(el.dataset.wscost){const v=Math.min(100,Math.max(1,+el.value||30));await write(()=>db.doc('workspaces/'+ws.id).update({costTarget:v}),'سقف فود کاست '+fmtN(v)+'٪ شد');return}
+  if(el.dataset.wscost){const v=Math.min(100,Math.max(1,+el.value||30));await write(()=>db.doc('workspaces/'+ws.id).update({costTarget:v}),'سقف '+costSrc().pct+' '+fmtN(v)+'٪ شد');return}
+  if(el.dataset.wsnum){const k=el.dataset.wsnum;if(!['capRate','goldMakerWage'].includes(k))return;const v=Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({[k]:v}),'ذخیره شد');return}
+  if(el.dataset.admsetplan){const id=el.dataset.admsetplan;const ok=await write(()=>db.doc('workspaces/'+id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');if(ok&&adm){const w=adm.workspaces.find(x=>x.id===id);if(w)w.plan=el.value;render()}return}
   if(el.dataset.wsplan){await write(()=>db.doc('workspaces/'+ws.id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');return}
   if(el.dataset.wsteam){await write(()=>db.doc('workspaces/'+ws.id).update({teamSize:el.value}),'ذخیره شد');return}
   if(el.dataset.wsrate){await write(()=>db.doc('workspaces/'+ws.id).update({goldRate:+el.value||0,goldRateDate:TODAY}),'نرخ طلا ذخیره شد');return}
@@ -1963,7 +2110,7 @@ V.addEventListener('change',async e=>{
       el.checked?(t.repeat&&t.repeat!=='none'?'انجام شد، نوبت بعدی ساخته شد':'انجام شد'):'دوباره باز شد');}
 });
 V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
-V.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
+V.addEventListener('input',e=>{if(e.target.id==='admq'){ui.admQ=e.target.value;render();const i=document.getElementById('admq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
 V.addEventListener('submit',async e=>{
   const f=e.target.closest('form.f');if(!f)return;e.preventDefault();
   if(f.dataset.form==='need'){const fd=new FormData(f);const r={};['job','name','owner','city','branches','staff','pain','repeat','privacy','phone'].forEach(k=>r[k]=String(fd.get(k)||'').trim());['income','roles','channels','daily','now','extra'].forEach(k=>r[k]=fd.getAll(k).map(String));
@@ -1975,7 +2122,7 @@ V.addEventListener('submit',async e=>{
     catch(err){toast(err.code==='bad_phone'?'شماره موبایل درست نیست':err.code==='wait'?'کمی صبر کن و دوباره بخواه':err.code==='sms_failed'?'پیامک ارسال نشد، دوباره امتحان کن':'خطا، دوباره امتحان کن')}return}
   if(f.dataset.form==='verify'){const code=String(new FormData(f).get('code')||'').trim();
     try{await smarto.verify(loginStep.phone,code);toast('خوش آمدی');await afterLogin()}
-    catch(err){toast(err.code==='wrong_code'?(loginStep.pl?'شماره را درست تکرار کن':'کد اشتباه است'):err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
+    catch(err){toast(err.status===403?'این حساب مسدود شده است':err.code==='wrong_code'?(loginStep.pl?'شماره را درست تکرار کن':'کد اشتباه است'):err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
   const v={};new FormData(f).forEach((x,k)=>v[k]=String(x).trim());
   const now=Date.now();let col,data,msg='ثبت شد';
   switch(f.dataset.form){
@@ -1992,11 +2139,11 @@ V.addEventListener('submit',async e=>{
     case 'person':col='people';data={name:v.name,role:v.role,kind:v.kind||'employee',title:v.title||'',phone:v.phone||'',payType:v.payType||'',pay:+v.pay||0,commission:v.payType==='درصدی'?(+v.pay||0):0,branch:v.branch||''};msg=(v.kind==='specialist'?'متخصص':'کارمند')+' اضافه شد';break;
     case 'item':col=(TEMPLATES[ws.type]||{}).items||'services';data={name:v.name,price:+v.price||0};if(['shop','retail','repair'].includes(ws.type)){data.stock=+v.stock||0;data.min=+v.min||0}if(col==='menu'){data.cat='سایر';data.available=true}break;
     case 'inv':col=v.col;data={name:v.name,stock:+v.stock||0,min:+v.min||0,unit:v.unit||'',price:+v.price||0};if(v.cost)data.cost=+v.cost||0;break;
-    case 'recipe':{const m=state.menu.find(x=>x.id===v.mid),i=invItem(v.iid),q=+toEn(v.qty)||0;if(!m||!i||!(q>0)){toast('ماده و مقدار را بنویس');return}
+    case 'recipe':{const src=costSrc(),m=src.items.find(x=>x.id===v.mid),i=invItem(v.iid),q=+toEn(v.qty)||0;if(!m||!i||!(q>0)){toast('ماده و مقدار را بنویس');return}
       const base=q/subU(i.unit)[1], rc=[...(m.recipe||[])], k=rc.findIndex(l=>l.iid===i.id);
       if(k>=0)rc[k]={...rc[k],qty:base};else rc.push({iid:i.id,qty:base});
       ui.openRecipe=m.id;
-      const ok=await write(()=>D('menu/'+m.id).update({recipe:rc,updatedAt:now}),i.name+' به دستور '+m.name+' اضافه شد');if(ok)resetForm(f);return}
+      const ok=await write(()=>D(src.col+'/'+m.id).update({recipe:rc,updatedAt:now}),i.name+' به '+m.name+' اضافه شد');if(ok)resetForm(f);return}
     case 'purchase':{if(!db){toast('اتصال به سرور برقرار نیست');return}
       const qty=+toEn(v.qty)||0,total=+toEn(v.total)||0;if(!(qty>0)){toast('مقدار خرید را بنویس');return}
       if(v.iid==='__new'&&!v.name){toast('نام قلم جدید را بنویس');return}
@@ -2051,12 +2198,12 @@ V.addEventListener('submit',async e=>{
         if(!cid){const ref=await C('clients').add({name:v.client,phone:v.phone||'',note:'',fileNo:String(1000+state.clients.length+1),createdAt:now});cid=ref.id}
         await C('plans').add({clientId:cid,clientName:v.client,phone:v.phone||(c&&c.phone)||'',dentist:v.dentist||'',date:TODAY,items,discount:+v.discount||0,payments:+v.prepay?[{date:TODAY,amount:+v.prepay,by:me.id}]:[],status:'در حال درمان',note:v.note||'',by:me.id,createdAt:now})},'طرح درمان ثبت شد');
       if(ok)resetForm(f);return}
-    case 'gitem':col='products';data={name:v.name,weight:toNum(v.weight),karat:+v.karat||750,wage:toNum(v.wage),stock:+v.stock||0,min:0};break;
+    case 'gitem':col='products';data={name:v.name,weight:toNum(v.weight),karat:+v.karat||750,wage:toNum(v.wage),stock:+v.stock||0,min:0};if(v.buyRate)data.buyRate=+v.buyRate||0;if(v.buyWage)data.buyWage=toNum(v.buyWage);break;
     case 'gsale':{if(!db){toast('اتصال به سرور برقرار نیست');return}
       const c=goldCalc(v);if(!toNum(v.weight)||!c.amount){toast('وزن و نرخ را بنویس');return}
       if(v.method==='نسیه'&&!v.customer){toast('برای نسیه نام مشتری را بنویس');return}
       const p=state.products.find(x=>x.id===v.pid);
-      const ok=await write(async()=>{await C('gsales').add({kind:'فروش',date:TODAY,time:nowTime(),pid:p?p.id:'',name:v.name||(p&&p.name)||'',weight:toNum(v.weight),karat:+v.karat||750,rate:+v.rate||0,wage:toNum(v.wage),profit:toNum(v.profit),tax:toNum(v.tax),wageAmt:c.wageAmt,profitAmt:c.profitAmt,taxAmt:c.taxAmt,amount:c.amount,method:v.method,customer:v.customer||'',by:me.id,createdAt:now});
+      const ok=await write(async()=>{await C('gsales').add({kind:'فروش',date:TODAY,time:nowTime(),pid:p?p.id:'',name:v.name||(p&&p.name)||'',weight:toNum(v.weight),karat:+v.karat||750,rate:+v.rate||0,wage:toNum(v.wage),profit:toNum(v.profit),tax:toNum(v.tax),wageAmt:c.wageAmt,profitAmt:c.profitAmt,taxAmt:c.taxAmt,amount:c.amount,method:v.method,customer:v.customer||'',by:me.id,createdAt:now,...(p&&+p.buyRate?{buyRate:+p.buyRate,...(p.buyWage!==undefined?{buyWage:+p.buyWage}:{})}:{})});
         if(v.method==='نسیه')await C('ledger').add({name:v.customer,phone:'',amount:c.amount,date:TODAY,note:'خرید طلا',by:me.id,createdAt:now});
         if(p)await D('products/'+p.id).update({stock:Math.max(0,(+p.stock||0)-1),updatedAt:now})},'فاکتور '+fmtN(c.amount)+' تومان ثبت شد');
       if(ok){resetForm(f);render()}return}
@@ -2138,6 +2285,7 @@ function scrAccount(){
   <div class="row"><h2>حساب من</h2><button class="lnk" data-landing="1">بازگشت</button></div>
   <section class="card"><div class="row"><span class="t">${esc(myPhone||'')}</span>${amOwner?'<span class="pill p-info">مدیر سامانه</span>':''}</div>
     <div class="m">${fmtN(mine.length)} کسب‌وکار</div></section>
+  ${amOwner?'<button class="btn" data-admin="1" style="justify-self:start">پنل مدیریت سامانه</button>':''}
   <button class="btn" data-logout="1" style="justify-self:start;background:var(--bad)">خروج از حساب</button>`;
 }
 function openWs(w){

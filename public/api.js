@@ -78,6 +78,10 @@
     requestCode: (phone) => call('POST', '/api/auth/request', { phone }),
     verify: (phone, code) => call('POST', '/api/auth/verify', { phone, code }),
     logout: () => call('POST', '/api/auth/logout', {}),
+    admin: {
+      overview: () => call('GET', '/api/admin/overview'),
+      block: (id, blocked) => call('POST', '/api/admin/user', { id, blocked }),
+    },
     reconnect: () => { stream(); subs.forEach((_, p) => soon(p)); },
     start: stream,
   };

@@ -41,6 +41,8 @@ create table if not exists docs (
   data jsonb not null,
   updated_at bigint not null
 );
+alter table users add column if not exists blocked boolean not null default false;
+alter table users add column if not exists last_login bigint;
 create index if not exists docs_parent_idx on docs(parent);
 create index if not exists docs_people_uid_idx on docs((data->>'uid')) where parent like 'workspaces/%/people';
 create index if not exists docs_people_phone_idx on docs((data->>'phone')) where parent like 'workspaces/%/people';

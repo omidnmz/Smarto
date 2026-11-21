@@ -1534,7 +1534,9 @@
     "example": true,
     "name": "سالن زیبایی نمونه",
     "order": 2,
-    "type": "salon"
+    "type": "salon",
+    "plan": "pro",
+    "costTarget": 15
    },
    "cols": {
     "appointments": {
@@ -2750,32 +2752,108 @@
      "sv0": {
       "example": true,
       "name": "کوتاهی مو",
-      "price": 450000
+      "price": 450000,
+      "recipe": [
+       {
+        "iid": "v03",
+        "qty": 0.03
+       }
+      ]
      },
      "sv1": {
       "example": true,
       "name": "رنگ مو",
-      "price": 2500000
+      "price": 2500000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.06
+       },
+       {
+        "iid": "v01",
+        "qty": 0.09
+       },
+       {
+        "iid": "v02",
+        "qty": 2
+       },
+       {
+        "iid": "v03",
+        "qty": 0.04
+       }
+      ]
      },
      "sv2": {
       "example": true,
       "name": "هایلایت",
-      "price": 4500000
+      "price": 4500000,
+      "recipe": [
+       {
+        "iid": "v04",
+        "qty": 0.08
+       },
+       {
+        "iid": "v00",
+        "qty": 0.04
+       },
+       {
+        "iid": "v01",
+        "qty": 0.15
+       },
+       {
+        "iid": "v02",
+        "qty": 2
+       },
+       {
+        "iid": "v03",
+        "qty": 0.04
+       }
+      ]
      },
      "sv3": {
       "example": true,
       "name": "براشینگ",
-      "price": 400000
+      "price": 400000,
+      "recipe": [
+       {
+        "iid": "v03",
+        "qty": 0.03
+       }
+      ]
      },
      "sv4": {
       "example": true,
       "name": "کراتینه",
-      "price": 6000000
+      "price": 6000000,
+      "recipe": [
+       {
+        "iid": "v05",
+        "qty": 0.04
+       },
+       {
+        "iid": "v03",
+        "qty": 0.05
+       },
+       {
+        "iid": "v02",
+        "qty": 2
+       }
+      ]
      },
      "sv5": {
       "example": true,
       "name": "کاشت ناخن",
-      "price": 1200000
+      "price": 1200000,
+      "recipe": [
+       {
+        "iid": "v06",
+        "qty": 12
+       },
+       {
+        "iid": "v07",
+        "qty": 10
+       }
+      ]
      },
      "sv6": {
       "example": true,
@@ -2785,7 +2863,13 @@
      "sv7": {
       "example": true,
       "name": "اصلاح ابرو",
-      "price": 200000
+      "price": 200000,
+      "recipe": [
+       {
+        "iid": "v08",
+        "qty": 1
+       }
+      ]
      }
     },
     "tasks": {
@@ -2837,6 +2921,127 @@
       "title": "پست نمونه‌کار کراتینه",
       "to": "owner"
      }
+    },
+    "inventory": {
+     "v00": {
+      "createdAt": 1761200000101,
+      "min": 0.5,
+      "name": "رنگ مو",
+      "price": 0,
+      "stock": 1.2,
+      "unit": "کیلو",
+      "cost": 4000000
+     },
+     "v01": {
+      "createdAt": 1761200000102,
+      "min": 2,
+      "name": "اکسیدان",
+      "price": 0,
+      "stock": 4,
+      "unit": "لیتر",
+      "cost": 300000
+     },
+     "v02": {
+      "createdAt": 1761200000103,
+      "min": 100,
+      "name": "دستکش یک‌بار مصرف",
+      "price": 0,
+      "stock": 150,
+      "unit": "عدد",
+      "cost": 3000
+     },
+     "v03": {
+      "createdAt": 1761200000104,
+      "min": 1,
+      "name": "شامپو",
+      "price": 0,
+      "stock": 3,
+      "unit": "لیتر",
+      "cost": 600000
+     },
+     "v04": {
+      "createdAt": 1761200000105,
+      "min": 0.5,
+      "name": "پودر دکلره",
+      "price": 0,
+      "stock": 0.4,
+      "unit": "کیلو",
+      "cost": 3500000
+     },
+     "v05": {
+      "createdAt": 1761200000106,
+      "min": 0.2,
+      "name": "کراتین",
+      "price": 0,
+      "stock": 0.3,
+      "unit": "لیتر",
+      "cost": 25000000
+     },
+     "v06": {
+      "createdAt": 1761200000107,
+      "min": 100,
+      "name": "ژل کاشت ناخن",
+      "price": 0,
+      "stock": 180,
+      "unit": "گرم",
+      "cost": 25000
+     },
+     "v07": {
+      "createdAt": 1761200000108,
+      "min": 200,
+      "name": "تیپ ناخن",
+      "price": 0,
+      "stock": 400,
+      "unit": "عدد",
+      "cost": 2000
+     },
+     "v08": {
+      "createdAt": 1761200000109,
+      "min": 20,
+      "name": "نخ و تیغ ابرو",
+      "price": 0,
+      "stock": 60,
+      "unit": "عدد",
+      "cost": 5000
+     }
+    },
+    "purchases": {
+     "p00": {
+      "by": "own",
+      "createdAt": 1761200000200,
+      "date": "2026-10-15",
+      "iid": "v00",
+      "name": "رنگ مو",
+      "unit": "کیلو",
+      "qty": 1,
+      "total": 4000000,
+      "unitCost": 4000000.0,
+      "supplier": "پخش آرایشی رز"
+     },
+     "p01": {
+      "by": "own",
+      "createdAt": 1761200000201,
+      "date": "2026-10-19",
+      "iid": "v05",
+      "name": "کراتین",
+      "unit": "لیتر",
+      "qty": 0.5,
+      "total": 12500000,
+      "unitCost": 25000000.0,
+      "supplier": "پخش آرایشی رز"
+     },
+     "p02": {
+      "by": "own",
+      "createdAt": 1761200000202,
+      "date": "2026-10-22",
+      "iid": "v02",
+      "name": "دستکش یک‌بار مصرف",
+      "unit": "عدد",
+      "qty": 200,
+      "total": 600000,
+      "unitCost": 3000.0,
+      "supplier": ""
+     }
     }
    }
   },
@@ -2846,7 +3051,9 @@
     "example": true,
     "name": "کلینیک پوست نمونه",
     "order": 3,
-    "type": "clinic"
+    "type": "clinic",
+    "plan": "pro",
+    "costTarget": 35
    },
    "cols": {
     "appointments": {
@@ -3849,32 +4056,96 @@
      "sv0": {
       "example": true,
       "name": "ویزیت",
-      "price": 600000
+      "price": 600000,
+      "recipe": [
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "sv1": {
       "example": true,
       "name": "لیزر موهای زائد",
-      "price": 2500000
+      "price": 2500000,
+      "recipe": [
+       {
+        "iid": "v02",
+        "qty": 0.05
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "sv2": {
       "example": true,
       "name": "بوتاکس",
-      "price": 7000000
+      "price": 7000000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.4
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "sv3": {
       "example": true,
       "name": "فیلر",
-      "price": 9000000
+      "price": 9000000,
+      "recipe": [
+       {
+        "iid": "v01",
+        "qty": 1
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "sv4": {
       "example": true,
       "name": "میکرونیدلینگ",
-      "price": 3000000
+      "price": 3000000,
+      "recipe": [
+       {
+        "iid": "v04",
+        "qty": 1
+       },
+       {
+        "iid": "v05",
+        "qty": 1
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "sv5": {
       "example": true,
       "name": "پاکسازی پوست",
-      "price": 1500000
+      "price": 1500000,
+      "recipe": [
+       {
+        "iid": "v06",
+        "qty": 1
+       },
+       {
+        "iid": "v07",
+        "qty": 0.03
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      }
     },
     "tasks": {
@@ -3913,6 +4184,118 @@
       "repeat": "monthly",
       "title": "کالیبره دستگاه لیزر",
       "to": "dr1"
+     }
+    },
+    "inventory": {
+     "v00": {
+      "createdAt": 1761200000101,
+      "min": 2,
+      "name": "ویال بوتاکس",
+      "price": 0,
+      "stock": 3,
+      "unit": "عدد",
+      "cost": 6000000
+     },
+     "v01": {
+      "createdAt": 1761200000102,
+      "min": 3,
+      "name": "سرنگ فیلر",
+      "price": 0,
+      "stock": 4,
+      "unit": "عدد",
+      "cost": 4500000
+     },
+     "v02": {
+      "createdAt": 1761200000103,
+      "min": 1,
+      "name": "ژل لیزر",
+      "price": 0,
+      "stock": 2,
+      "unit": "لیتر",
+      "cost": 400000
+     },
+     "v03": {
+      "createdAt": 1761200000104,
+      "min": 50,
+      "name": "ملحفه یک‌بار مصرف",
+      "price": 0,
+      "stock": 120,
+      "unit": "عدد",
+      "cost": 15000
+     },
+     "v04": {
+      "createdAt": 1761200000105,
+      "min": 5,
+      "name": "کارتریج میکرونیدلینگ",
+      "price": 0,
+      "stock": 8,
+      "unit": "عدد",
+      "cost": 600000
+     },
+     "v05": {
+      "createdAt": 1761200000106,
+      "min": 5,
+      "name": "سرم پوست",
+      "price": 0,
+      "stock": 10,
+      "unit": "عدد",
+      "cost": 400000
+     },
+     "v06": {
+      "createdAt": 1761200000107,
+      "min": 10,
+      "name": "ماسک پوست",
+      "price": 0,
+      "stock": 25,
+      "unit": "عدد",
+      "cost": 80000
+     },
+     "v07": {
+      "createdAt": 1761200000108,
+      "min": 0.5,
+      "name": "شوینده پوست",
+      "price": 0,
+      "stock": 1.5,
+      "unit": "لیتر",
+      "cost": 900000
+     }
+    },
+    "purchases": {
+     "p00": {
+      "by": "own",
+      "createdAt": 1761200000200,
+      "date": "2026-10-15",
+      "iid": "v00",
+      "name": "ویال بوتاکس",
+      "unit": "عدد",
+      "qty": 4,
+      "total": 24000000,
+      "unitCost": 6000000.0,
+      "supplier": "تجهیزات پزشکی آریا"
+     },
+     "p01": {
+      "by": "own",
+      "createdAt": 1761200000201,
+      "date": "2026-10-18",
+      "iid": "v01",
+      "name": "سرنگ فیلر",
+      "unit": "عدد",
+      "qty": 5,
+      "total": 22500000,
+      "unitCost": 4500000.0,
+      "supplier": "تجهیزات پزشکی آریا"
+     },
+     "p02": {
+      "by": "own",
+      "createdAt": 1761200000202,
+      "date": "2026-10-20",
+      "iid": "v03",
+      "name": "ملحفه یک‌بار مصرف",
+      "unit": "عدد",
+      "qty": 200,
+      "total": 3000000,
+      "unitCost": 15000.0,
+      "supplier": ""
      }
     }
    }
@@ -15132,7 +15515,8 @@
     "createdAt": 1761200000000,
     "goldRate": 7800000,
     "goldRateDate": "2026-10-23",
-    "teamSize": "2-5"
+    "teamSize": "2-5",
+    "plan": "pro"
    },
    "cols": {
     "people": {
@@ -15185,7 +15569,9 @@
       "wage": 18,
       "stock": 3,
       "min": 0,
-      "createdAt": 1761200000000
+      "createdAt": 1761200000000,
+      "buyRate": 7350000,
+      "buyWage": 6
      },
      "p01": {
       "name": "انگشتر نگین‌دار",
@@ -15194,7 +15580,9 @@
       "wage": 22,
       "stock": 2,
       "min": 0,
-      "createdAt": 1761200000001
+      "createdAt": 1761200000001,
+      "buyRate": 7400000,
+      "buyWage": 7
      },
      "p02": {
       "name": "گردنبند ونیزی",
@@ -15203,7 +15591,9 @@
       "wage": 12,
       "stock": 2,
       "min": 0,
-      "createdAt": 1761200000002
+      "createdAt": 1761200000002,
+      "buyRate": 7450000,
+      "buyWage": 8
      },
      "p03": {
       "name": "گردنبند پلاک اسم",
@@ -15221,7 +15611,9 @@
       "wage": 14,
       "stock": 2,
       "min": 0,
-      "createdAt": 1761200000004
+      "createdAt": 1761200000004,
+      "buyRate": 7400000,
+      "buyWage": 7
      },
      "p05": {
       "name": "دستبند النگویی",
@@ -15230,7 +15622,9 @@
       "wage": 10,
       "stock": 1,
       "min": 0,
-      "createdAt": 1761200000005
+      "createdAt": 1761200000005,
+      "buyRate": 7450000,
+      "buyWage": 8
      },
      "p06": {
       "name": "النگو ساده",
@@ -15239,7 +15633,9 @@
       "wage": 8,
       "stock": 4,
       "min": 0,
-      "createdAt": 1761200000006
+      "createdAt": 1761200000006,
+      "buyRate": 7350000,
+      "buyWage": 6
      },
      "p07": {
       "name": "گوشواره حلقه‌ای",
@@ -15257,7 +15653,9 @@
       "wage": 24,
       "stock": 0,
       "min": 0,
-      "createdAt": 1761200000008
+      "createdAt": 1761200000008,
+      "buyRate": 7450000,
+      "buyWage": 8
      },
      "p09": {
       "name": "سرویس عروس",
@@ -15266,7 +15664,9 @@
       "wage": 16,
       "stock": 1,
       "min": 0,
-      "createdAt": 1761200000009
+      "createdAt": 1761200000009,
+      "buyRate": 7350000,
+      "buyWage": 6
      },
      "p10": {
       "name": "آویز کودک",
@@ -15275,7 +15675,9 @@
       "wage": 28,
       "stock": 5,
       "min": 0,
-      "createdAt": 1761200000010
+      "createdAt": 1761200000010,
+      "buyRate": 7400000,
+      "buyWage": 7
      },
      "p11": {
       "name": "زنجیر مردانه",
@@ -15307,7 +15709,9 @@
       "method": "نقد",
       "customer": "خانم رحیمی",
       "by": "s2",
-      "createdAt": 1761200000000
+      "createdAt": 1761200000000,
+      "buyRate": 7137000,
+      "buyWage": 6
      },
      "g01": {
       "kind": "فروش",
@@ -15328,7 +15732,9 @@
       "method": "کارت",
       "customer": "آقای نوری",
       "by": "s1",
-      "createdAt": 1761200000001
+      "createdAt": 1761200000001,
+      "buyRate": 7149000,
+      "buyWage": 7
      },
      "g02": {
       "kind": "فروش",
@@ -15349,7 +15755,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000002
+      "createdAt": 1761200000002,
+      "buyRate": 7149000,
+      "buyWage": 8
      },
      "g03": {
       "kind": "فروش",
@@ -15370,7 +15778,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000003
+      "createdAt": 1761200000003,
+      "buyRate": 7160000,
+      "buyWage": 6
      },
      "g04": {
       "kind": "فروش",
@@ -15412,7 +15822,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000005
+      "createdAt": 1761200000005,
+      "buyRate": 7160000,
+      "buyWage": 8
      },
      "g06": {
       "kind": "خرید",
@@ -15447,7 +15859,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000007
+      "createdAt": 1761200000007,
+      "buyRate": 7172000,
+      "buyWage": 7
      },
      "g08": {
       "kind": "فروش",
@@ -15468,7 +15882,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000008
+      "createdAt": 1761200000008,
+      "buyRate": 7184000,
+      "buyWage": 8
      },
      "g09": {
       "kind": "فروش",
@@ -15510,7 +15926,9 @@
       "method": "نقد",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000010
+      "createdAt": 1761200000010,
+      "buyRate": 7196000,
+      "buyWage": 7
      },
      "g11": {
       "kind": "فروش",
@@ -15531,7 +15949,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000011
+      "createdAt": 1761200000011,
+      "buyRate": 7207000,
+      "buyWage": 8
      },
      "g12": {
       "kind": "فروش",
@@ -15552,7 +15972,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000012
+      "createdAt": 1761200000012,
+      "buyRate": 7219000,
+      "buyWage": 6
      },
      "g13": {
       "kind": "فروش",
@@ -15573,7 +15995,9 @@
       "method": "کارت",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000013
+      "createdAt": 1761200000013,
+      "buyRate": 7219000,
+      "buyWage": 7
      },
      "g14": {
       "kind": "فروش",
@@ -15629,7 +16053,9 @@
       "method": "نقد",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000016
+      "createdAt": 1761200000016,
+      "buyRate": 7242000,
+      "buyWage": 7
      },
      "g17": {
       "kind": "فروش",
@@ -15650,7 +16076,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000017
+      "createdAt": 1761200000017,
+      "buyRate": 7242000,
+      "buyWage": 8
      },
      "g18": {
       "kind": "خرید",
@@ -15706,7 +16134,9 @@
       "method": "کارت",
       "customer": "خانم کاظمی",
       "by": "s1",
-      "createdAt": 1761200000020
+      "createdAt": 1761200000020,
+      "buyRate": 7266000,
+      "buyWage": 8
      },
      "g21": {
       "kind": "فروش",
@@ -15727,7 +16157,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "آقای سلطانی",
       "by": "s2",
-      "createdAt": 1761200000021
+      "createdAt": 1761200000021,
+      "buyRate": 7277000,
+      "buyWage": 6
      },
      "g22": {
       "kind": "فروش",
@@ -15748,7 +16180,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000022
+      "createdAt": 1761200000022,
+      "buyRate": 7277000,
+      "buyWage": 7
      },
      "g23": {
       "kind": "فروش",
@@ -15769,7 +16203,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000023
+      "createdAt": 1761200000023,
+      "buyRate": 7289000,
+      "buyWage": 8
      },
      "g24": {
       "kind": "فروش",
@@ -15825,7 +16261,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000026
+      "createdAt": 1761200000026,
+      "buyRate": 7301000,
+      "buyWage": 8
      },
      "g27": {
       "kind": "فروش",
@@ -15846,7 +16284,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000027
+      "createdAt": 1761200000027,
+      "buyRate": 7312000,
+      "buyWage": 6
      },
      "g28": {
       "kind": "فروش",
@@ -15867,7 +16307,9 @@
       "method": "نقد",
       "customer": "خانم کاظمی",
       "by": "s2",
-      "createdAt": 1761200000028
+      "createdAt": 1761200000028,
+      "buyRate": 7312000,
+      "buyWage": 7
      },
      "g29": {
       "kind": "فروش",
@@ -15909,7 +16351,9 @@
       "method": "کارت",
       "customer": "خانم کاظمی",
       "by": "s2",
-      "createdAt": 1761200000030
+      "createdAt": 1761200000030,
+      "buyRate": 7324000,
+      "buyWage": 6
      },
      "g31": {
       "kind": "فروش",
@@ -15930,7 +16374,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000031
+      "createdAt": 1761200000031,
+      "buyRate": 7336000,
+      "buyWage": 7
      },
      "g32": {
       "kind": "فروش",
@@ -15951,7 +16397,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000032
+      "createdAt": 1761200000032,
+      "buyRate": 7336000,
+      "buyWage": 8
      },
      "g33": {
       "kind": "فروش",
@@ -15972,7 +16420,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000033
+      "createdAt": 1761200000033,
+      "buyRate": 7336000,
+      "buyWage": 6
      },
      "g34": {
       "kind": "فروش",
@@ -16014,7 +16464,9 @@
       "method": "نقد",
       "customer": "خانم احمدی",
       "by": "s2",
-      "createdAt": 1761200000035
+      "createdAt": 1761200000035,
+      "buyRate": 7348000,
+      "buyWage": 8
      },
      "g36": {
       "kind": "فروش",
@@ -16035,7 +16487,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000036
+      "createdAt": 1761200000036,
+      "buyRate": 7371000,
+      "buyWage": 6
      },
      "g37": {
       "kind": "فروش",
@@ -16056,7 +16510,9 @@
       "method": "کارت",
       "customer": "خانم احمدی",
       "by": "s2",
-      "createdAt": 1761200000037
+      "createdAt": 1761200000037,
+      "buyRate": 7371000,
+      "buyWage": 7
      },
      "g38": {
       "kind": "خرید",
@@ -16112,7 +16568,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000040
+      "createdAt": 1761200000040,
+      "buyRate": 7383000,
+      "buyWage": 7
      },
      "g41": {
       "kind": "خرید",
@@ -16147,7 +16605,9 @@
       "method": "نقد",
       "customer": "آقای نوری",
       "by": "s1",
-      "createdAt": 1761200000042
+      "createdAt": 1761200000042,
+      "buyRate": 7394000,
+      "buyWage": 6
      },
      "g43": {
       "kind": "فروش",
@@ -16168,7 +16628,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000043
+      "createdAt": 1761200000043,
+      "buyRate": 7394000,
+      "buyWage": 7
      },
      "g44": {
       "kind": "فروش",
@@ -16210,7 +16672,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000045
+      "createdAt": 1761200000045,
+      "buyRate": 7418000,
+      "buyWage": 6
      },
      "g46": {
       "kind": "فروش",
@@ -16231,7 +16695,9 @@
       "method": "کارت",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000046
+      "createdAt": 1761200000046,
+      "buyRate": 7418000,
+      "buyWage": 7
      },
      "g47": {
       "kind": "فروش",
@@ -16252,7 +16718,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000047
+      "createdAt": 1761200000047,
+      "buyRate": 7418000,
+      "buyWage": 8
      },
      "g48": {
       "kind": "خرید",
@@ -16308,7 +16776,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000050
+      "createdAt": 1761200000050,
+      "buyRate": 7430000,
+      "buyWage": 8
      },
      "g51": {
       "kind": "فروش",
@@ -16329,7 +16799,9 @@
       "method": "کارت",
       "customer": "خانم کاظمی",
       "by": "s1",
-      "createdAt": 1761200000051
+      "createdAt": 1761200000051,
+      "buyRate": 7430000,
+      "buyWage": 6
      },
      "g52": {
       "kind": "خرید",
@@ -16364,7 +16836,9 @@
       "method": "نسیه",
       "customer": "خانم رحیمی",
       "by": "s2",
-      "createdAt": 1761200000053
+      "createdAt": 1761200000053,
+      "buyRate": 7441000,
+      "buyWage": 8
      },
      "g54": {
       "kind": "فروش",
@@ -16406,7 +16880,9 @@
       "method": "نسیه",
       "customer": "آقای سلطانی",
       "by": "s2",
-      "createdAt": 1761200000055
+      "createdAt": 1761200000055,
+      "buyRate": 7453000,
+      "buyWage": 7
      },
      "g56": {
       "kind": "فروش",
@@ -16427,7 +16903,9 @@
       "method": "نسیه",
       "customer": "خانم احمدی",
       "by": "s2",
-      "createdAt": 1761200000056
+      "createdAt": 1761200000056,
+      "buyRate": 7453000,
+      "buyWage": 8
      },
      "g57": {
       "kind": "فروش",
@@ -16448,7 +16926,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000057
+      "createdAt": 1761200000057,
+      "buyRate": 7465000,
+      "buyWage": 6
      },
      "g58": {
       "kind": "خرید",
@@ -16497,7 +16977,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "خانم کاظمی",
       "by": "s2",
-      "createdAt": 1761200000060
+      "createdAt": 1761200000060,
+      "buyRate": 7488000,
+      "buyWage": 6
      },
      "g61": {
       "kind": "خرید",
@@ -16532,7 +17014,9 @@
       "method": "کارت",
       "customer": "خانم کاظمی",
       "by": "s2",
-      "createdAt": 1761200000062
+      "createdAt": 1761200000062,
+      "buyRate": 7500000,
+      "buyWage": 8
      },
      "g63": {
       "kind": "فروش",
@@ -16553,7 +17037,9 @@
       "method": "کارت",
       "customer": "",
       "by": "s2",
-      "createdAt": 1761200000063
+      "createdAt": 1761200000063,
+      "buyRate": 7500000,
+      "buyWage": 6
      },
      "g64": {
       "kind": "خرید",
@@ -16588,7 +17074,9 @@
       "method": "نقد",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000065
+      "createdAt": 1761200000065,
+      "buyRate": 7511000,
+      "buyWage": 8
      },
      "g66": {
       "kind": "فروش",
@@ -16609,7 +17097,9 @@
       "method": "کارت",
       "customer": "آقای نوری",
       "by": "s2",
-      "createdAt": 1761200000066
+      "createdAt": 1761200000066,
+      "buyRate": 7511000,
+      "buyWage": 6
      },
      "g67": {
       "kind": "فروش",
@@ -16630,7 +17120,9 @@
       "method": "کارت",
       "customer": "آقای سلطانی",
       "by": "s2",
-      "createdAt": 1761200000067
+      "createdAt": 1761200000067,
+      "buyRate": 7511000,
+      "buyWage": 7
      },
      "g68": {
       "kind": "فروش",
@@ -16651,7 +17143,9 @@
       "method": "نسیه",
       "customer": "خانم احمدی",
       "by": "s2",
-      "createdAt": 1761200000068
+      "createdAt": 1761200000068,
+      "buyRate": 7523000,
+      "buyWage": 8
      },
      "g69": {
       "kind": "فروش",
@@ -16693,7 +17187,9 @@
       "method": "نسیه",
       "customer": "آقای نوری",
       "by": "s1",
-      "createdAt": 1761200000070
+      "createdAt": 1761200000070,
+      "buyRate": 7535000,
+      "buyWage": 7
      },
      "g71": {
       "kind": "فروش",
@@ -16714,7 +17210,9 @@
       "method": "نقد",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000071
+      "createdAt": 1761200000071,
+      "buyRate": 7546000,
+      "buyWage": 8
      },
      "g72": {
       "kind": "فروش",
@@ -16735,7 +17233,9 @@
       "method": "کارت",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000072
+      "createdAt": 1761200000072,
+      "buyRate": 7558000,
+      "buyWage": 6
      },
      "g73": {
       "kind": "فروش",
@@ -16756,7 +17256,9 @@
       "method": "نسیه",
       "customer": "آقای نوری",
       "by": "s1",
-      "createdAt": 1761200000073
+      "createdAt": 1761200000073,
+      "buyRate": 7570000,
+      "buyWage": 7
      },
      "g74": {
       "kind": "فروش",
@@ -16798,7 +17300,9 @@
       "method": "نسیه",
       "customer": "آقای سلطانی",
       "by": "s1",
-      "createdAt": 1761200000075
+      "createdAt": 1761200000075,
+      "buyRate": 7570000,
+      "buyWage": 6
      },
      "g76": {
       "kind": "فروش",
@@ -16819,7 +17323,9 @@
       "method": "نقد",
       "customer": "",
       "by": "s1",
-      "createdAt": 1761200000076
+      "createdAt": 1761200000076,
+      "buyRate": 7593000,
+      "buyWage": 7
      },
      "g77": {
       "kind": "فروش",
@@ -16840,7 +17346,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "خانم احمدی",
       "by": "s2",
-      "createdAt": 1761200000077
+      "createdAt": 1761200000077,
+      "buyRate": 7593000,
+      "buyWage": 8
      },
      "g78": {
       "kind": "فروش",
@@ -16861,7 +17369,9 @@
       "method": "کارت",
       "customer": "خانم کاظمی",
       "by": "s2",
-      "createdAt": 1761200000078
+      "createdAt": 1761200000078,
+      "buyRate": 7593000,
+      "buyWage": 6
      },
      "g79": {
       "kind": "فروش",
@@ -16903,7 +17413,9 @@
       "method": "کارت‌به‌کارت",
       "customer": "خانم رحیمی",
       "by": "s1",
-      "createdAt": 1761200000080
+      "createdAt": 1761200000080,
+      "buyRate": 7605000,
+      "buyWage": 8
      },
      "g81": {
       "kind": "فروش",
@@ -16924,7 +17436,9 @@
       "method": "نقد",
       "customer": "خانم رحیمی",
       "by": "s2",
-      "createdAt": 1761200000081
+      "createdAt": 1761200000081,
+      "buyRate": 7605000,
+      "buyWage": 6
      }
     },
     "ledger": {
@@ -20986,7 +21500,8 @@
     "type": "cars",
     "example": true,
     "createdAt": 1762400000000,
-    "teamSize": "2-5"
+    "teamSize": "2-5",
+    "plan": "pro"
    },
    "cols": {
     "people": {

@@ -216,6 +216,73 @@ test('cost control for café and restaurant plans', { skip: !DB && 'TEST_DATABAS
   assert.ok((await get(anon, 'workspaces/rest1/menu')).some((x) => x.data.recipe?.length));
 });
 
+test('salon supplies follow appointments on paid plans', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const admin = new Client();
+  await owner.login('09125555551');
+  await admin.login(ADMIN);
+  const doc = async (col, id) => (await owner.get(col)).body.docs.find((x) => x.id === id).data;
+  const w = await owner.add('workspaces', { name: 'سالن من', type: 'salon' });
+  const ws = `workspaces/${w.body.id}`;
+  const dye = (await owner.add(`${ws}/inventory`, { name: 'رنگ', unit: 'کیلو', stock: 1, cost: 4000000 })).body.id;
+  const color = (await owner.add(`${ws}/services`, { name: 'رنگ مو', price: 2500000, recipe: [{ iid: dye, qty: 0.06 }] })).body.id;
+  const stock = async () => (await doc(`${ws}/inventory`, dye)).stock;
+
+  // Basic plan: marking an appointment done does not touch stock.
+  const a0 = (await owner.add(`${ws}/appointments`, { serviceId: color, status: 'رزرو' })).body.id;
+  await owner.patch(`${ws}/appointments/${a0}`, { status: 'انجام‌شده' });
+  assert.equal(await stock(), 1);
+
+  await admin.patch(ws, { plan: 'vip' });
+  const a1 = (await owner.add(`${ws}/appointments`, { serviceId: color, status: 'رزرو' })).body.id;
+  assert.equal(await stock(), 1);
+  await owner.patch(`${ws}/appointments/${a1}`, { status: 'انجام‌شده' });
+  assert.equal(await stock(), 0.94);
+  await owner.patch(`${ws}/appointments/${a1}`, { status: 'انجام‌شده', paid: true });
+  assert.equal(await stock(), 0.94);
+  await owner.patch(`${ws}/appointments/${a1}`, { status: 'لغو' });
+  assert.equal(await stock(), 1);
+  await owner.patch(`${ws}/appointments/${a1}`, { status: 'انجام‌شده' });
+  assert.equal(await stock(), 0.94);
+  await owner.call('DELETE', `/api/doc?path=${ws}/appointments/${a1}`);
+  assert.equal(await stock(), 1);
+  // An appointment added as already done takes its supplies too.
+  await owner.add(`${ws}/appointments`, { serviceId: color, status: 'انجام‌شده' });
+  assert.equal(await stock(), 0.94);
+  assert.equal((await owner.get(`${ws}/purchases`)).status, 200);
+});
+
+test('the platform admin manages accounts', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const user = new Client();
+  const admin = new Client();
+  const me = await user.login('09126666661');
+  await admin.login(ADMIN);
+  await user.add('workspaces', { name: 'مغازه', type: 'retail' });
+  assert.equal((await user.call('GET', '/api/admin/overview')).status, 403);
+  const o = (await admin.call('GET', '/api/admin/overview')).body;
+  const u = o.users.find((x) => x.id === me.id);
+  assert.equal(u.phone, '09126666661');
+  assert.ok(u.lastLogin > 0);
+  assert.ok(o.workspaces.some((w) => w.ownerPhone === '09126666661' && w.plan === 'basic'));
+  assert.equal((await admin.call('POST', '/api/admin/user', { id: o.users.find((x) => x.admin).id, blocked: true })).status, 400);
+
+  // Blocking signs the account out and refuses new logins; unblocking lets it back in.
+  assert.equal((await admin.call('POST', '/api/admin/user', { id: me.id, blocked: true })).status, 200);
+  assert.equal((await user.call('GET', '/api/me')).body.id, null);
+  const codes = () => [...out.matchAll(/login code for 09126666661: (\d{5})/g)];
+  const before = codes().length;
+  // The earlier code was sent under a minute ago, so wait out the resend limit by clearing it.
+  const c = new pg.Client({ connectionString: DB });
+  await c.connect();
+  await c.query('delete from otps');
+  await c.end();
+  await user.call('POST', '/api/auth/request', { phone: '09126666661' });
+  for (let i = 0; i < 50 && codes().length <= before; i++) await new Promise((r) => setTimeout(r, 50));
+  const code = codes().pop()[1];
+  assert.equal((await user.call('POST', '/api/auth/verify', { phone: '09126666661', code })).status, 403);
+  assert.equal((await admin.call('POST', '/api/admin/user', { id: me.id, blocked: false })).status, 200);
+});
+
 test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const port = 3998;
   let log = '';

@@ -7,6 +7,12 @@ import { AccessError } from './access.js';
 export const PAID_PLANS = new Set(['pro', 'vip']);
 export const isPaid = (ws) => !!ws && PAID_PLANS.has(ws.plan);
 export const PRO_COLS = new Set(['purchases']);
+const FOOD = new Set(['cafe', 'restaurant']);
+const APPT = new Set(['salon', 'clinic', 'dental']);
+const DONE = 'انجام‌شده';
+// Collections whose docs take ingredients or supplies out of stock, and the field that says which recipe applies.
+const STOCKED = { forders: 'food', appointments: 'appt' };
+const usesStock = (ws, col) => isPaid(ws) && ((STOCKED[col] === 'food' && FOOD.has(ws.type)) || (STOCKED[col] === 'appt' && APPT.has(ws.type)));
 
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || 0);
 const round = (v) => Math.round(v * 10000) / 10000;
@@ -23,11 +29,12 @@ const applyStock = async (wsId, out, sign) => {
   for (const [iid, qty] of Object.entries(out || {})) await moveStock(wsId, iid, sign * num(qty));
 };
 
-// Ingredients used by an order, from the recipes saved on its menu items: { inventoryId: qty }.
-async function usageOf(wsId, items) {
+// Ingredients used by an order (from its menu items' recipes) or supplies used by an appointment
+// (from its service's recipe): { inventoryId: qty }.
+async function usageOf(wsId, items, col = 'menu') {
   const mids = [...new Set((Array.isArray(items) ? items : []).map((i) => String(i?.mid || '')).filter(Boolean))];
   if (!mids.length) return {};
-  const r = await q('select id, data from docs where parent=$1 and id = any($2)', [`workspaces/${wsId}/menu`, mids]);
+  const r = await q('select id, data from docs where parent=$1 and id = any($2)', [`workspaces/${wsId}/${col}`, mids]);
   const recipe = Object.fromEntries(r.rows.map((x) => [x.id, Array.isArray(x.data.recipe) ? x.data.recipe : []]));
   const out = {};
   for (const it of items) {
@@ -43,12 +50,13 @@ async function usageOf(wsId, items) {
 // Runs before a doc in a workspace collection is stored; may change the data. `a` is the caller's access.
 export async function beforeWrite(p, op, data, a) {
   if (!data) return data;
-  if (p.col === 'forders') {
-    // stockOut is the server's record of what an order took from stock; clients never set it.
+  if (STOCKED[p.col]) {
+    // stockOut is the server's record of what an order or appointment took from stock; clients never set it.
     const { stockOut, ...rest } = data;
     data = rest;
-    if (op === 'add' && isPaid(a.ws) && (a.ws.type === 'cafe' || a.ws.type === 'restaurant')) {
-      const out = await usageOf(p.wsId, data.items);
+    if (op === 'add' && usesStock(a.ws, p.col)) {
+      const out = p.col === 'forders' ? await usageOf(p.wsId, data.items)
+        : data.status === DONE ? await usageOf(p.wsId, [{ mid: data.serviceId, qty: 1 }], 'services') : {};
       if (Object.keys(out).length) data.stockOut = out;
     }
   }
@@ -68,7 +76,7 @@ export async function beforeWrite(p, op, data, a) {
 
 // Runs after a doc was added. Returns the collections it changed besides the doc's own.
 export async function afterAdd(p, data) {
-  if (p.col === 'forders' && data.stockOut) {
+  if (STOCKED[p.col] && data.stockOut) {
     await applyStock(p.wsId, data.stockOut, -1);
     return [`workspaces/${p.wsId}/inventory`];
   }
@@ -86,9 +94,8 @@ export async function afterAdd(p, data) {
   return [];
 }
 
-// Runs after a doc was updated (merge). Cancelling an order gives its ingredients back.
-export async function afterUpdate(p, data) {
-  if (p.col !== 'forders' || data?.status !== 'لغو') return [];
+// Gives back what a doc took from stock, once.
+async function giveBack(p) {
   const path = p.segs.join('/');
   const r = await q(`with o as (select path, data->'stockOut' as s from docs where path=$1 and data ? 'stockOut' for update)
     update docs d set data = d.data - 'stockOut' from o where d.path=o.path returning o.s`, [path]);
@@ -97,10 +104,30 @@ export async function afterUpdate(p, data) {
   return [`workspaces/${p.wsId}/inventory`];
 }
 
+// Runs after a doc was updated (merge). Cancelling an order gives its ingredients back; marking an
+// appointment done takes its service's supplies, and moving it out of done gives them back.
+export async function afterUpdate(p, data, a) {
+  if (!data || typeof data.status !== 'string') return [];
+  if (p.col === 'forders') return data.status === 'لغو' ? giveBack(p) : [];
+  if (p.col !== 'appointments') return [];
+  if (data.status !== DONE) return giveBack(p);
+  if (!usesStock(a?.ws, p.col)) return [];
+  const path = p.segs.join('/');
+  const cur = await q('select data from docs where path=$1', [path]);
+  const doc = cur.rows[0]?.data;
+  if (!doc || doc.stockOut) return [];
+  const out = await usageOf(p.wsId, [{ mid: doc.serviceId, qty: 1 }], 'services');
+  if (!Object.keys(out).length) return [];
+  const r = await q(`update docs set data = data || jsonb_build_object('stockOut', $2::jsonb) where path=$1 and not data ? 'stockOut' returning 1`, [path, JSON.stringify(out)]);
+  if (!r.rows[0]) return [];
+  await applyStock(p.wsId, out, -1);
+  return [`workspaces/${p.wsId}/inventory`];
+}
+
 // Runs after a doc was deleted, with the data it had.
 export async function afterRemove(p, old) {
   if (!old) return [];
-  if (p.col === 'forders' && old.stockOut) {
+  if (STOCKED[p.col] && old.stockOut) {
     await applyStock(p.wsId, old.stockOut, 1);
     return [`workspaces/${p.wsId}/inventory`];
   }
