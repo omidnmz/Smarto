@@ -91,7 +91,7 @@ export async function update(ctx, path, data, { replace = false } = {}) {
        on conflict(path) do update set data=docs.data || excluded.data, updated_at=excluded.updated_at`;
   await q(sql, [path, parent, id, data, now()]);
   announce(parent);
-  if (p.col) (await costs.afterUpdate(p, data)).forEach(announce);
+  if (p.col) (await costs.afterUpdate(p, data, await wsAccess(ctx, p.wsId))).forEach(announce);
 }
 
 export async function remove(ctx, path) {
