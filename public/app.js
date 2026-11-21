@@ -1706,6 +1706,9 @@ function scrLanding(){
     <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}${factoryTile()}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">چرا اسمارتو</span><h2>همه چیز سر جای خودش</h2></div>
     <div class="feats">${FEATURES.map(([ic,t,d])=>`<div class="feat"><span class="fi">${ICON[ic]}</span><h3>${t}</h3><p>${d}</p></div>`).join('')}</div></section>
+  <section class="lsec" id="plans"><div class="sec-head"><span class="eyebrow">پلن‌ها</span><h2>از رایگان شروع کن، با Pro تخصصی‌تر مدیریت کن</h2><p class="muted">پلن پایه برای اداره روزمره کافی است. بسته‌های Pro و VIP ابزارهای تخصصی هر صنف را اضافه می‌کنند.</p></div>
+    <div class="feats plans">${PLAN_CARDS.map(c=>`<div class="feat${c.hot?' hot':''}"><div class="row" style="justify-content:flex-start;gap:8px"><h3 style="margin:0">${c.name}</h3>${c.badge?`<span class="pill ${c.hot?'p-info':'p-mute'}">${c.badge}</span>`:''}</div><p>${c.desc}</p>
+      <ul class="plan-list">${c.items.map(i=>`<li>${i}</li>`).join('')}</ul>${c.cta}</div>`).join('')}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">شروع</span><h2>سه قدم تا پنل خودت</h2></div>
     <ol class="steps"><li><b>با موبایل وارد شو</b><span>یک کد پیامکی؛ بدون رمز.</span></li><li><b>نوع کسب‌وکارت را بزن</b><span>نقش‌ها، بخش‌ها و داده نمونه آماده می‌شود.</span></li><li><b>تیمت را اضافه کن</b><span>هر کس با شماره خودش وارد می‌شود و کارش را می‌بیند.</span></li></ol></section>
   <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">ساخت پنل رایگان</button>
@@ -1714,6 +1717,11 @@ function scrLanding(){
   ${upgradeInbox()}
   ${needInbox()}`;
 }
+const PLAN_CARDS=[
+  {name:'پایه',badge:'رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">ساخت پنل رایگان</button>'},
+  {name:'Pro',badge:'مدیریت تخصصی',hot:1,desc:'ابزارهای تخصصی صنف تو، برای وقتی که می‌خواهی سود را دقیق کنترل کنی.',items:['کاست کنترل کافه و رستوران: دستور تهیه، بهای تمام‌شده و درصد فود کاست هر آیتم','هشدار وقتی هزینه مواد از سقف بالاتر برود','خرید مواد اولیه و انبار که با هر فروش خودش کم می‌شود','امکانات تخصصی صنف‌های دیگر به‌زودی'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» فعال می‌شود.</span>'},
+  {name:'VIP',badge:'همراهی ویژه',desc:'همه امکانات Pro، به‌همراه راه‌اندازی و پشتیبانی نزدیک.',items:['همه امکانات Pro','کمک در راه‌اندازی و ورود اطلاعات','پشتیبانی در اولویت'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» درخواست بده.</span>'},
+];
 const FACTORY={label:'کارخانه و تولیدی',desc:'سفارش تولید، مواد اولیه، کنترل کیفیت، شیفت‌ها، تعمیرات دستگاه‌ها و طلب از مشتری‌ها؛ برای هر کارخانه جداگانه طراحی می‌شود.'};
 const factoryTile=()=>`<button class="tile" data-need="factory"><span class="ti" style="--h:#334155"><svg viewBox="0 0 24 24"><path d="M3 21V10l6 4V10l6 4V6l6 3v12z"/><path d="M7 18h2M12 18h2M17 18h2"/></svg></span><span class="tile-b"><span class="row" style="justify-content:flex-start;gap:6px"><span class="t">${FACTORY.label}</span><span class="pill p-warn">اختصاصی</span></span><span class="m">${FACTORY.desc}</span></span></button>`;
 function wsTile(w,demo){
