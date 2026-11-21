@@ -19,7 +19,7 @@ before(async () => {
   await c.query('drop table if exists sessions, otps, users, docs cascade');
   await c.end();
   srv = spawn(process.execPath, ['server/index.js'], {
-    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '0' },
+    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '0', LOGIN_IP_LIMIT: '1000' },
   });
   srv.stdout.on('data', (d) => { out += d; });
   srv.stderr.on('data', (d) => { out += d; });
@@ -54,6 +54,9 @@ class Client {
     return v.body;
   }
 }
+// One admin session shared by the tests, since the admin phone may only ask for a few codes per window.
+let adminC;
+const adminClient = () => (adminC ||= (async () => { const c = new Client(); await c.login(ADMIN); return c; })());
 
 test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => {
   const anon = new Client();
@@ -148,9 +151,8 @@ test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => 
 test('cost control for café and restaurant plans', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const owner = new Client();
   const cashier = new Client();
-  const admin = new Client();
+  const admin = await adminClient();
   await owner.login('09124444441');
-  await admin.login(ADMIN);
   const get = async (c, path) => (await c.get(path)).body.docs;
   const doc = async (c, col, id) => (await get(c, col)).find((x) => x.id === id).data;
 
@@ -218,9 +220,8 @@ test('cost control for café and restaurant plans', { skip: !DB && 'TEST_DATABAS
 
 test('salon supplies follow appointments on paid plans', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const owner = new Client();
-  const admin = new Client();
+  const admin = await adminClient();
   await owner.login('09125555551');
-  await admin.login(ADMIN);
   const doc = async (col, id) => (await owner.get(col)).body.docs.find((x) => x.id === id).data;
   const w = await owner.add('workspaces', { name: 'سالن من', type: 'salon' });
   const ws = `workspaces/${w.body.id}`;
@@ -254,9 +255,8 @@ test('salon supplies follow appointments on paid plans', { skip: !DB && 'TEST_DA
 
 test('the platform admin manages accounts', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const user = new Client();
-  const admin = new Client();
+  const admin = await adminClient();
   const me = await user.login('09126666661');
-  await admin.login(ADMIN);
   await user.add('workspaces', { name: 'مغازه', type: 'retail' });
   assert.equal((await user.call('GET', '/api/admin/overview')).status, 403);
   const o = (await admin.call('GET', '/api/admin/overview')).body;
@@ -285,9 +285,8 @@ test('the platform admin manages accounts', { skip: !DB && 'TEST_DATABASE_URL no
 
 test('customer club SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const owner = new Client();
-  const admin = new Client();
+  const admin = await adminClient();
   await owner.login('09127777771');
-  await admin.login(ADMIN);
   const w = await owner.add('workspaces', { name: 'کافه باشگاه', type: 'cafe' });
   const ws = `workspaces/${w.body.id}`;
   assert.equal((await owner.add(`${ws}/members`, { name: 'سارا', phone: '09121112222' })).status, 200);
@@ -334,4 +333,32 @@ test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not 
   } finally {
     s2.kill();
   }
+});
+
+test('monthly subscription: one free month, then read-only until renewed', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const admin = await adminClient();
+  await owner.login('09128888881');
+  const w = await owner.add('workspaces', { name: 'فروشگاه اشتراک', type: 'retail' });
+  const ws = `workspaces/${w.body.id}`;
+  const row = async () => (await admin.call('GET', '/api/admin/overview')).body.workspaces.find((x) => x.id === w.body.id);
+  // A new panel gets a 30-day trial.
+  const until = (await row()).paidUntil;
+  assert.match(until, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(until > new Date().toISOString().slice(0, 10));
+  // The owner cannot extend their own subscription.
+  await owner.patch(ws, { paidUntil: '2099-01-01' });
+  assert.equal((await row()).paidUntil, until);
+  assert.equal((await owner.add(`${ws}/products`, { name: 'الف' })).status, 200);
+
+  // Once it ends, writes are refused but the data stays readable.
+  await admin.patch(ws, { paidUntil: '2020-01-01' });
+  const r = await owner.add(`${ws}/products`, { name: 'ب' });
+  assert.equal(r.status, 402);
+  assert.equal(r.body.error, 'subscription_expired');
+  assert.equal((await owner.get(`${ws}/products`)).body.docs.length, 1);
+
+  // Renewing by the admin opens it again.
+  await admin.patch(ws, { paidUntil: '2099-01-01' });
+  assert.equal((await owner.add(`${ws}/products`, { name: 'ب' })).status, 200);
 });

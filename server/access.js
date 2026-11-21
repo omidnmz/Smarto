@@ -1,5 +1,6 @@
 import { q } from './db.js';
 import { PRO_COLS, isPaid } from './costs.js';
+import { assertActive } from './subscription.js';
 
 // Collections a workspace may hold (union of every business template).
 export const WS_COLS = new Set([
@@ -131,6 +132,7 @@ export async function checkWrite(ctx, p, op, data) {
   const a = await wsAccess(ctx, p.wsId);
   if (!a.write || !roleAllowed(a, p.col)) deny();
   planAllowed(a, p.col);
+  if (!admin) assertActive(a.ws);
   // The SMS log is written only by the server when it sends.
   if (p.col === 'smslog' && !admin) deny();
   if (p.col === 'people') {

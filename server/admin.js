@@ -1,5 +1,6 @@
 import { q } from './db.js';
 import { isAdmin, AccessError } from './access.js';
+import { paidUntil } from './subscription.js';
 
 // The platform admin's own panel: every account and every business, with plans and blocking.
 const need = (req) => {
@@ -31,7 +32,7 @@ export function adminRoutes(app) {
       })),
       workspaces: wss.rows.map((w) => ({
         id: w.id, name: w.data.name, type: w.data.type, typeLabel: w.data.typeLabel || '', plan: w.data.plan || 'basic',
-        example: !!w.data.example, ownerUid: w.data.ownerUid || '', ownerPhone: phoneOf[w.data.ownerUid] || '',
+        example: !!w.data.example, paidUntil: paidUntil(w.data), trial: !w.data.paidUntil, ownerUid: w.data.ownerUid || '', ownerPhone: phoneOf[w.data.ownerUid] || '',
         createdAt: Number(w.data.createdAt) || null, teamSize: w.data.teamSize || '', people: people[w.id] || 0, lastActive: last[w.id] || null,
       })),
     };

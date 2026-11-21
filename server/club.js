@@ -1,6 +1,7 @@
 import { q } from './db.js';
 import { wsAccess, AccessError } from './access.js';
 import { isPaid } from './costs.js';
+import { assertActive } from './subscription.js';
 import { newId, normalizePhone } from './ids.js';
 import { bus } from './store.js';
 
@@ -43,6 +44,7 @@ export function clubRoutes(app) {
     if (!a.ws) throw new AccessError(404, 'not_found');
     if (!a.write || !['owner', 'gm', 'manager'].includes(a.role)) throw new AccessError(403, 'permission_denied');
     if (!isPaid(a.ws)) throw new AccessError(403, 'plan_required');
+    assertActive(a.ws);
     const kind = req.body?.kind === 'promo' ? 'promo' : 'service';
     let text = String(req.body?.text || '').trim();
     if (!text || text.length > MAX_TEXT) throw new AccessError(400, 'bad_text');

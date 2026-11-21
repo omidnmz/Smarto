@@ -805,6 +805,19 @@ function scrMenu(){
 
 // ---------- cost control (Pro/VIP plans of café & restaurant) ----------
 const PLANS={basic:'پایه',pro:'Pro',vip:'VIP'};
+// Monthly subscription: the first month is free; afterwards the panel is read-only until extended.
+const LAUNCH=Date.parse('2026-11-21T00:00:00Z'), TRIAL_DAYS=30;
+const wsUntil=w=>{if(!w||w.example)return null;if(/^\d{4}-\d{2}-\d{2}$/.test(w.paidUntil||''))return w.paidUntil;return iso(Math.max(+w.createdAt||LAUNCH,LAUNCH)+TRIAL_DAYS*864e5)};
+const daysLeft=w=>{const u=wsUntil(w);return u===null?null:Math.round((new Date(u+'T12:00:00')-new Date(TODAY+'T12:00:00'))/864e5)};
+const inTrial=w=>w&&'trial' in w?!!w.trial:!/^\d{4}-\d{2}-\d{2}$/.test((w&&w.paidUntil)||'');
+function subBanner(){
+  const n=daysLeft(ws);if(n===null||n>7)return '';
+  const pending=needReqs.find(r=>r.kind==='upgrade'&&r.wsId===ws.id&&!['تأیید شد','رد شد'].includes(r.status));
+  const btn=me&&me.role==='owner'&&!amOwner?(pending?'<span class="small">درخواست تمدید فرستاده شد</span>':'<button class="chip" data-renew="1">تمدید</button>'):'';
+  const what=inTrial(ws)?'ماه رایگان':'اشتراک';
+  return n<0?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--bad-soft,#fde8e8);color:var(--bad)"><span>${what} این پنل تمام شده و پنل فقط‌خواندنی است. برای ثبت دوباره، اشتراک را تمدید کن.</span>${btn}</div>`
+    :`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>${n===0?'امروز آخرین روز':fmtN(n)+' روز تا پایان'} ${what} پنل.</span>${btn}</div>`;
+}
 const planOf=w=>w&&PLANS[w.plan]&&w.plan!=='basic'?w.plan:'basic';
 const isPaid=()=>planOf(ws)!=='basic';
 const planPill=w=>{const p=planOf(w);return `<span class="pill ${p==='basic'?'p-mute':p==='vip'?'p-warn':'p-info'}">${p==='basic'?'پلن پایه':PLANS[p]}</span>`};
@@ -908,14 +921,16 @@ function costBuy(canEdit){
   <section class="card"><div class="row"><h3>خریدهای اخیر</h3><span class="small muted">این ماه ${fmtT(month)} تومان</span></div>
     ${list.length?`<ul class="list">${list.slice(0,40).map(x=>{const i=invItem(x.iid);return `<li><div class="grow"><div class="t">${esc(i?i.name:x.name||'—')} <span class="small muted">${fmtQ(x.qty)} ${esc(i?i.unit||'':x.unit||'')}</span></div><div class="m">${jd(x.date)}${x.supplier?' · '+esc(x.supplier):''} · واحدی ${fmtN(x.unitCost)}</div></div><span class="num">${fmtN(x.total)}</span>${canEdit?delBtn('purchases',x.id):''}</li>`}).join('')}</ul>`:empty('هنوز خریدی ثبت نشده است.')}</section>`;
 }
+// One more month from the later of today and the current end date.
+const extendMonth=w=>{const u=wsUntil(w)||TODAY;return addMonths(u>TODAY?u:TODAY,1)};
 function upgradeInbox(){
   const list=needReqs.filter(r=>r.kind==='upgrade').sort((a,b)=>((a.status==='تأیید شد'||a.status==='رد شد')-(b.status==='تأیید شد'||b.status==='رد شد'))||(b.createdAt||0)-(a.createdAt||0));
   if(!amOwner||!list.length)return '';
   const open=r=>!['تأیید شد','رد شد'].includes(r.status);
   return `<div class="row"><h3>درخواست‌های ارتقای پلن</h3>${list.some(open)?`<span class="pill p-warn">${fmtN(list.filter(open).length)} منتظر تو</span>`:''}</div>
-  ${list.slice(0,20).map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.name||'')} · ${PLANS[r.plan]||r.plan}</span><span class="pill ${REQ_PILL[r.status]||'p-warn'}">${esc(r.status||'در انتظار بررسی')}</span></div>
+  ${list.slice(0,20).map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.name||'')} · ${r.renew?'تمدید ':''}${PLANS[r.plan]||r.plan}</span><span class="pill ${REQ_PILL[r.status]||'p-warn'}">${esc(r.status||'در انتظار بررسی')}</span></div>
     <div class="small muted">${[r.owner,r.userPhone,r.createdAt?jd(iso(r.createdAt)):''].filter(Boolean).map(esc).join(' · ')}</div>
-    ${open(r)?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgok="${r.id}">فعال‌سازی ${PLANS[r.plan]||''}</button><button class="lnk del" data-upgno="${r.id}">رد</button></div>`:''}</section>`).join('')}`;
+    ${open(r)?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgok="${r.id}">${r.renew?'تمدید یک ماه':'فعال‌سازی '+(PLANS[r.plan]||'')+' (یک ماه)'}</button><button class="lnk del" data-upgno="${r.id}">رد</button></div>`:''}</section>`).join('')}`;
 }
 
 // ---------- repair shop ----------
@@ -1598,6 +1613,7 @@ function scrAdmin(){
     return head+`<div class="kpis">
       <button class="kpi" data-admtab="users" style="text-align:start;cursor:pointer"><span class="lab">کاربران</span><span class="val">${fmtN(adm.users.length)}</span><span class="hint">${fmtN(adm.users.filter(u=>u.createdAt>week).length)} نفر در ۷ روز اخیر</span></button>
       <button class="kpi" data-admtab="panels" style="text-align:start;cursor:pointer"><span class="lab">پنل‌ها</span><span class="val">${fmtN(real.length)}</span><span class="hint">${fmtN(real.filter(w=>w.lastActive>week).length)} فعال در ۷ روز اخیر</span></button>
+      ${(()=>{const ex=real.filter(w=>{const n=daysLeft(w);return n!==null&&n<=7});return ex.length?alertKpi('','اشتراک رو به پایان',fmtN(ex.length),'۷ روز آینده یا تمام‌شده',' data-admtab="panels"'):''})()}
       <div class="kpi"><span class="lab">Pro و VIP</span><span class="val">${fmtN(paid.length)}</span><span class="hint">${fmtN(paid.filter(w=>w.plan==='vip').length)} VIP</span></div>
       ${pending?alertKpi('','درخواست منتظر',fmtN(pending),'شغل جدید یا ارتقا',' data-admtab="reqs"'):''}
     </div>
@@ -1624,6 +1640,7 @@ function scrAdmin(){
 function admWsRow(w){
   return `<li><div class="grow"><div class="t">${esc(w.name||'بی‌نام')} <span class="small muted">${esc(w.typeLabel||TYPE_LABEL[w.type]||w.type||'')}</span></div>
     <div class="m">${w.ownerPhone?'<span class="num">'+esc(w.ownerPhone)+'</span> · ':''}${fmtN(w.people)} نفر · ساخته ${jd(tsDay(w.createdAt))} · فعالیت ${ago(w.lastActive)}</div>
+    ${(()=>{const n=daysLeft(w);return `<div class="row" style="justify-content:flex-start;gap:6px"><span class="pill ${n<0?'p-bad':n<=7?'p-warn':'p-ok'}">${n<0?'تمام شده':inTrial(w)?'ماه رایگان':'اشتراک'} تا ${jd(wsUntil(w))}</span><button class="chip" data-admext="${w.id}">+۱ ماه</button><input class="inline" type="date" value="${wsUntil(w)}" data-admuntil="${w.id}" aria-label="اعتبار تا"></div>`})()}
     <div class="row" style="justify-content:flex-start;gap:6px;margin-top:4px"><select class="inline" data-admsetplan="${w.id}" aria-label="پلن">${opts(Object.entries(PLANS),w.plan==='pro'||w.plan==='vip'?w.plan:'basic')}</select><button class="chip" data-open="${w.id}">باز کردن</button>
     <button class="lnk del ${armed==='admdel/'+w.id?'armed':''}" data-admdel="${w.id}">${armed==='admdel/'+w.id?'همه داده‌ها پاک شود؟':'حذف پنل'}</button></div></div></li>`;
 }
@@ -2018,13 +2035,13 @@ function scrLanding(){
       <span class="eyebrow">پنل هوشمند کسب‌وکار</span>
       <h1>کسب‌وکارت را <em>از روی گوشی</em> اداره کن</h1>
       <p>فروش، نوبت‌ها، مشتری‌ها، تیم و حساب‌وکتاب در یک پنل. برای نوع کسب‌وکارت آماده است و هر عضو تیم فقط بخش خودش را می‌بیند.</p>
-      <div class="hero-cta"><button class="btn big" data-create="1">ساخت پنل رایگان</button><a class="btn ghost big" href="#samples">دیدن نمونه‌ها</a></div>
+      <div class="hero-cta"><button class="btn big" data-create="1">یک ماه رایگان امتحان کن</button><a class="btn ghost big" href="#samples">دیدن نمونه‌ها</a></div>
       <div class="hero-stats"><span><b>${fmtN(types.length)}</b> نوع کسب‌وکار</span><span><b>۲</b> دقیقه تا شروع</span><span><b>بدون</b> نصب برنامه</span></div>
     </div>
     ${heroMock()}
   </section>
   ${myUid?`<section class="lsec"><div class="row"><h2>کسب‌وکارهای من</h2><button class="chip" data-create="1">+ پنل جدید</button></div>
-    ${mine.length?`<div class="tiles">${mine.map(w=>wsTile(w,false)).join('')}</div>`:empty('هنوز پنلی نساخته‌ای. با «ساخت پنل رایگان» اولین پنل را بساز.')}</section>`
+    ${mine.length?`<div class="tiles">${mine.map(w=>wsTile(w,false)).join('')}</div>`:empty('هنوز پنلی نساخته‌ای. با «یک ماه رایگان امتحان کن» اولین پنل را بساز.')}</section>`
     :`<button class="card login-card" data-login="1"><span class="t">قبلاً پنل ساخته‌ای یا عضو تیمی هستی؟</span><span class="btn ghost">ورود با موبایل</span></button>`}
   ${amOwner?`<button class="card" data-admin="1" style="text-align:start;cursor:pointer;border-color:var(--accent)"><div class="row"><span class="t">پنل مدیریت سامانه</span><span class="small muted">کاربران، پنل‌ها، پلن‌ها${needReqs.some(r=>!['تأیید شد','رد شد'].includes(r.status))?' · <span class="pill p-warn">درخواست منتظر</span>':''}</span></div></button>`:''}
   ${others.length?`<details class="card"><summary class="row" style="cursor:pointer"><span class="t">همه کسب‌وکارهای سامانه</span><span class="small muted">${fmtN(others.length)}</span></summary><div class="tiles">${others.map(w=>wsTile(w,false)).join('')}</div></details>`:''}
@@ -2032,19 +2049,19 @@ function scrLanding(){
     <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}${factoryTile()}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">چرا اسمارتو</span><h2>همه چیز سر جای خودش</h2></div>
     <div class="feats">${FEATURES.map(([ic,t,d])=>`<div class="feat"><span class="fi">${ICON[ic]}</span><h3>${t}</h3><p>${d}</p></div>`).join('')}</div></section>
-  <section class="lsec" id="plans"><div class="sec-head"><span class="eyebrow">پلن‌ها</span><h2>از رایگان شروع کن، با Pro تخصصی‌تر مدیریت کن</h2><p class="muted">پلن پایه برای اداره روزمره کافی است. بسته‌های Pro و VIP ابزارهای تخصصی هر صنف را اضافه می‌کنند.</p></div>
+  <section class="lsec" id="plans"><div class="sec-head"><span class="eyebrow">پلن‌ها</span><h2>ماه اول رایگان؛ با Pro تخصصی‌تر مدیریت کن</h2><p class="muted">همه پلن‌ها ماهانه‌اند و ماه اول هر پنل رایگان است تا با ابزارها آشنا شوی. پلن پایه برای اداره روزمره کافی است و Pro و VIP ابزارهای تخصصی هر صنف را اضافه می‌کنند.</p></div>
     <div class="feats plans">${PLAN_CARDS.map(c=>`<div class="feat${c.hot?' hot':''}"><div class="row" style="justify-content:flex-start;gap:8px"><h3 style="margin:0">${c.name}</h3>${c.badge?`<span class="pill ${c.hot?'p-info':'p-mute'}">${c.badge}</span>`:''}</div><p>${c.desc}</p>
       <ul class="plan-list">${c.items.map(i=>`<li>${i}</li>`).join('')}</ul>${c.cta}</div>`).join('')}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">شروع</span><h2>سه قدم تا پنل خودت</h2></div>
     <ol class="steps"><li><b>با موبایل وارد شو</b><span>یک کد پیامکی؛ بدون رمز.</span></li><li><b>نوع کسب‌وکارت را بزن</b><span>نقش‌ها، بخش‌ها و داده نمونه آماده می‌شود.</span></li><li><b>تیمت را اضافه کن</b><span>هر کس با شماره خودش وارد می‌شود و کارش را می‌بیند.</span></li></ol></section>
-  <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">ساخت پنل رایگان</button>
+  <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">یک ماه رایگان امتحان کن</button>
     <button class="lnk light" data-need="1">کسب‌وکارم در فهرست نیست</button></section>
   ${myRequests()}
   ${upgradeInbox()}
   ${needInbox()}`;
 }
 const PLAN_CARDS=[
-  {name:'پایه',badge:'رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">ساخت پنل رایگان</button>'},
+  {name:'پایه',badge:'ماه اول رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">یک ماه رایگان امتحان کن</button>'},
   {name:'Pro',badge:'مدیریت تخصصی',hot:1,desc:'ابزارهای تخصصی صنف تو، برای وقتی که می‌خواهی سود را دقیق کنترل کنی.',items:['کاست کنترل کافه و رستوران: دستور تهیه، بهای تمام‌شده و درصد فود کاست هر آیتم','هشدار وقتی هزینه مواد از سقف بالاتر برود','خرید مواد اولیه و انبار که با هر فروش خودش کم می‌شود','سالن زیبایی و کلینیک: مواد مصرفی هر خدمت که با هر نوبت انجام‌شده از انبار کم می‌شود','نمایشگاه ماشین: سود واقعی هر ماشین بعد از خواب سرمایه و سهم فروشنده','طلافروشی: سود واقعی هر فاکتور، جدا از سود نوسان نرخ طلا'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» فعال می‌شود.</span>'},
   {name:'VIP',badge:'همراهی ویژه',desc:'همه امکانات Pro، به‌همراه راه‌اندازی و پشتیبانی نزدیک.',items:['همه امکانات Pro','کمک در راه‌اندازی و ورود اطلاعات','پشتیبانی در اولویت'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» درخواست بده.</span>'},
 ];
@@ -2183,7 +2200,7 @@ function render(){
   const keep=saveForms();
   const qf=document.activeElement&&document.activeElement.id==='q';
   v.dataset.k=ui.screen+'|'+me.id+'|'+ws.id;v.classList.remove('wide');
-  v.innerHTML=(ws.example&&!amOwner?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>این یک نمونه است و فقط برای تماشاست.</span><button class="chip" data-create="1">پنل خودم را بساز</button></div>`:'')+SCREENS[ui.screen]();
+  v.innerHTML=(ws.example&&!amOwner?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>این یک نمونه است و فقط برای تماشاست.</span><button class="chip" data-create="1">پنل خودم را بساز</button></div>`:'')+subBanner()+SCREENS[ui.screen]();
   if(keep.__s===ui.screen+'|'+me.id+'|'+ws.id)restoreForms(keep);
   const gsum=document.getElementById('gs-sum');if(gsum)gsum.innerHTML=goldSumHtml(readGoldForm());
   if(qf){const q=document.getElementById('q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
@@ -2211,6 +2228,7 @@ V.addEventListener('click',async e=>{
   if(d.admblock){const u=adm&&adm.users.find(x=>x.id===d.admblock);if(!u)return;
     if(!u.blocked&&armed!=='blk/'+u.id){armed='blk/'+u.id;render();return}armed=null;
     try{await smarto.admin.block(u.id,!u.blocked);u.blocked=!u.blocked;toast(u.blocked?'حساب '+u.phone+' مسدود شد':'مسدودی برداشته شد')}catch(e){toast('انجام نشد')}render();return}
+  if(d.admext){const w=adm&&adm.workspaces.find(x=>x.id===d.admext);if(!w)return;const u=extendMonth(w);const ok=await write(()=>db.doc('workspaces/'+w.id).update({paidUntil:u}),'اعتبار تا '+jd(u)+' تمدید شد');if(ok){w.paidUntil=u;render()}return}
   if(d.admdel){if(armed!=='admdel/'+d.admdel){armed='admdel/'+d.admdel;render();return}armed=null;
     const ok=await write(()=>db.doc('workspaces/'+d.admdel).delete(),'پنل حذف شد');if(ok&&adm){adm.workspaces=adm.workspaces.filter(w=>w.id!==d.admdel);render()}return}
   if(d.landing){uiView='landing';render();window.scrollTo({top:0});return}
@@ -2251,8 +2269,10 @@ V.addEventListener('click',async e=>{
   if(d.upgrade){if(!myUid){needLogin(null);return}if(ws.example){toast('این نمونه فقط برای تماشاست');return}
     try{const r=await db.collection('requests').add({kind:'upgrade',job:'ارتقای پنل به '+PLANS[d.upgrade],name:ws.name,wsId:ws.id,plan:d.upgrade,owner:me.name,createdAt:Date.now()});
       needReqs=[...needReqs,{id:r.id,kind:'upgrade',wsId:ws.id,plan:d.upgrade,uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست ارتقا فرستاده شد')}catch(e){toast('فرستاده نشد، دوباره امتحان کن')}return}
+  if(d.renew){try{await db.collection('requests').add({kind:'upgrade',renew:true,job:'تمدید اشتراک '+PLANS[planOf(ws)],name:ws.name,wsId:ws.id,plan:planOf(ws),owner:me.name,createdAt:Date.now()});
+      needReqs=[...needReqs,{kind:'upgrade',wsId:ws.id,plan:planOf(ws),uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست تمدید فرستاده شد')}catch(e){toast('فرستاده نشد')}return}
   if(d.upgok||d.upgno){const r=needReqs.find(x=>x.id===(d.upgok||d.upgno));if(!r)return;
-    await write(async()=>{if(d.upgok)await db.doc('workspaces/'+r.wsId).update({plan:r.plan});await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
+    await write(async()=>{if(d.upgok){const w=workspaces.find(x=>x.id===r.wsId);await db.doc('workspaces/'+r.wsId).update({plan:r.plan,paidUntil:extendMonth(w)})}await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
   if(d.ldeal){ui.ldeal=d.ldeal;render();return}
   if(d.lst){ui.lst=d.lst;render();return}
   if(d.lmine){ui.lmine=!ui.lmine;render();return}
@@ -2297,6 +2317,7 @@ V.addEventListener('change',async e=>{
     await write(()=>D('plans/'+id).update({items,...(all&&p.status==='در حال درمان'?{status:'تمام‌شده'}:{}),updatedAt:Date.now()}),el.checked?(all?'همه درمان‌ها انجام شد':'انجام شد'):'برگشت');return}
   if(el.dataset.wscost){const v=Math.min(100,Math.max(1,+el.value||30));await write(()=>db.doc('workspaces/'+ws.id).update({costTarget:v}),'سقف '+costSrc().pct+' '+fmtN(v)+'٪ شد');return}
   if(el.dataset.wsnum){const k=el.dataset.wsnum;if(!['capRate','goldMakerWage'].includes(k))return;const v=Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({[k]:v}),'ذخیره شد');return}
+  if(el.dataset.admuntil){const w=adm&&adm.workspaces.find(x=>x.id===el.dataset.admuntil);if(!w||!el.value)return;const ok=await write(()=>db.doc('workspaces/'+w.id).update({paidUntil:el.value}),'اعتبار تا '+jd(el.value));if(ok){w.paidUntil=el.value;render()}return}
   if(el.dataset.admsetplan){const id=el.dataset.admsetplan;const ok=await write(()=>db.doc('workspaces/'+id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');if(ok&&adm){const w=adm.workspaces.find(x=>x.id===id);if(w)w.plan=el.value;render()}return}
   if(el.dataset.clubcfg){const k=el.dataset.clubcfg;const v=k==='reward'?el.value.trim():Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({club:{...(ws.club||{}),[k]:v}}),'ذخیره شد');return}
   if(el.dataset.mbday){const [id,part]=el.dataset.mbday.split('|');const m=state.members.find(x=>x.id===id);if(!m)return;const [bm,bd]=String(m.birthday||'-').split('-');const nm=part==='m'?el.value:bm,nd=part==='d'?el.value:bd;
@@ -2451,7 +2472,7 @@ V.addEventListener('submit',async e=>{
 });
 async function write(fn,msg){
   if(!db){toast('اتصال به سرور برقرار نیست');return false}
-  try{await fn();toast(msg);return true}catch(err){toast(err&&err.code==='login_required'?'اول وارد حسابت شو':err&&err.code==='permission_denied'?(ws&&ws.example?'این نمونه فقط برای تماشاست':'اجازه این کار را نداری'):'ذخیره نشد، دوباره امتحان کن');return false}
+  try{await fn();toast(msg);return true}catch(err){toast(err&&err.code==='login_required'?'اول وارد حسابت شو':err&&err.code==='subscription_expired'?'اشتراک پنل تمام شده؛ اول تمدید کن':err&&err.code==='permission_denied'?(ws&&ws.example?'این نمونه فقط برای تماشاست':'اجازه این کار را نداری'):'ذخیره نشد، دوباره امتحان کن');return false}
 }
 
 // ---------- boot ----------
