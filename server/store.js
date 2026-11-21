@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { q, pool } from './db.js';
 import { newId, normalizePhone } from './ids.js';
 import { parsePath, assertRead, checkWrite, workspaceFilter, isAdmin, wsAccess, AccessError } from './access.js';
+import * as costs from './costs.js';
 
 // Every write announces the collection it touched; open streams decide who hears it.
 export const bus = new EventEmitter();
@@ -17,6 +18,12 @@ const asObject = (d) => {
   return Object.fromEntries(Object.entries(d).filter(([k]) => !k.startsWith('_')));
 };
 // Normalizes a person's phone and, if someone already signed up with it, links them.
+// Workspace-level side effects (cost control) run around writes to workspace collections.
+async function hooked(ctx, p, op, data) {
+  if (!p.col) return data;
+  return costs.beforeWrite(p, op, data, await wsAccess(ctx, p.wsId));
+}
+
 async function cleanPerson(p, data) {
   if (p.col === 'people' && data && typeof data.phone === 'string') {
     data.phone = normalizePhone(data.phone) || data.phone.trim();
@@ -58,15 +65,18 @@ export async function list(ctx, path) {
 export async function add(ctx, path, data) {
   const p = parsePath(path, 'col');
   data = await cleanPerson(p, await checkWrite(ctx, p, 'add', asObject(data)));
+  data = await hooked(ctx, p, 'add', data);
   const id = newId();
   await q('insert into docs(path,parent,id,data,updated_at) values($1,$2,$3,$4,$5)', [`${path}/${id}`, path, id, data, now()]);
   announce(path);
+  if (p.col) (await costs.afterAdd(p, data)).forEach(announce);
   return id;
 }
 
 export async function update(ctx, path, data, { replace = false } = {}) {
   const p = parsePath(path, 'doc');
   data = await cleanPerson(p, await checkWrite(ctx, p, replace ? 'set' : 'update', asObject(data)));
+  data = await hooked(ctx, p, replace ? 'set' : 'update', data);
   const parent = p.segs.slice(0, -1).join('/');
   const id = p.segs[p.segs.length - 1];
   if (p.top === 'requests' || p.segs.length === 2) {
@@ -81,6 +91,7 @@ export async function update(ctx, path, data, { replace = false } = {}) {
        on conflict(path) do update set data=docs.data || excluded.data, updated_at=excluded.updated_at`;
   await q(sql, [path, parent, id, data, now()]);
   announce(parent);
+  if (p.col) (await costs.afterUpdate(p, data)).forEach(announce);
 }
 
 export async function remove(ctx, path) {
@@ -94,8 +105,9 @@ export async function remove(ctx, path) {
   }
   await checkWrite(ctx, p, 'delete', null);
   const parent = p.segs.slice(0, -1).join('/');
-  await q('delete from docs where path=$1', [path]);
+  const r = await q('delete from docs where path=$1 returning data', [path]);
   announce(parent);
+  if (p.col && r.rows[0]) (await costs.afterRemove(p, r.rows[0].data)).forEach(announce);
 }
 
 // Links people the owner added by phone to the account that just logged in with that phone.

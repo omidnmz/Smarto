@@ -6462,7 +6462,9 @@
     "example": true,
     "name": "کافه نمونه",
     "order": 5,
-    "type": "cafe"
+    "type": "cafe",
+    "plan": "pro",
+    "costTarget": 30
    },
    "cols": {
     "costs": {
@@ -8734,7 +8736,8 @@
       "name": "دانه قهوه عربیکا",
       "price": 0,
       "stock": 3.5,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 1500000
      },
      "v01": {
       "createdAt": 1761200000001,
@@ -8742,7 +8745,8 @@
       "name": "شیر",
       "price": 0,
       "stock": 18,
-      "unit": "لیتر"
+      "unit": "لیتر",
+      "cost": 48000
      },
      "v02": {
       "createdAt": 1761200000002,
@@ -8750,7 +8754,8 @@
       "name": "شکلات پودری",
       "price": 0,
       "stock": 0.8,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 900000
      },
      "v03": {
       "createdAt": 1761200000003,
@@ -8758,15 +8763,17 @@
       "name": "لیوان یک‌بار مصرف",
       "price": 0,
       "stock": 140,
-      "unit": "عدد"
+      "unit": "عدد",
+      "cost": 3500
      },
      "v04": {
       "createdAt": 1761200000004,
       "min": 1,
       "name": "سیروپ کارامل",
       "price": 0,
-      "stock": 2,
-      "unit": "بطری"
+      "stock": 1.5,
+      "unit": "لیتر",
+      "cost": 870000
      },
      "v05": {
       "createdAt": 1761200000005,
@@ -8774,7 +8781,71 @@
       "name": "آرد",
       "price": 0,
       "stock": 6,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 45000
+     },
+     "v06": {
+      "createdAt": 1761200000101,
+      "min": 3,
+      "name": "شکر",
+      "price": 0,
+      "stock": 8,
+      "unit": "کیلو",
+      "cost": 70000
+     },
+     "v07": {
+      "createdAt": 1761200000102,
+      "min": 1,
+      "name": "انبه منجمد",
+      "price": 0,
+      "stock": 2,
+      "unit": "کیلو",
+      "cost": 400000
+     },
+     "v08": {
+      "createdAt": 1761200000103,
+      "min": 1,
+      "name": "لیمو ترش",
+      "price": 0,
+      "stock": 3,
+      "unit": "کیلو",
+      "cost": 120000
+     },
+     "v09": {
+      "createdAt": 1761200000104,
+      "min": 0.3,
+      "name": "چای ماسالا",
+      "price": 0,
+      "stock": 0.6,
+      "unit": "کیلو",
+      "cost": 1200000
+     },
+     "v10": {
+      "createdAt": 1761200000105,
+      "min": 1,
+      "name": "پنیر خامه‌ای",
+      "price": 0,
+      "stock": 0.8,
+      "unit": "کیلو",
+      "cost": 600000
+     },
+     "v11": {
+      "createdAt": 1761200000106,
+      "min": 1,
+      "name": "کره",
+      "price": 0,
+      "stock": 1.5,
+      "unit": "کیلو",
+      "cost": 900000
+     },
+     "v12": {
+      "createdAt": 1761200000107,
+      "min": 30,
+      "name": "تخم‌مرغ",
+      "price": 0,
+      "stock": 60,
+      "unit": "عدد",
+      "cost": 7000
      }
     },
     "menu": {
@@ -8783,84 +8854,264 @@
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000000,
       "name": "اسپرسو",
-      "price": 95000
+      "price": 95000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       }
+      ]
      },
      "m01": {
       "available": true,
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000001,
       "name": "آمریکانو",
-      "price": 110000
+      "price": 110000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m02": {
       "available": true,
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000002,
       "name": "لاته",
-      "price": 145000
+      "price": 145000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       },
+       {
+        "iid": "v01",
+        "qty": 0.2
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m03": {
       "available": true,
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000003,
       "name": "کاپوچینو",
-      "price": 140000
+      "price": 140000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       },
+       {
+        "iid": "v01",
+        "qty": 0.15
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m04": {
       "available": true,
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000004,
       "name": "موکا",
-      "price": 165000
+      "price": 165000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       },
+       {
+        "iid": "v01",
+        "qty": 0.18
+       },
+       {
+        "iid": "v02",
+        "qty": 0.025
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m05": {
       "available": true,
       "cat": "نوشیدنی گرم",
       "createdAt": 1761200000005,
       "name": "چای ماسالا",
-      "price": 120000
+      "price": 120000,
+      "recipe": [
+       {
+        "iid": "v09",
+        "qty": 0.01
+       },
+       {
+        "iid": "v01",
+        "qty": 0.2
+       },
+       {
+        "iid": "v06",
+        "qty": 0.015
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m06": {
       "available": true,
       "cat": "نوشیدنی سرد",
       "createdAt": 1761200000006,
       "name": "آیس لاته",
-      "price": 160000
+      "price": 160000,
+      "recipe": [
+       {
+        "iid": "v00",
+        "qty": 0.018
+       },
+       {
+        "iid": "v01",
+        "qty": 0.2
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m07": {
       "available": true,
       "cat": "نوشیدنی سرد",
       "createdAt": 1761200000007,
       "name": "اسموتی انبه",
-      "price": 185000
+      "price": 185000,
+      "recipe": [
+       {
+        "iid": "v07",
+        "qty": 0.15
+       },
+       {
+        "iid": "v01",
+        "qty": 0.1
+       },
+       {
+        "iid": "v06",
+        "qty": 0.02
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m08": {
       "available": true,
       "cat": "نوشیدنی سرد",
       "createdAt": 1761200000008,
       "name": "لیموناد",
-      "price": 130000
+      "price": 130000,
+      "recipe": [
+       {
+        "iid": "v08",
+        "qty": 0.08
+       },
+       {
+        "iid": "v06",
+        "qty": 0.04
+       },
+       {
+        "iid": "v03",
+        "qty": 1
+       }
+      ]
      },
      "m09": {
       "available": true,
       "cat": "کیک و دسر",
       "createdAt": 1761200000009,
       "name": "کیک شکلاتی",
-      "price": 160000
+      "price": 160000,
+      "recipe": [
+       {
+        "iid": "v05",
+        "qty": 0.05
+       },
+       {
+        "iid": "v02",
+        "qty": 0.025
+       },
+       {
+        "iid": "v06",
+        "qty": 0.04
+       },
+       {
+        "iid": "v11",
+        "qty": 0.02
+       },
+       {
+        "iid": "v12",
+        "qty": 1
+       }
+      ]
      },
      "m10": {
       "available": true,
       "cat": "کیک و دسر",
       "createdAt": 1761200000010,
       "name": "چیزکیک",
-      "price": 190000
+      "price": 190000,
+      "recipe": [
+       {
+        "iid": "v10",
+        "qty": 0.08
+       },
+       {
+        "iid": "v06",
+        "qty": 0.02
+       },
+       {
+        "iid": "v11",
+        "qty": 0.015
+       },
+       {
+        "iid": "v12",
+        "qty": 1
+       }
+      ]
      },
      "m11": {
       "available": true,
       "cat": "کیک و دسر",
       "createdAt": 1761200000011,
       "name": "کروسان",
-      "price": 120000
+      "price": 120000,
+      "recipe": [
+       {
+        "iid": "v05",
+        "qty": 0.06
+       },
+       {
+        "iid": "v11",
+        "qty": 0.03
+       },
+       {
+        "iid": "v12",
+        "qty": 0.5
+       }
+      ]
      },
      "m12": {
       "available": false,
@@ -9006,6 +9257,56 @@
       "title": "بستن صندوق و گزارش روز",
       "to": "cas"
      }
+    },
+    "purchases": {
+     "p00": {
+      "by": "own",
+      "createdAt": 1761200000200,
+      "date": "2026-10-17",
+      "iid": "v00",
+      "name": "دانه قهوه عربیکا",
+      "unit": "کیلو",
+      "qty": 2,
+      "total": 3000000,
+      "unitCost": 1500000.0,
+      "supplier": "رست قهوه نوین"
+     },
+     "p01": {
+      "by": "own",
+      "createdAt": 1761200000201,
+      "date": "2026-10-20",
+      "iid": "v01",
+      "name": "شیر",
+      "unit": "لیتر",
+      "qty": 24,
+      "total": 1152000,
+      "unitCost": 48000.0,
+      "supplier": "لبنیات محله"
+     },
+     "p02": {
+      "by": "own",
+      "createdAt": 1761200000202,
+      "date": "2026-10-22",
+      "iid": "v03",
+      "name": "لیوان یک‌بار مصرف",
+      "unit": "عدد",
+      "qty": 500,
+      "total": 1750000,
+      "unitCost": 3500.0,
+      "supplier": ""
+     },
+     "p03": {
+      "by": "own",
+      "createdAt": 1761200000203,
+      "date": "2026-10-23",
+      "iid": "v02",
+      "name": "شکلات پودری",
+      "unit": "کیلو",
+      "qty": 1,
+      "total": 900000,
+      "unitCost": 900000.0,
+      "supplier": ""
+     }
     }
    }
   },
@@ -9016,7 +9317,9 @@
     "example": true,
     "name": "رستوران نمونه",
     "order": 6,
-    "type": "restaurant"
+    "type": "restaurant",
+    "plan": "pro",
+    "costTarget": 35
    },
    "cols": {
     "costs": {
@@ -10810,7 +11113,8 @@
       "name": "برنج ایرانی",
       "price": 0,
       "stock": 45,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 220000
      },
      "v01": {
       "createdAt": 1761200000001,
@@ -10818,7 +11122,8 @@
       "name": "گوشت چرخ‌کرده",
       "price": 0,
       "stock": 8,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 750000
      },
      "v02": {
       "createdAt": 1761200000002,
@@ -10826,7 +11131,8 @@
       "name": "سینه مرغ",
       "price": 0,
       "stock": 22,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 380000
      },
      "v03": {
       "createdAt": 1761200000003,
@@ -10834,7 +11140,8 @@
       "name": "روغن",
       "price": 0,
       "stock": 12,
-      "unit": "لیتر"
+      "unit": "لیتر",
+      "cost": 120000
      },
      "v04": {
       "createdAt": 1761200000004,
@@ -10842,7 +11149,8 @@
       "name": "زعفران",
       "price": 0,
       "stock": 40,
-      "unit": "گرم"
+      "unit": "گرم",
+      "cost": 60000
      },
      "v05": {
       "createdAt": 1761200000005,
@@ -10850,7 +11158,8 @@
       "name": "گوجه",
       "price": 0,
       "stock": 10,
-      "unit": "کیلو"
+      "unit": "کیلو",
+      "cost": 50000
      },
      "v06": {
       "createdAt": 1761200000006,
@@ -10858,7 +11167,98 @@
       "name": "ظرف یک‌بار مصرف",
       "price": 0,
       "stock": 300,
-      "unit": "عدد"
+      "unit": "عدد",
+      "cost": 9000
+     },
+     "v07": {
+      "createdAt": 1761200000101,
+      "min": 4,
+      "name": "فیله گوسفندی",
+      "price": 0,
+      "stock": 6,
+      "unit": "کیلو",
+      "cost": 1600000
+     },
+     "v08": {
+      "createdAt": 1761200000102,
+      "min": 2,
+      "name": "سبزی قورمه",
+      "price": 0,
+      "stock": 5,
+      "unit": "کیلو",
+      "cost": 150000
+     },
+     "v09": {
+      "createdAt": 1761200000103,
+      "min": 2,
+      "name": "لوبیا قرمز",
+      "price": 0,
+      "stock": 4,
+      "unit": "کیلو",
+      "cost": 200000
+     },
+     "v10": {
+      "createdAt": 1761200000104,
+      "min": 1,
+      "name": "زرشک",
+      "price": 0,
+      "stock": 1.5,
+      "unit": "کیلو",
+      "cost": 700000
+     },
+     "v11": {
+      "createdAt": 1761200000105,
+      "min": 5,
+      "name": "ماست",
+      "price": 0,
+      "stock": 10,
+      "unit": "کیلو",
+      "cost": 90000
+     },
+     "v12": {
+      "createdAt": 1761200000106,
+      "min": 3,
+      "name": "خیار",
+      "price": 0,
+      "stock": 6,
+      "unit": "کیلو",
+      "cost": 40000
+     },
+     "v13": {
+      "createdAt": 1761200000107,
+      "min": 24,
+      "name": "دوغ بطری",
+      "price": 0,
+      "stock": 40,
+      "unit": "عدد",
+      "cost": 15000
+     },
+     "v14": {
+      "createdAt": 1761200000108,
+      "min": 24,
+      "name": "نوشابه",
+      "price": 0,
+      "stock": 18,
+      "unit": "عدد",
+      "cost": 12000
+     },
+     "v15": {
+      "createdAt": 1761200000109,
+      "min": 3,
+      "name": "بادمجان",
+      "price": 0,
+      "stock": 5,
+      "unit": "کیلو",
+      "cost": 60000
+     },
+     "v16": {
+      "createdAt": 1761200000110,
+      "min": 1,
+      "name": "جو پرک",
+      "price": 0,
+      "stock": 3,
+      "unit": "کیلو",
+      "cost": 150000
      }
     },
     "menu": {
@@ -10867,77 +11267,251 @@
       "cat": "غذای اصلی",
       "createdAt": 1761200000000,
       "name": "چلوکباب کوبیده",
-      "price": 420000
+      "price": 420000,
+      "recipe": [
+       {
+        "iid": "v01",
+        "qty": 0.17
+       },
+       {
+        "iid": "v00",
+        "qty": 0.12
+       },
+       {
+        "iid": "v03",
+        "qty": 0.015
+       },
+       {
+        "iid": "v04",
+        "qty": 0.1
+       },
+       {
+        "iid": "v05",
+        "qty": 0.08
+       }
+      ]
      },
      "m01": {
       "available": true,
       "cat": "غذای اصلی",
       "createdAt": 1761200000001,
       "name": "جوجه کباب",
-      "price": 390000
+      "price": 390000,
+      "recipe": [
+       {
+        "iid": "v02",
+        "qty": 0.25
+       },
+       {
+        "iid": "v00",
+        "qty": 0.12
+       },
+       {
+        "iid": "v04",
+        "qty": 0.1
+       },
+       {
+        "iid": "v03",
+        "qty": 0.015
+       },
+       {
+        "iid": "v05",
+        "qty": 0.08
+       }
+      ]
      },
      "m02": {
       "available": true,
       "cat": "غذای اصلی",
       "createdAt": 1761200000002,
       "name": "چلو مرغ",
-      "price": 360000
+      "price": 360000,
+      "recipe": [
+       {
+        "iid": "v02",
+        "qty": 0.25
+       },
+       {
+        "iid": "v00",
+        "qty": 0.12
+       },
+       {
+        "iid": "v04",
+        "qty": 0.05
+       },
+       {
+        "iid": "v03",
+        "qty": 0.02
+       }
+      ]
      },
      "m03": {
       "available": true,
       "cat": "غذای اصلی",
       "createdAt": 1761200000003,
       "name": "قورمه‌سبزی",
-      "price": 310000
+      "price": 310000,
+      "recipe": [
+       {
+        "iid": "v01",
+        "qty": 0.08
+       },
+       {
+        "iid": "v08",
+        "qty": 0.08
+       },
+       {
+        "iid": "v09",
+        "qty": 0.04
+       },
+       {
+        "iid": "v03",
+        "qty": 0.03
+       },
+       {
+        "iid": "v00",
+        "qty": 0.1
+       }
+      ]
      },
      "m04": {
       "available": true,
       "cat": "غذای اصلی",
       "createdAt": 1761200000004,
       "name": "زرشک‌پلو با مرغ",
-      "price": 350000
+      "price": 350000,
+      "recipe": [
+       {
+        "iid": "v02",
+        "qty": 0.25
+       },
+       {
+        "iid": "v00",
+        "qty": 0.12
+       },
+       {
+        "iid": "v10",
+        "qty": 0.02
+       },
+       {
+        "iid": "v04",
+        "qty": 0.2
+       },
+       {
+        "iid": "v03",
+        "qty": 0.02
+       }
+      ]
      },
      "m05": {
       "available": true,
       "cat": "غذای اصلی",
       "createdAt": 1761200000005,
       "name": "کباب برگ",
-      "price": 690000
+      "price": 690000,
+      "recipe": [
+       {
+        "iid": "v07",
+        "qty": 0.16
+       },
+       {
+        "iid": "v00",
+        "qty": 0.12
+       },
+       {
+        "iid": "v04",
+        "qty": 0.1
+       },
+       {
+        "iid": "v05",
+        "qty": 0.08
+       },
+       {
+        "iid": "v03",
+        "qty": 0.015
+       }
+      ]
      },
      "m06": {
       "available": true,
       "cat": "پیش‌غذا",
       "createdAt": 1761200000006,
       "name": "سوپ جو",
-      "price": 85000
+      "price": 85000,
+      "recipe": [
+       {
+        "iid": "v16",
+        "qty": 0.04
+       },
+       {
+        "iid": "v02",
+        "qty": 0.03
+       },
+       {
+        "iid": "v03",
+        "qty": 0.01
+       }
+      ]
      },
      "m07": {
       "available": true,
       "cat": "پیش‌غذا",
       "createdAt": 1761200000007,
       "name": "سالاد شیرازی",
-      "price": 60000
+      "price": 60000,
+      "recipe": [
+       {
+        "iid": "v12",
+        "qty": 0.1
+       },
+       {
+        "iid": "v05",
+        "qty": 0.1
+       }
+      ]
      },
      "m08": {
       "available": true,
       "cat": "پیش‌غذا",
       "createdAt": 1761200000008,
       "name": "ماست و خیار",
-      "price": 55000
+      "price": 55000,
+      "recipe": [
+       {
+        "iid": "v11",
+        "qty": 0.15
+       },
+       {
+        "iid": "v12",
+        "qty": 0.05
+       }
+      ]
      },
      "m09": {
       "available": true,
       "cat": "نوشیدنی",
       "createdAt": 1761200000009,
       "name": "دوغ",
-      "price": 45000
+      "price": 45000,
+      "recipe": [
+       {
+        "iid": "v13",
+        "qty": 1
+       }
+      ]
      },
      "m10": {
       "available": true,
       "cat": "نوشیدنی",
       "createdAt": 1761200000010,
       "name": "نوشابه",
-      "price": 35000
+      "price": 35000,
+      "recipe": [
+       {
+        "iid": "v14",
+        "qty": 1
+       }
+      ]
      },
      "m11": {
       "available": true,
@@ -10958,7 +11532,21 @@
       "cat": "پیش‌غذا",
       "createdAt": 1761200000013,
       "name": "میرزاقاسمی",
-      "price": 150000
+      "price": 150000,
+      "recipe": [
+       {
+        "iid": "v15",
+        "qty": 0.25
+       },
+       {
+        "iid": "v05",
+        "qty": 0.1
+       },
+       {
+        "iid": "v03",
+        "qty": 0.03
+       }
+      ]
      }
     },
     "people": {
@@ -11099,6 +11687,56 @@
       "repeat": "daily",
       "title": "بستن صندوق",
       "to": "cas"
+     }
+    },
+    "purchases": {
+     "p00": {
+      "by": "own",
+      "createdAt": 1761200000200,
+      "date": "2026-10-18",
+      "iid": "v00",
+      "name": "برنج ایرانی",
+      "unit": "کیلو",
+      "qty": 50,
+      "total": 11000000,
+      "unitCost": 220000.0,
+      "supplier": "برنج‌فروشی شمال"
+     },
+     "p01": {
+      "by": "own",
+      "createdAt": 1761200000201,
+      "date": "2026-10-21",
+      "iid": "v01",
+      "name": "گوشت چرخ‌کرده",
+      "unit": "کیلو",
+      "qty": 20,
+      "total": 15000000,
+      "unitCost": 750000.0,
+      "supplier": "قصابی امین"
+     },
+     "p02": {
+      "by": "own",
+      "createdAt": 1761200000202,
+      "date": "2026-10-22",
+      "iid": "v02",
+      "name": "سینه مرغ",
+      "unit": "کیلو",
+      "qty": 25,
+      "total": 9500000,
+      "unitCost": 380000.0,
+      "supplier": ""
+     },
+     "p03": {
+      "by": "own",
+      "createdAt": 1761200000203,
+      "date": "2026-10-23",
+      "iid": "v07",
+      "name": "فیله گوسفندی",
+      "unit": "کیلو",
+      "qty": 8,
+      "total": 12800000,
+      "unitCost": 1600000.0,
+      "supplier": "قصابی امین"
      }
     }
    }
