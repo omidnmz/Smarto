@@ -84,14 +84,15 @@ const REPAIR_COLS=['people','jobs','parts','tasks','ideas','costs','salaries'];
 const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas','costs','salaries'];
 const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
 const RE_COLS=['people','listings','clients','visits','deals','tasks','ideas','costs','salaries'];
-const colsFor=t=>[...new Set([...colsFor0(t),'ledger'])];
+const colsFor=t=>[...new Set([...colsFor0(t),'ledger','members','smslog'])];
 const colsFor0=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS}[t]||APPT_COLS);
 let ws=null, workspaces=[], unsubs=[];
 const L=k=>(ws&&ws.labels&&ws.labels[k])||(LBL[ws&&ws.type]||LBL.salon)[k];
 const rolesOf=()=>({...baseRoles(ws.type),...(ws.roleLabels||{})});
 const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES,cars:CAR_ROLES}[type]||APPT_ROLES[type]||{});
 const roleLabel=r=>rolesOf()[r]||r;
-function navFor(r){const n=navBase(r);return ['owner','gm','manager','front','reception','cashier'].includes(r)&&!n.some(x=>x[0]==='debts')?[...n,['debts','',1]]:n}
+const DESK=['owner','gm','manager','front','reception','cashier','seller','agent','support'];
+function navFor(r){const n=navBase(r);if(!DESK.includes(r))return n;return [...n,...(n.some(x=>x[0]==='debts')?[]:[['debts','',1]]),['club','',1]]}
 function navBase(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='store')return NAV[r]||NAV.team;
   if(ws.type==='shop'){
@@ -141,7 +142,7 @@ const REPEAT={none:'یک‌بار',daily:'روزانه',weekly:'هفتگی',mont
 const COST_CATS=['خرید و تأمین','حمل‌ونقل','قبوض','اجاره','تبلیغات','پذیرایی','سایر'];
 const JMONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 
-const state={};const resetState=()=>[...new Set([...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS,...CAR_COLS])].forEach(c=>state[c]=[]);resetState();
+const state={};const resetState=()=>[...new Set(['ledger','members','smslog','rsales','gsales','sorders','jobs','cdeals','deals','clients','appointments','forders','plans','checks','purchases','inventory',...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS,...CAR_COLS])].forEach(c=>state[c]=[]);resetState();
 const ui={day:null,staffF:'همه',q:'',period:'today',source:'all',from:'',to:'',taskTab:'received',taskCat:'همه',moneyTab:'costs',salMonth:null,contentSt:'همه'};
 let db=null, me=null, armed=null, loaded=new Set();
 
@@ -804,6 +805,19 @@ function scrMenu(){
 
 // ---------- cost control (Pro/VIP plans of café & restaurant) ----------
 const PLANS={basic:'پایه',pro:'Pro',vip:'VIP'};
+// Monthly subscription: the first month is free; afterwards the panel is read-only until extended.
+const LAUNCH=Date.parse('2026-11-21T00:00:00Z'), TRIAL_DAYS=30;
+const wsUntil=w=>{if(!w||w.example)return null;if(/^\d{4}-\d{2}-\d{2}$/.test(w.paidUntil||''))return w.paidUntil;return iso(Math.max(+w.createdAt||LAUNCH,LAUNCH)+TRIAL_DAYS*864e5)};
+const daysLeft=w=>{const u=wsUntil(w);return u===null?null:Math.round((new Date(u+'T12:00:00')-new Date(TODAY+'T12:00:00'))/864e5)};
+const inTrial=w=>w&&'trial' in w?!!w.trial:!/^\d{4}-\d{2}-\d{2}$/.test((w&&w.paidUntil)||'');
+function subBanner(){
+  const n=daysLeft(ws);if(n===null||n>7)return '';
+  const pending=needReqs.find(r=>r.kind==='upgrade'&&r.wsId===ws.id&&!['تأیید شد','رد شد'].includes(r.status));
+  const btn=me&&me.role==='owner'&&!amOwner?(pending?'<span class="small">درخواست تمدید فرستاده شد</span>':'<button class="chip" data-renew="1">تمدید</button>'):'';
+  const what=inTrial(ws)?'ماه رایگان':'اشتراک';
+  return n<0?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--bad-soft,#fde8e8);color:var(--bad)"><span>${what} این پنل تمام شده و پنل فقط‌خواندنی است. برای ثبت دوباره، اشتراک را تمدید کن.</span>${btn}</div>`
+    :`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>${n===0?'امروز آخرین روز':fmtN(n)+' روز تا پایان'} ${what} پنل.</span>${btn}</div>`;
+}
 const planOf=w=>w&&PLANS[w.plan]&&w.plan!=='basic'?w.plan:'basic';
 const isPaid=()=>planOf(ws)!=='basic';
 const planPill=w=>{const p=planOf(w);return `<span class="pill ${p==='basic'?'p-mute':p==='vip'?'p-warn':'p-info'}">${p==='basic'?'پلن پایه':PLANS[p]}</span>`};
@@ -907,14 +921,16 @@ function costBuy(canEdit){
   <section class="card"><div class="row"><h3>خریدهای اخیر</h3><span class="small muted">این ماه ${fmtT(month)} تومان</span></div>
     ${list.length?`<ul class="list">${list.slice(0,40).map(x=>{const i=invItem(x.iid);return `<li><div class="grow"><div class="t">${esc(i?i.name:x.name||'—')} <span class="small muted">${fmtQ(x.qty)} ${esc(i?i.unit||'':x.unit||'')}</span></div><div class="m">${jd(x.date)}${x.supplier?' · '+esc(x.supplier):''} · واحدی ${fmtN(x.unitCost)}</div></div><span class="num">${fmtN(x.total)}</span>${canEdit?delBtn('purchases',x.id):''}</li>`}).join('')}</ul>`:empty('هنوز خریدی ثبت نشده است.')}</section>`;
 }
+// One more month from the later of today and the current end date.
+const extendMonth=w=>{const u=wsUntil(w)||TODAY;return addMonths(u>TODAY?u:TODAY,1)};
 function upgradeInbox(){
   const list=needReqs.filter(r=>r.kind==='upgrade').sort((a,b)=>((a.status==='تأیید شد'||a.status==='رد شد')-(b.status==='تأیید شد'||b.status==='رد شد'))||(b.createdAt||0)-(a.createdAt||0));
   if(!amOwner||!list.length)return '';
   const open=r=>!['تأیید شد','رد شد'].includes(r.status);
   return `<div class="row"><h3>درخواست‌های ارتقای پلن</h3>${list.some(open)?`<span class="pill p-warn">${fmtN(list.filter(open).length)} منتظر تو</span>`:''}</div>
-  ${list.slice(0,20).map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.name||'')} · ${PLANS[r.plan]||r.plan}</span><span class="pill ${REQ_PILL[r.status]||'p-warn'}">${esc(r.status||'در انتظار بررسی')}</span></div>
+  ${list.slice(0,20).map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.name||'')} · ${r.renew?'تمدید ':''}${PLANS[r.plan]||r.plan}</span><span class="pill ${REQ_PILL[r.status]||'p-warn'}">${esc(r.status||'در انتظار بررسی')}</span></div>
     <div class="small muted">${[r.owner,r.userPhone,r.createdAt?jd(iso(r.createdAt)):''].filter(Boolean).map(esc).join(' · ')}</div>
-    ${open(r)?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgok="${r.id}">فعال‌سازی ${PLANS[r.plan]||''}</button><button class="lnk del" data-upgno="${r.id}">رد</button></div>`:''}</section>`).join('')}`;
+    ${open(r)?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgok="${r.id}">${r.renew?'تمدید یک ماه':'فعال‌سازی '+(PLANS[r.plan]||'')+' (یک ماه)'}</button><button class="lnk del" data-upgno="${r.id}">رد</button></div>`:''}</section>`).join('')}`;
 }
 
 // ---------- repair shop ----------
@@ -1597,6 +1613,7 @@ function scrAdmin(){
     return head+`<div class="kpis">
       <button class="kpi" data-admtab="users" style="text-align:start;cursor:pointer"><span class="lab">کاربران</span><span class="val">${fmtN(adm.users.length)}</span><span class="hint">${fmtN(adm.users.filter(u=>u.createdAt>week).length)} نفر در ۷ روز اخیر</span></button>
       <button class="kpi" data-admtab="panels" style="text-align:start;cursor:pointer"><span class="lab">پنل‌ها</span><span class="val">${fmtN(real.length)}</span><span class="hint">${fmtN(real.filter(w=>w.lastActive>week).length)} فعال در ۷ روز اخیر</span></button>
+      ${(()=>{const ex=real.filter(w=>{const n=daysLeft(w);return n!==null&&n<=7});return ex.length?alertKpi('','اشتراک رو به پایان',fmtN(ex.length),'۷ روز آینده یا تمام‌شده',' data-admtab="panels"'):''})()}
       <div class="kpi"><span class="lab">Pro و VIP</span><span class="val">${fmtN(paid.length)}</span><span class="hint">${fmtN(paid.filter(w=>w.plan==='vip').length)} VIP</span></div>
       ${pending?alertKpi('','درخواست منتظر',fmtN(pending),'شغل جدید یا ارتقا',' data-admtab="reqs"'):''}
     </div>
@@ -1623,6 +1640,7 @@ function scrAdmin(){
 function admWsRow(w){
   return `<li><div class="grow"><div class="t">${esc(w.name||'بی‌نام')} <span class="small muted">${esc(w.typeLabel||TYPE_LABEL[w.type]||w.type||'')}</span></div>
     <div class="m">${w.ownerPhone?'<span class="num">'+esc(w.ownerPhone)+'</span> · ':''}${fmtN(w.people)} نفر · ساخته ${jd(tsDay(w.createdAt))} · فعالیت ${ago(w.lastActive)}</div>
+    ${(()=>{const n=daysLeft(w);return `<div class="row" style="justify-content:flex-start;gap:6px"><span class="pill ${n<0?'p-bad':n<=7?'p-warn':'p-ok'}">${n<0?'تمام شده':inTrial(w)?'ماه رایگان':'اشتراک'} تا ${jd(wsUntil(w))}</span><button class="chip" data-admext="${w.id}">+۱ ماه</button><input class="inline" type="date" value="${wsUntil(w)}" data-admuntil="${w.id}" aria-label="اعتبار تا"></div>`})()}
     <div class="row" style="justify-content:flex-start;gap:6px;margin-top:4px"><select class="inline" data-admsetplan="${w.id}" aria-label="پلن">${opts(Object.entries(PLANS),w.plan==='pro'||w.plan==='vip'?w.plan:'basic')}</select><button class="chip" data-open="${w.id}">باز کردن</button>
     <button class="lnk del ${armed==='admdel/'+w.id?'armed':''}" data-admdel="${w.id}">${armed==='admdel/'+w.id?'همه داده‌ها پاک شود؟':'حذف پنل'}</button></div></div></li>`;
 }
@@ -1644,6 +1662,8 @@ function debtors(){
   state.checks.filter(c=>c.kind==='دریافتنی'&&!c.paid).forEach(c=>add(c.party,'',{src:'check',id:c.id,label:'چک · سررسید '+jd(c.due),amount:+c.amount||0,date:c.due}));
   return Object.values(o).sort((a,b)=>b.amount-a.amount);
 }
+async function ensureMember(c){const ex=state.members.find(m=>c.phone?normPh(m.phone)===c.phone:nameKey(m.name)===nameKey(c.name));if(ex)return ex;
+  const data={name:c.name||'',phone:c.phone||'',birthday:'',note:'',redeemed:0,wallet:0,joinedAt:TODAY,createdAt:Date.now()};const r=await C('members').add(data);return {id:r.id,...data}}
 async function settleItem(it){
   const now=Date.now();
   if(it.src==='ledger'){const c=ledgerBalances().find(x=>x.name===it.id);if(c&&c.bal>0)await C('ledger').add({name:c.name,phone:c.phone||'',amount:-c.bal,date:TODAY,note:'تسویه',by:me.id,createdAt:now});return}
@@ -1672,6 +1692,142 @@ function debtsBody(){
     :empty(all.length?'کسی با این نام پیدا نشد.':'هیچ‌کس به کسب‌وکار بدهکار نیست.')}`;
 }
 const scrDebts=()=>`<div class="row"><h2>بدهکاران</h2><button class="lnk" data-go="money" data-mtab="costs">مالی</button></div>`+debtsBody();
+
+// ---------- customer club: basic for every plan, tiers, wallet, report and SMS on Pro/VIP ----------
+const normPh=s=>{let x=toEn(s).replace(/[^\d]/g,'');if(x.startsWith('98')&&x.length===12)x='0'+x.slice(2);if(x.length===10&&x.startsWith('9'))x='0'+x;return /^09\d{9}$/.test(x)?x:''};
+const clubCfg=()=>({stampGoal:10,reward:'یک خرید رایگان',inactive:45,silver:5000000,gold:20000000,silverOff:5,goldOff:10,...(ws.club||{})});
+// Every customer the business has seen, keyed by mobile number (or by name when there is none),
+// with each visit's date and amount, merged with the club's own record (birthday, note, stamps, wallet).
+function clubCustomers(){
+  const o={}, byName={};
+  state.ledger.forEach(l=>{const p=normPh(l.phone);if(p&&l.name)byName[nameKey(l.name)]=p});
+  state.clients.forEach(c=>{const p=normPh(c.phone);if(p)byName[nameKey(c.name)]=p});
+  const get=(name,phone)=>{const p=normPh(phone)||byName[nameKey(name)]||'';const k=p||('n:'+nameKey(name));if(!p&&!String(name||'').trim())return null;
+    const c=o[k]||(o[k]={key:k,name:String(name||'').trim(),phone:p,visits:[],total:0,last:'',first:''});if(!c.name&&name)c.name=String(name).trim();return c};
+  const visit=(name,phone,date,amount)=>{const c=get(name,phone);if(!c)return;c.visits.push({date,amount});c.total+=amount;if(!c.last||date>c.last)c.last=date;if(!c.first||date<c.first)c.first=date};
+  const cById=Object.fromEntries(state.clients.map(c=>[c.id,c]));
+  state.clients.forEach(c=>get(c.name,c.phone));
+  state.appointments.filter(a=>a.status==='انجام‌شده').forEach(a=>{const c=cById[a.clientId]||{};visit(c.name||a.clientName,c.phone,a.date,+a.price||0)});
+  state.forders.filter(x=>fValid(x)&&(x.customer||x.phone)).forEach(x=>visit(x.customer,x.phone,x.date,itemsTotal(x)));
+  state.sorders.filter(x=>!['لغو','مرجوعی'].includes(x.status)).forEach(x=>visit(x.customer,x.phone,x.date,itemsTotal(x)+(+x.fee||0)));
+  state.jobs.filter(j=>j.status==='تحویل‌شده').forEach(j=>visit(j.customer,j.phone,j.deliveredOn||j.date,jAmt(j)));
+  state.rsales.filter(x=>x.customer).forEach(x=>visit(x.customer,'',x.date,+x.amount||0));
+  state.gsales.filter(x=>x.customer&&x.kind!=='خرید').forEach(x=>visit(x.customer,'',x.date,+x.amount||0));
+  state.cdeals.forEach(x=>visit(x.buyer,x.phone,x.date,+x.price||0));
+  state.deals.forEach(x=>visit(x.client,'',x.date,+x.commission||0));
+  state.members.forEach(m=>{const c=get(m.name,m.phone);if(c){c.member=m;if(m.name)c.name=m.name}});
+  const cfg=clubCfg(), yr=addDays(TODAY,-365);
+  return Object.values(o).map(c=>{const y=c.visits.filter(v=>v.date>=yr).reduce((a,v)=>a+v.amount,0);
+    c.year=y;c.tier=y>=cfg.gold?'gold':y>=cfg.silver?'silver':'bronze';
+    c.stamps=Math.max(0,c.visits.length-(+(c.member&&c.member.redeemed)||0)*cfg.stampGoal);
+    c.wallet=+(c.member&&c.member.wallet)||0;c.birthday=(c.member&&c.member.birthday)||'';return c});
+}
+const TIERS={bronze:['برنزی','p-mute'],silver:['نقره‌ای','p-info'],gold:['طلایی','p-warn']};
+const tierPill=c=>`<span class="pill ${TIERS[c.tier][1]}">${TIERS[c.tier][0]}</span>`;
+// Birthday "MM-DD" falls within the next n days (by the Persian calendar the business enters it in).
+const bdaySoon=(b,n=7)=>{if(!/^\d{1,2}-\d{1,2}$/.test(b||''))return false;const [m,d]=b.split('-').map(Number);for(let i=0;i<=n;i++){const p=jp(addDays(TODAY,i));if(p.m===m&&p.d===d)return true}return false};
+const bdayLbl=b=>{if(!/^\d{1,2}-\d{1,2}$/.test(b||''))return '';const [m,d]=b.split('-').map(Number);return fmtN(d)+' '+JMONTHS[m-1]};
+let smsInfo=null;
+async function loadSms(){if(!ws||!isPaid())return;try{smsInfo=await smarto.sms.status(ws.id)}catch(e){smsInfo={quota:0,used:0,live:false}}if(ui.screen==='club')render()}
+function clubSegments(all){const cfg=clubCfg();return {
+  all:['همه مشتری‌های دارای موبایل',all.filter(c=>c.phone)],
+  inactive:['بیش از '+fmtN(cfg.inactive)+' روز نیامده‌اند',all.filter(c=>c.phone&&c.last&&c.last<addDays(TODAY,-cfg.inactive))],
+  bday:['تولدشان در ۷ روز آینده است',all.filter(c=>c.phone&&bdaySoon(c.birthday))],
+  gold:['مشتری‌های طلایی',all.filter(c=>c.phone&&c.tier==='gold')],
+  silver:['مشتری‌های نقره‌ای و طلایی',all.filter(c=>c.phone&&c.tier!=='bronze')],
+  new:['اولین خریدشان در ۳۰ روز اخیر',all.filter(c=>c.phone&&c.first&&c.first>=addDays(TODAY,-30))],
+}}
+function scrClub(){
+  const all=clubCustomers(), cfg=clubCfg(), paid=isPaid(), canEdit=['owner','gm','manager'].includes(me.role);
+  const tab=['list','sms','report','settings'].includes(ui.clubTab)?ui.clubTab:'list';
+  const tabs=[['list','مشتری‌ها'],['sms','پیامک'+(paid?'':' 🔒')],['report','گزارش'+(paid?'':' 🔒')],...(canEdit?[['settings','تنظیمات']]:[])];
+  const head=`<div class="row"><h2>باشگاه مشتری</h2>${planPill(ws)}</div><div class="seg" role="group">${tabs.map(([k,l])=>`<button data-clubtab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
+  if(tab==='sms')return head+(paid?clubSms(all):proLocked('پیامک به مشتری‌ها','تبریک تولد، دعوت دوباره غایب‌ها و پیامک گروهی به هر دسته از مشتری‌ها، با اعتبار پیامک ماهانه.',CLUB_PRO));
+  if(tab==='report')return head+(paid?clubReport(all):proLocked('گزارش وفاداری','ببین چند درصد مشتری‌ها برمی‌گردند، هر مشتری چقدر می‌ارزد و بهترین مشتری‌هایت چه کسانی‌اند.',CLUB_PRO));
+  if(tab==='settings')return head+clubSettings(cfg,paid);
+  const q=(ui.q||'').trim();
+  const inactive=all.filter(c=>c.last&&c.last<addDays(TODAY,-cfg.inactive)).sort((a,b)=>b.total-a.total);
+  const bdays=all.filter(c=>bdaySoon(c.birthday));
+  const rewards=all.filter(c=>c.stamps>=cfg.stampGoal);
+  let list=all.filter(c=>!q||c.name.includes(q)||c.phone.includes(toEn(q)));
+  list.sort((a,b)=>(b.last||'').localeCompare(a.last||'')||b.total-a.total);
+  const f=ui.clubF||'همه';
+  if(f==='غایب')list=inactive;else if(f==='تولد')list=bdays;else if(f==='جایزه')list=rewards;else if(f==='طلایی'&&paid)list=list.filter(c=>c.tier==='gold');
+  return head+`
+  <div class="kpis"><div class="kpi"><span class="lab">مشتری‌ها</span><span class="val">${fmtN(all.length)}</span><span class="hint">${fmtN(all.filter(c=>c.phone).length)} با موبایل</span></div>
+    <button class="kpi ${inactive.length?'alert':''}" data-clubf="غایب" style="text-align:start;cursor:pointer"><span class="lab">مدتی نیامده‌اند</span><span class="val">${fmtN(inactive.length)}</span><span class="hint">بیش از ${fmtN(cfg.inactive)} روز</span></button>
+    ${bdays.length?`<button class="kpi" data-clubf="تولد" style="text-align:start;cursor:pointer"><span class="lab">تولد این هفته</span><span class="val">${fmtN(bdays.length)}</span><span class="hint">تبریک بگو</span></button>`:''}
+    ${rewards.length?`<button class="kpi" data-clubf="جایزه" style="text-align:start;cursor:pointer"><span class="lab">جایزه گرفته‌اند</span><span class="val">${fmtN(rewards.length)}</span><span class="hint">${esc(cfg.reward)}</span></button>`:''}</div>
+  <details class="add"><summary>عضو جدید</summary><form class="f" data-form="member">
+    <label>نام<input id="mb-name" name="name" required></label>
+    <label>موبایل<input id="mb-phone" name="phone" inputmode="tel" required></label>
+    <label>تولد (ماه)<select id="mb-bm" name="bm"><option value="">—</option>${JMONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></label>
+    <label>تولد (روز)<input id="mb-bd" name="bd" type="number" min="1" max="31"></label>
+    <label class="full">یادداشت<input id="mb-note" name="note" placeholder="مثلاً قهوه بدون شکر"></label>
+    <button class="btn full">ثبت در باشگاه</button></form></details>
+  <div class="chips">${['همه','غایب','تولد','جایزه',...(paid?['طلایی']:[])].map(k=>`<button class="chip" data-clubf="${k}" aria-pressed="${f===k}">${k==='غایب'?'غایب‌ها':k==='جایزه'?'آماده جایزه':k}</button>`).join('')}</div>
+  ${searchBox('جستجوی نام یا موبایل')}
+  <section class="card"><div class="row"><h3>${f==='همه'?'مشتری‌ها':f}</h3><span class="small muted">${fmtN(list.length)} نفر</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,80).map(c=>clubRow(c,cfg,paid)).join('')}</ul>`:empty(all.length?'کسی با این شرایط نیست.':'هنوز مشتری‌ای ثبت نشده. با گرفتن شماره موبایل در سفارش و نوبت، باشگاه خودش پر می‌شود.')}</section>
+  <p class="small muted" style="margin:0">مشتری‌ها از روی نام و موبایل در سفارش‌ها، نوبت‌ها، فاکتورها و نسیه خودشان اضافه می‌شوند.</p>`;
+}
+function clubRow(c,cfg,paid){
+  const open=ui.openMember===c.key, m=c.member;
+  return `<li style="display:block"><details${open?' open':''} data-memberbox="${esc(c.key)}"><summary style="cursor:pointer;list-style:none;display:flex;gap:10px;justify-content:space-between;align-items:flex-start">
+    <div class="grow"><div class="t">${esc(c.name||c.phone)} ${paid?tierPill(c):''}${bdaySoon(c.birthday)?' 🎂':''}</div>
+    <div class="m">${c.phone?esc(c.phone)+' · ':''}${fmtN(c.visits.length)} مراجعه${c.last?' · آخرین '+rel(c.last):''}${paid&&c.wallet?' · کیف پول '+fmtN(c.wallet):''}</div></div>
+    <div style="display:grid;justify-items:end;gap:2px"><span class="num small">${fmtT(c.total)}</span><span class="small muted">${'●'.repeat(Math.min(c.stamps,cfg.stampGoal))}${'○'.repeat(Math.max(0,cfg.stampGoal-c.stamps))}</span></div></summary>
+    <div style="display:grid;gap:8px;margin-top:8px;padding:10px;background:var(--surface-2);border-radius:10px">
+      <div class="small">کارت امتیاز: ${fmtN(Math.min(c.stamps,cfg.stampGoal))} از ${fmtN(cfg.stampGoal)}${c.stamps>=cfg.stampGoal?` · <b>${esc(cfg.reward)}</b> <button class="chip" data-redeem="${esc(c.key)}">جایزه داده شد</button>`:''}</div>
+      ${c.birthday?`<div class="small">تولد: ${bdayLbl(c.birthday)}</div>`:''}
+      ${m&&m.note?`<div class="small">یادداشت: ${esc(m.note)}</div>`:''}
+      ${paid?`<div class="small">${tierPill(c)} خرید ۱۲ ماه ${fmtT(c.year)} تومان${c.tier==='gold'?' · تخفیف '+fmtN(cfg.goldOff)+'٪':c.tier==='silver'?' · تخفیف '+fmtN(cfg.silverOff)+'٪':''}</div>
+        <div class="row" style="justify-content:flex-start;gap:6px"><span class="small">کیف پول: <b class="num">${fmtN(c.wallet)}</b></span><input class="inline" id="wl-${esc(c.key)}" type="number" min="0" step="10000" placeholder="مبلغ" style="width:100px"><button class="chip" data-wallet="${esc(c.key)}|1">شارژ / کارت هدیه</button>${c.wallet?`<button class="chip" data-wallet="${esc(c.key)}|-1">برداشت</button>`:''}</div>`:''}
+      ${!m?`<button class="lnk" data-joinmember="${esc(c.key)}" style="justify-self:start">افزودن تولد و یادداشت</button>`:`<div class="row" style="justify-content:flex-start;gap:6px"><select class="inline" data-mbday="${m.id}|m"><option value="">ماه تولد</option>${JMONTHS.map((x,i)=>`<option value="${i+1}"${String(c.birthday).split('-')[0]==String(i+1)?' selected':''}>${x}</option>`).join('')}</select><input class="inline" type="number" min="1" max="31" style="width:60px" placeholder="روز" value="${esc(String(c.birthday).split('-')[1]||'')}" data-mbday="${m.id}|d"><input class="inline" style="flex:1" placeholder="یادداشت" value="${esc(m.note||'')}" data-set="members/${m.id}" data-field="note"></div>`}
+      ${c.phone?`<a class="chip" href="tel:${esc(c.phone)}" style="justify-self:start">تماس</a>`:''}
+    </div></details></li>`;
+}
+const CLUB_PRO=[
+  ['سطح‌بندی و تخفیف','مشتری‌ها بر اساس خرید ۱۲ ماه برنزی، نقره‌ای یا طلایی می‌شوند و هر سطح تخفیف خودش را دارد.'],
+  ['پیامک به مشتری‌ها','تبریک تولد، دعوت دوباره غایب‌ها، تشکر از مشتری تازه و پیامک گروهی به هر دسته؛ با اعتبار ماهانه.'],
+  ['کیف پول و کارت هدیه','اعتبار شارژ کن یا کارت هدیه بده و در خرید بعدی از آن کم کن.'],
+  ['گزارش وفاداری','درصد مشتری‌هایی که برمی‌گردند، ارزش هر مشتری و بهترین مشتری‌ها.'],
+];
+const SMS_TPL={bday:'{نام} عزیز، تولدت مبارک! به مناسبت تولدت این هفته مهمان ما باش. ',inactive:'{نام} عزیز، دلمان برایت تنگ شده! این هفته با ۱۰٪ تخفیف منتظرت هستیم. ',new:'{نام} عزیز، ممنون که مشتری ما شدی. منتظر دیدار دوباره‌ات هستیم. ',gold:'{نام} عزیز، تو جزو بهترین مشتری‌های ما هستی. ',silver:'{نام} عزیز، ',all:'{نام} عزیز، '};
+function clubSms(all){
+  if(!smsInfo){loadSms();return empty('در حال بارگذاری…')}
+  const segs=clubSegments(all), seg=segs[ui.smsSeg]?ui.smsSeg:'bday', [label,to]=segs[seg];
+  const left=Math.max(0,smsInfo.quota-smsInfo.used);
+  const log=[...state.smslog].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,20);
+  const text=ui.smsText!==undefined&&ui.smsSegFor===seg?ui.smsText:(SMS_TPL[seg]||'')+ws.name;
+  return `<div class="kpis"><div class="kpi"><span class="lab">اعتبار این ماه</span><span class="val">${fmtN(left)}</span><span class="hint">از ${fmtN(smsInfo.quota)} پیامک</span></div></div>
+  ${smsInfo.live?'':'<div class="note">حالت آزمایشی: کلید ارسال کاوه‌نگار هنوز تنظیم نشده، پس پیامک‌ها فقط ثبت می‌شوند و به مشتری نمی‌رسند.</div>'}
+  <section class="card"><h3>به چه کسانی؟</h3><div class="chips" style="flex-wrap:wrap">${Object.entries(segs).map(([k,[l,x]])=>`<button class="chip" data-smsseg="${k}" aria-pressed="${seg===k}">${l} (${fmtN(x.length)})</button>`).join('')}</div>
+    ${to.length?`<p class="small muted" style="margin:0">${to.slice(0,12).map(c=>esc(c.name||c.phone)).join('، ')}${to.length>12?' و '+fmtN(to.length-12)+' نفر دیگر':''}</p>`:'<p class="small muted" style="margin:0">کسی در این دسته موبایل ثبت‌شده ندارد.</p>'}
+    <label class="small muted">متن پیام (به جای {نام} اسم هر مشتری می‌نشیند)<textarea id="sms-text" rows="4" style="width:100%">${esc(text)}</textarea></label>
+    <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="sms-promo" style="width:auto"${seg==='inactive'||seg==='all'?' checked':''}> پیام تبلیغاتی است («لغو۱۱» اضافه می‌شود)</label>
+    <button class="btn" data-smssend="${seg}" ${!to.length||to.length>left?'disabled':''}>${armed==='sms/'+seg?'مطمئنی؟ ارسال به '+fmtN(to.length)+' نفر':'ارسال به '+fmtN(to.length)+' نفر'}</button>
+    ${to.length>left?'<p class="small" style="color:var(--bad);margin:0">اعتبار پیامک این ماه کافی نیست.</p>':''}</section>
+  <section class="card"><h3>پیامک‌های فرستاده‌شده</h3>${log.length?`<ul class="list">${log.map(l=>`<li><div class="grow"><div class="small">${esc(String(l.text||'').slice(0,90))}</div><div class="m">${jd(l.date)} · ${fmtN(l.count)} نفر${l.segment?' · '+esc(l.segment):''}</div></div><span class="pill ${l.status==='فرستاده شد'?'p-ok':l.status==='خطا'?'p-bad':'p-mute'}">${esc(l.status)}</span></li>`).join('')}</ul>`:empty('هنوز پیامکی فرستاده نشده.')}</section>`;
+}
+function clubReport(all){
+  const withV=all.filter(c=>c.visits.length), rep=withV.filter(c=>c.visits.length>=2);
+  const ms=monthStart(TODAY), newM=withV.filter(c=>c.first>=ms), back=withV.filter(c=>c.first<ms&&c.last>=ms);
+  const avg=withV.length?withV.reduce((a,c)=>a+c.total,0)/withV.length:0;
+  const tiers=['gold','silver','bronze'].map(t=>[t,withV.filter(c=>c.tier===t)]);
+  const top=[...withV].sort((a,b)=>b.year-a.year).slice(0,10);
+  return `<div class="kpis">
+    <div class="kpi"><span class="lab">برمی‌گردند</span><span class="val">${withV.length?fmtN(Math.round(rep.length/withV.length*100))+'٪':'—'}</span><span class="hint">${fmtN(rep.length)} نفر بیش از یک بار آمده‌اند</span></div>
+    <div class="kpi"><span class="lab">ارزش هر مشتری</span><span class="val">${fmtT(avg)}</span><span class="hint">میانگین کل خرید</span></div>
+    <div class="kpi"><span class="lab">مشتری تازه این ماه</span><span class="val">${fmtN(newM.length)}</span><span class="hint">${fmtN(back.length)} مشتری قدیمی برگشت</span></div></div>
+  <section class="card"><h3>سطح‌ها</h3><div class="tbl-wrap"><table class="tbl"><thead><tr><th>سطح</th><th>نفر</th><th>خرید ۱۲ ماه</th></tr></thead><tbody>${tiers.map(([t,l])=>`<tr><td>${TIERS[t][0]}</td><td class="num">${fmtN(l.length)}</td><td class="num">${fmtT(l.reduce((a,c)=>a+c.year,0))}</td></tr>`).join('')}</tbody></table></div></section>
+  <section class="card"><h3>بهترین مشتری‌ها</h3>${top.length?`<ul class="list">${top.map(c=>`<li><span class="grow">${esc(c.name||c.phone)} ${tierPill(c)}</span><span class="small muted">${fmtN(c.visits.length)} مراجعه</span><span class="num">${fmtT(c.year)}</span></li>`).join('')}</ul>`:empty('هنوز خریدی با نام یا موبایل مشتری ثبت نشده.')}</section>`;
+}
+function clubSettings(cfg,paid){
+  const f=(k,l,step)=>`<label>${l}<input class="inline" type="number" min="0" step="${step}" value="${cfg[k]}" data-clubcfg="${k}"></label>`;
+  return `<section class="card"><h3>کارت امتیاز</h3><div class="f">${f('stampGoal','چند مراجعه تا جایزه',1)}<label>جایزه<input class="inline" value="${esc(cfg.reward)}" data-clubcfg="reward"></label>${f('inactive','غایب حساب شود بعد از (روز)',1)}</div></section>
+  <section class="card"><div class="row"><h3>سطح‌ها و تخفیف</h3>${paid?'':'<span class="pill p-info">Pro</span>'}</div>${paid?`<div class="f">${f('silver','نقره‌ای از خرید ۱۲ ماه (تومان)',1000000)}${f('silverOff','تخفیف نقره‌ای ٪',1)}${f('gold','طلایی از خرید ۱۲ ماه (تومان)',1000000)}${f('goldOff','تخفیف طلایی ٪',1)}</div>`:'<p class="small muted" style="margin:0">سطح‌بندی خودکار مشتری‌ها با تخفیف هر سطح در پلن Pro و VIP است.</p>'}</section>`;
+}
 
 // ---------- needs form for businesses not in the samples ----------
 let amOwner=false, needReqs=[], needResult=null, needJob='';
@@ -1879,13 +2035,13 @@ function scrLanding(){
       <span class="eyebrow">پنل هوشمند کسب‌وکار</span>
       <h1>کسب‌وکارت را <em>از روی گوشی</em> اداره کن</h1>
       <p>فروش، نوبت‌ها، مشتری‌ها، تیم و حساب‌وکتاب در یک پنل. برای نوع کسب‌وکارت آماده است و هر عضو تیم فقط بخش خودش را می‌بیند.</p>
-      <div class="hero-cta"><button class="btn big" data-create="1">ساخت پنل رایگان</button><a class="btn ghost big" href="#samples">دیدن نمونه‌ها</a></div>
+      <div class="hero-cta"><button class="btn big" data-create="1">یک ماه رایگان امتحان کن</button><a class="btn ghost big" href="#samples">دیدن نمونه‌ها</a></div>
       <div class="hero-stats"><span><b>${fmtN(types.length)}</b> نوع کسب‌وکار</span><span><b>۲</b> دقیقه تا شروع</span><span><b>بدون</b> نصب برنامه</span></div>
     </div>
     ${heroMock()}
   </section>
   ${myUid?`<section class="lsec"><div class="row"><h2>کسب‌وکارهای من</h2><button class="chip" data-create="1">+ پنل جدید</button></div>
-    ${mine.length?`<div class="tiles">${mine.map(w=>wsTile(w,false)).join('')}</div>`:empty('هنوز پنلی نساخته‌ای. با «ساخت پنل رایگان» اولین پنل را بساز.')}</section>`
+    ${mine.length?`<div class="tiles">${mine.map(w=>wsTile(w,false)).join('')}</div>`:empty('هنوز پنلی نساخته‌ای. با «یک ماه رایگان امتحان کن» اولین پنل را بساز.')}</section>`
     :`<button class="card login-card" data-login="1"><span class="t">قبلاً پنل ساخته‌ای یا عضو تیمی هستی؟</span><span class="btn ghost">ورود با موبایل</span></button>`}
   ${amOwner?`<button class="card" data-admin="1" style="text-align:start;cursor:pointer;border-color:var(--accent)"><div class="row"><span class="t">پنل مدیریت سامانه</span><span class="small muted">کاربران، پنل‌ها، پلن‌ها${needReqs.some(r=>!['تأیید شد','رد شد'].includes(r.status))?' · <span class="pill p-warn">درخواست منتظر</span>':''}</span></div></button>`:''}
   ${others.length?`<details class="card"><summary class="row" style="cursor:pointer"><span class="t">همه کسب‌وکارهای سامانه</span><span class="small muted">${fmtN(others.length)}</span></summary><div class="tiles">${others.map(w=>wsTile(w,false)).join('')}</div></details>`:''}
@@ -1893,19 +2049,19 @@ function scrLanding(){
     <div class="tiles">${types.map(t=>{const d=demoOf(t);return d?wsTile(d,true):''}).join('')}${factoryTile()}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">چرا اسمارتو</span><h2>همه چیز سر جای خودش</h2></div>
     <div class="feats">${FEATURES.map(([ic,t,d])=>`<div class="feat"><span class="fi">${ICON[ic]}</span><h3>${t}</h3><p>${d}</p></div>`).join('')}</div></section>
-  <section class="lsec" id="plans"><div class="sec-head"><span class="eyebrow">پلن‌ها</span><h2>از رایگان شروع کن، با Pro تخصصی‌تر مدیریت کن</h2><p class="muted">پلن پایه برای اداره روزمره کافی است. بسته‌های Pro و VIP ابزارهای تخصصی هر صنف را اضافه می‌کنند.</p></div>
+  <section class="lsec" id="plans"><div class="sec-head"><span class="eyebrow">پلن‌ها</span><h2>ماه اول رایگان؛ با Pro تخصصی‌تر مدیریت کن</h2><p class="muted">همه پلن‌ها ماهانه‌اند و ماه اول هر پنل رایگان است تا با ابزارها آشنا شوی. پلن پایه برای اداره روزمره کافی است و Pro و VIP ابزارهای تخصصی هر صنف را اضافه می‌کنند.</p></div>
     <div class="feats plans">${PLAN_CARDS.map(c=>`<div class="feat${c.hot?' hot':''}"><div class="row" style="justify-content:flex-start;gap:8px"><h3 style="margin:0">${c.name}</h3>${c.badge?`<span class="pill ${c.hot?'p-info':'p-mute'}">${c.badge}</span>`:''}</div><p>${c.desc}</p>
       <ul class="plan-list">${c.items.map(i=>`<li>${i}</li>`).join('')}</ul>${c.cta}</div>`).join('')}</div></section>
   <section class="lsec"><div class="sec-head"><span class="eyebrow">شروع</span><h2>سه قدم تا پنل خودت</h2></div>
     <ol class="steps"><li><b>با موبایل وارد شو</b><span>یک کد پیامکی؛ بدون رمز.</span></li><li><b>نوع کسب‌وکارت را بزن</b><span>نقش‌ها، بخش‌ها و داده نمونه آماده می‌شود.</span></li><li><b>تیمت را اضافه کن</b><span>هر کس با شماره خودش وارد می‌شود و کارش را می‌بیند.</span></li></ol></section>
-  <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">ساخت پنل رایگان</button>
+  <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">یک ماه رایگان امتحان کن</button>
     <button class="lnk light" data-need="1">کسب‌وکارم در فهرست نیست</button></section>
   ${myRequests()}
   ${upgradeInbox()}
   ${needInbox()}`;
 }
 const PLAN_CARDS=[
-  {name:'پایه',badge:'رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">ساخت پنل رایگان</button>'},
+  {name:'پایه',badge:'ماه اول رایگان',desc:'همه چیزهایی که هر روز لازم داری.',items:['پنل آماده برای نوع کسب‌وکارت','فروش، سفارش، نوبت و مشتری','کارهای تیم با یادآوری','هزینه‌ها، حقوق و انبار ساده'],cta:'<button class="btn ghost" data-create="1">یک ماه رایگان امتحان کن</button>'},
   {name:'Pro',badge:'مدیریت تخصصی',hot:1,desc:'ابزارهای تخصصی صنف تو، برای وقتی که می‌خواهی سود را دقیق کنترل کنی.',items:['کاست کنترل کافه و رستوران: دستور تهیه، بهای تمام‌شده و درصد فود کاست هر آیتم','هشدار وقتی هزینه مواد از سقف بالاتر برود','خرید مواد اولیه و انبار که با هر فروش خودش کم می‌شود','سالن زیبایی و کلینیک: مواد مصرفی هر خدمت که با هر نوبت انجام‌شده از انبار کم می‌شود','نمایشگاه ماشین: سود واقعی هر ماشین بعد از خواب سرمایه و سهم فروشنده','طلافروشی: سود واقعی هر فاکتور، جدا از سود نوسان نرخ طلا'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» فعال می‌شود.</span>'},
   {name:'VIP',badge:'همراهی ویژه',desc:'همه امکانات Pro، به‌همراه راه‌اندازی و پشتیبانی نزدیک.',items:['همه امکانات Pro','کمک در راه‌اندازی و ورود اطلاعات','پشتیبانی در اولویت'],cta:'<span class="small muted">از داخل پنل با دکمه «ارتقا» درخواست بده.</span>'},
 ];
@@ -2008,7 +2164,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,debts:scrDebts,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,club:scrClub,debts:scrDebts,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -2018,6 +2174,7 @@ function renderWs(){
   document.querySelector('nav.bottom').hidden=!ws;
   document.getElementById('whoWrap').hidden=!(ws&&canPreview());
   document.getElementById('gear').hidden=!(ws&&me&&['owner','gm'].includes(me.role));
+  document.getElementById('clubBtn').hidden=!(ws&&me&&DESK.includes(me.role));
   document.getElementById('wsname').textContent=ws?ws.name:'اسمارتو';
 }
 function renderWho(){
@@ -2043,7 +2200,7 @@ function render(){
   const keep=saveForms();
   const qf=document.activeElement&&document.activeElement.id==='q';
   v.dataset.k=ui.screen+'|'+me.id+'|'+ws.id;v.classList.remove('wide');
-  v.innerHTML=(ws.example&&!amOwner?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>این یک نمونه است و فقط برای تماشاست.</span><button class="chip" data-create="1">پنل خودم را بساز</button></div>`:'')+SCREENS[ui.screen]();
+  v.innerHTML=(ws.example&&!amOwner?`<div class="note" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><span>این یک نمونه است و فقط برای تماشاست.</span><button class="chip" data-create="1">پنل خودم را بساز</button></div>`:'')+subBanner()+SCREENS[ui.screen]();
   if(keep.__s===ui.screen+'|'+me.id+'|'+ws.id)restoreForms(keep);
   const gsum=document.getElementById('gs-sum');if(gsum)gsum.innerHTML=goldSumHtml(readGoldForm());
   if(qf){const q=document.getElementById('q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
@@ -2071,6 +2228,7 @@ V.addEventListener('click',async e=>{
   if(d.admblock){const u=adm&&adm.users.find(x=>x.id===d.admblock);if(!u)return;
     if(!u.blocked&&armed!=='blk/'+u.id){armed='blk/'+u.id;render();return}armed=null;
     try{await smarto.admin.block(u.id,!u.blocked);u.blocked=!u.blocked;toast(u.blocked?'حساب '+u.phone+' مسدود شد':'مسدودی برداشته شد')}catch(e){toast('انجام نشد')}render();return}
+  if(d.admext){const w=adm&&adm.workspaces.find(x=>x.id===d.admext);if(!w)return;const u=extendMonth(w);const ok=await write(()=>db.doc('workspaces/'+w.id).update({paidUntil:u}),'اعتبار تا '+jd(u)+' تمدید شد');if(ok){w.paidUntil=u;render()}return}
   if(d.admdel){if(armed!=='admdel/'+d.admdel){armed='admdel/'+d.admdel;render();return}armed=null;
     const ok=await write(()=>db.doc('workspaces/'+d.admdel).delete(),'پنل حذف شد');if(ok&&adm){adm.workspaces=adm.workspaces.filter(w=>w.id!==d.admdel);render()}return}
   if(d.landing){uiView='landing';render();window.scrollTo({top:0});return}
@@ -2086,6 +2244,22 @@ V.addEventListener('click',async e=>{
   if(d.ost&&!d.go){ui.ost=d.ost;render();return}
   if(d.jst&&!d.go){ui.jst=d.jst;render();return}
   if(d.mcat){ui.mcat=d.mcat;render();return}
+  if(d.clubtab){ui.clubTab=d.clubtab;ui.q='';armed=null;render();return}
+  if(d.clubf){ui.clubTab='list';ui.clubF=d.clubf;render();return}
+  if(d.smsseg){ui.smsSeg=d.smsseg;ui.smsText=undefined;armed=null;render();return}
+  if(d.smssend){const seg=d.smssend,[label,to]=clubSegments(clubCustomers())[seg]||[];const text=(document.getElementById('sms-text')||{}).value||'';const promo=!!(document.getElementById('sms-promo')||{}).checked;
+    if(!to||!to.length||!text.trim()){toast('متن و گیرنده لازم است');return}
+    ui.smsText=text;ui.smsSegFor=seg;
+    if(armed!=='sms/'+seg){armed='sms/'+seg;render();return}armed=null;
+    try{const r=await smarto.sms.send({ws:ws.id,to:to.map(c=>({phone:c.phone,name:c.name})),text,kind:promo?'promo':'service',segment:label});toast(r.status==='آزمایشی'?'ثبت شد (حالت آزمایشی، ارسال نشد)':'به '+fmtN(r.count)+' نفر فرستاده شد');ui.smsText=undefined}
+    catch(e){toast(e.code==='quota'?'اعتبار پیامک این ماه کافی نیست':e.code==='plan_required'?'پیامک در پلن Pro و VIP است':e.code==='sms_failed'?'ارسال پیامک ناموفق بود':'ارسال نشد')}
+    smsInfo=null;loadSms();return}
+  if(d.redeem){const c=clubCustomers().find(x=>x.key===d.redeem);if(!c)return;ui.openMember=c.key;
+    await write(async()=>{const m=c.member||await ensureMember(c);await D('members/'+m.id).update({redeemed:(+m.redeemed||0)+1,updatedAt:Date.now()})},'جایزه ثبت شد؛ کارت از نو شروع شد');return}
+  if(d.joinmember){const c=clubCustomers().find(x=>x.key===d.joinmember);if(!c)return;ui.openMember=c.key;await write(()=>ensureMember(c),'به باشگاه اضافه شد');return}
+  if(d.wallet){const [k,sg]=d.wallet.split('|');const c=clubCustomers().find(x=>x.key===k);const amt=+((document.getElementById('wl-'+k)||{}).value)||0;if(!c||!amt){toast('مبلغ را بنویس');return}
+    if(+sg<0&&amt>c.wallet){toast('بیشتر از موجودی کیف پول است');return}ui.openMember=k;
+    await write(async()=>{const m=c.member||await ensureMember(c);await D('members/'+m.id).update({wallet:(+m.wallet||0)+(+sg)*amt,walletLog:[...(m.walletLog||[]).slice(-49),{date:TODAY,amount:(+sg)*amt,by:me.id}],updatedAt:Date.now()})},+sg>0?'کیف پول شارژ شد':'از کیف پول برداشت شد');return}
   if(d.settle1){const [n,i]=d.settle1.split('|');const it=(debtors().find(x=>x.name===n)||{items:[]}).items[+i];if(!it)return;ui.openDebt=n;await write(()=>settleItem(it),'تسویه شد');return}
   if(d.settleall){const dd=debtors().find(x=>x.name===d.settleall);if(!dd)return;const k='debt/'+dd.name;if(armed!==k){armed=k;render();return}armed=null;
     await write(async()=>{for(const it of dd.items)await settleItem(it)},dd.name+' تسویه شد');return}
@@ -2095,8 +2269,10 @@ V.addEventListener('click',async e=>{
   if(d.upgrade){if(!myUid){needLogin(null);return}if(ws.example){toast('این نمونه فقط برای تماشاست');return}
     try{const r=await db.collection('requests').add({kind:'upgrade',job:'ارتقای پنل به '+PLANS[d.upgrade],name:ws.name,wsId:ws.id,plan:d.upgrade,owner:me.name,createdAt:Date.now()});
       needReqs=[...needReqs,{id:r.id,kind:'upgrade',wsId:ws.id,plan:d.upgrade,uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست ارتقا فرستاده شد')}catch(e){toast('فرستاده نشد، دوباره امتحان کن')}return}
+  if(d.renew){try{await db.collection('requests').add({kind:'upgrade',renew:true,job:'تمدید اشتراک '+PLANS[planOf(ws)],name:ws.name,wsId:ws.id,plan:planOf(ws),owner:me.name,createdAt:Date.now()});
+      needReqs=[...needReqs,{kind:'upgrade',wsId:ws.id,plan:planOf(ws),uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست تمدید فرستاده شد')}catch(e){toast('فرستاده نشد')}return}
   if(d.upgok||d.upgno){const r=needReqs.find(x=>x.id===(d.upgok||d.upgno));if(!r)return;
-    await write(async()=>{if(d.upgok)await db.doc('workspaces/'+r.wsId).update({plan:r.plan});await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
+    await write(async()=>{if(d.upgok){const w=workspaces.find(x=>x.id===r.wsId);await db.doc('workspaces/'+r.wsId).update({plan:r.plan,paidUntil:extendMonth(w)})}await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
   if(d.ldeal){ui.ldeal=d.ldeal;render();return}
   if(d.lst){ui.lst=d.lst;render();return}
   if(d.lmine){ui.lmine=!ui.lmine;render();return}
@@ -2141,7 +2317,11 @@ V.addEventListener('change',async e=>{
     await write(()=>D('plans/'+id).update({items,...(all&&p.status==='در حال درمان'?{status:'تمام‌شده'}:{}),updatedAt:Date.now()}),el.checked?(all?'همه درمان‌ها انجام شد':'انجام شد'):'برگشت');return}
   if(el.dataset.wscost){const v=Math.min(100,Math.max(1,+el.value||30));await write(()=>db.doc('workspaces/'+ws.id).update({costTarget:v}),'سقف '+costSrc().pct+' '+fmtN(v)+'٪ شد');return}
   if(el.dataset.wsnum){const k=el.dataset.wsnum;if(!['capRate','goldMakerWage'].includes(k))return;const v=Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({[k]:v}),'ذخیره شد');return}
+  if(el.dataset.admuntil){const w=adm&&adm.workspaces.find(x=>x.id===el.dataset.admuntil);if(!w||!el.value)return;const ok=await write(()=>db.doc('workspaces/'+w.id).update({paidUntil:el.value}),'اعتبار تا '+jd(el.value));if(ok){w.paidUntil=el.value;render()}return}
   if(el.dataset.admsetplan){const id=el.dataset.admsetplan;const ok=await write(()=>db.doc('workspaces/'+id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');if(ok&&adm){const w=adm.workspaces.find(x=>x.id===id);if(w)w.plan=el.value;render()}return}
+  if(el.dataset.clubcfg){const k=el.dataset.clubcfg;const v=k==='reward'?el.value.trim():Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({club:{...(ws.club||{}),[k]:v}}),'ذخیره شد');return}
+  if(el.dataset.mbday){const [id,part]=el.dataset.mbday.split('|');const m=state.members.find(x=>x.id===id);if(!m)return;const [bm,bd]=String(m.birthday||'-').split('-');const nm=part==='m'?el.value:bm,nd=part==='d'?el.value:bd;
+    await write(()=>D('members/'+id).update({birthday:nm&&nd?(+nm)+'-'+(+nd):'',updatedAt:Date.now()}),'ذخیره شد');return}
   if(el.dataset.wsplan){await write(()=>db.doc('workspaces/'+ws.id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');return}
   if(el.dataset.wsteam){await write(()=>db.doc('workspaces/'+ws.id).update({teamSize:el.value}),'ذخیره شد');return}
   if(el.dataset.wsrate){await write(()=>db.doc('workspaces/'+ws.id).update({goldRate:+el.value||0,goldRateDate:TODAY}),'نرخ طلا ذخیره شد');return}
@@ -2164,8 +2344,8 @@ V.addEventListener('change',async e=>{
       if(el.checked&&t.repeat&&t.repeat!=='none'&&!t.spawned){const nd=nextDue(t);await C('tasks').add({title:t.title,from:t.from,to:t.to,due:nd,repeat:t.repeat,category:t.category||'سایر',note:t.note||'',done:false,createdAt:Date.now()});await D('tasks/'+t.id).update({spawned:true})}},
       el.checked?(t.repeat&&t.repeat!=='none'?'انجام شد، نوبت بعدی ساخته شد':'انجام شد'):'دوباره باز شد');}
 });
-V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.debtbox){if(d.open)ui.openDebt=d.dataset.debtbox;else if(ui.openDebt===d.dataset.debtbox)ui.openDebt=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
-V.addEventListener('input',e=>{if(e.target.id==='admq'){ui.admQ=e.target.value;render();const i=document.getElementById('admq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
+V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.memberbox){if(d.open)ui.openMember=d.dataset.memberbox;else if(ui.openMember===d.dataset.memberbox)ui.openMember=null}if(d.dataset&&d.dataset.debtbox){if(d.open)ui.openDebt=d.dataset.debtbox;else if(ui.openDebt===d.dataset.debtbox)ui.openDebt=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
+V.addEventListener('input',e=>{if(e.target.id==='sms-text'){ui.smsText=e.target.value;ui.smsSegFor=ui.smsSeg&&clubSegments([])[ui.smsSeg]?ui.smsSeg:'bday';return}if(e.target.id==='admq'){ui.admQ=e.target.value;render();const i=document.getElementById('admq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
 V.addEventListener('submit',async e=>{
   const f=e.target.closest('form.f');if(!f)return;e.preventDefault();
   if(f.dataset.form==='need'){const fd=new FormData(f);const r={};['job','name','owner','city','branches','staff','pain','repeat','privacy','phone'].forEach(k=>r[k]=String(fd.get(k)||'').trim());['income','roles','channels','daily','now','extra'].forEach(k=>r[k]=fd.getAll(k).map(String));
@@ -2194,6 +2374,8 @@ V.addEventListener('submit',async e=>{
     case 'person':col='people';data={name:v.name,role:v.role,kind:v.kind||'employee',title:v.title||'',phone:v.phone||'',payType:v.payType||'',pay:+v.pay||0,commission:v.payType==='درصدی'?(+v.pay||0):0,branch:v.branch||''};msg=(v.kind==='specialist'?'متخصص':'کارمند')+' اضافه شد';break;
     case 'item':col=(TEMPLATES[ws.type]||{}).items||'services';data={name:v.name,price:+v.price||0};if(['shop','retail','repair'].includes(ws.type)){data.stock=+v.stock||0;data.min=+v.min||0}if(col==='menu'){data.cat='سایر';data.available=true}break;
     case 'inv':col=v.col;data={name:v.name,stock:+v.stock||0,min:+v.min||0,unit:v.unit||'',price:+v.price||0};if(v.cost)data.cost=+v.cost||0;break;
+    case 'member':{const ph=normPh(v.phone);if(!ph){toast('شماره موبایل درست نیست');return}if(state.members.some(m=>normPh(m.phone)===ph)){toast('این شماره قبلاً عضو است');return}
+      col='members';data={name:v.name,phone:ph,birthday:v.bm&&v.bd?(+v.bm)+'-'+(+v.bd):'',note:v.note||'',redeemed:0,wallet:0,joinedAt:TODAY};msg='به باشگاه اضافه شد';break}
     case 'recipe':{const src=costSrc(),m=src.items.find(x=>x.id===v.mid),i=invItem(v.iid),q=+toEn(v.qty)||0;if(!m||!i||!(q>0)){toast('ماده و مقدار را بنویس');return}
       const base=q/subU(i.unit)[1], rc=[...(m.recipe||[])], k=rc.findIndex(l=>l.iid===i.id);
       if(k>=0)rc[k]={...rc[k],qty:base};else rc.push({iid:i.id,qty:base});
@@ -2290,7 +2472,7 @@ V.addEventListener('submit',async e=>{
 });
 async function write(fn,msg){
   if(!db){toast('اتصال به سرور برقرار نیست');return false}
-  try{await fn();toast(msg);return true}catch(err){toast(err&&err.code==='login_required'?'اول وارد حسابت شو':err&&err.code==='permission_denied'?(ws&&ws.example?'این نمونه فقط برای تماشاست':'اجازه این کار را نداری'):'ذخیره نشد، دوباره امتحان کن');return false}
+  try{await fn();toast(msg);return true}catch(err){toast(err&&err.code==='login_required'?'اول وارد حسابت شو':err&&err.code==='subscription_expired'?'اشتراک پنل تمام شده؛ اول تمدید کن':err&&err.code==='permission_denied'?(ws&&ws.example?'این نمونه فقط برای تماشاست':'اجازه این کار را نداری'):'ذخیره نشد، دوباره امتحان کن');return false}
 }
 
 // ---------- boot ----------
@@ -2352,6 +2534,7 @@ function openWs(w){
 }
 document.getElementById('back').addEventListener('click',closeWs);
 document.getElementById('acct').addEventListener('click',()=>{if(ws)closeWs();if(!myUid)needLogin(null);else{uiView='account';render();window.scrollTo({top:0})}});
+document.getElementById('clubBtn').addEventListener('click',()=>{ui.screen='club';armed=null;smsInfo=null;render();window.scrollTo({top:0})});
 document.getElementById('gear').addEventListener('click',()=>{ui.screen='settings';armed=null;render();window.scrollTo({top:0})});
 (()=>{
 })();

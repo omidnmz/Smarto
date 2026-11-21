@@ -1,12 +1,13 @@
 import { q } from './db.js';
 import { PRO_COLS, isPaid } from './costs.js';
+import { assertActive } from './subscription.js';
 
 // Collections a workspace may hold (union of every business template).
 export const WS_COLS = new Set([
   'people', 'products', 'sales', 'orders', 'payments', 'tasks', 'ideas', 'content', 'costs', 'salaries',
   'services', 'clients', 'appointments', 'sorders', 'menu', 'forders', 'inventory', 'jobs', 'parts',
   'rsales', 'ledger', 'checks', 'gsales', 'listings', 'visits', 'deals', 'plans', 'cars', 'cdeals',
-  'purchases',
+  'purchases', 'members', 'smslog',
 ]);
 const TOP = new Set(['workspaces', 'requests', 'jobtypes']);
 const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
@@ -16,6 +17,7 @@ const ROLE_ONLY = {
   salaries: ['owner', 'gm'],
   costs: ['owner', 'gm', 'manager'],
   purchases: ['owner', 'gm', 'manager'],
+  smslog: ['owner', 'gm', 'manager'],
 };
 const PEOPLE_EDITORS = ['owner', 'gm'];
 
@@ -115,14 +117,14 @@ export async function checkWrite(ctx, p, op, data) {
     if (op === 'add') {
       if (admin) return data;
       // Only the platform admin chooses a panel's plan.
-      const { example, order, legacy, plan, ...rest } = data || {};
+      const { example, order, legacy, plan, smsQuota, paidUntil, ...rest } = data || {};
       return { ...rest, ownerUid: ctx.user.id };
     }
     const a = await wsAccess(ctx, p.wsId);
     if (!a.ws) throw new AccessError(404, 'not_found');
     if (!(a.owner || (a.write && a.role === 'gm'))) deny();
     if (!admin && data) {
-      const { example, order, legacy, ownerUid, plan, ...rest } = data;
+      const { example, order, legacy, ownerUid, plan, smsQuota, paidUntil, ...rest } = data;
       return rest;
     }
     return data;
@@ -130,6 +132,9 @@ export async function checkWrite(ctx, p, op, data) {
   const a = await wsAccess(ctx, p.wsId);
   if (!a.write || !roleAllowed(a, p.col)) deny();
   planAllowed(a, p.col);
+  if (!admin) assertActive(a.ws);
+  // The SMS log is written only by the server when it sends.
+  if (p.col === 'smslog' && !admin) deny();
   if (p.col === 'people') {
     if (!PEOPLE_EDITORS.includes(a.role)) deny();
     if (data && 'uid' in data && !admin) {

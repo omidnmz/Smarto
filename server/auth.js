@@ -46,7 +46,7 @@ export function authRoutes(app) {
     h.push(t);
     ipHits.set(ip, h);
     if (ipHits.size > 10000) ipHits.clear();
-    return h.length <= 30;
+    return h.length <= (Number(process.env.LOGIN_IP_LIMIT) || 30);
   };
 
   app.post('/api/auth/request', perPhone(5), async (req, reply) => {
