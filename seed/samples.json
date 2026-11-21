@@ -1536,7 +1536,18 @@
     "order": 2,
     "type": "salon",
     "plan": "pro",
-    "costTarget": 15
+    "costTarget": 15,
+    "page": {
+     "on": true,
+     "slug": "sample-salon",
+     "about": "کوتاهی، رنگ و مراقبت مو با متخصصان باتجربه. نوبتت را آنلاین رزرو کن.",
+     "address": "تهران، سعادت‌آباد، میدان کاج",
+     "hours": "شنبه تا پنجشنبه ۱۰ تا ۲۰",
+     "phone": "۰۲۱۲۲۰۰۰۰۰۰",
+     "instagram": "@sample.salon",
+     "booking": true,
+     "ordering": true
+    }
    },
    "cols": {
     "appointments": {
@@ -4307,7 +4318,18 @@
     "example": true,
     "name": "فروشگاه آنلاین نمونه",
     "order": 4,
-    "type": "shop"
+    "type": "shop",
+    "page": {
+     "on": true,
+     "slug": "sample-shop",
+     "about": "لباس راحتی و هودی با ارسال به سراسر کشور.",
+     "address": "",
+     "hours": "پاسخگویی ۱۰ تا ۲۲",
+     "phone": "",
+     "instagram": "@sample.shop",
+     "booking": true,
+     "ordering": true
+    }
    },
    "cols": {
     "costs": {
@@ -6852,6 +6874,17 @@
      "stampGoal": 8,
      "reward": "یک نوشیدنی رایگان",
      "inactive": 30
+    },
+    "page": {
+     "on": true,
+     "slug": "sample-cafe",
+     "about": "قهوه تازه‌دم، کیک خانگی و صبحانه. سفارشت را آنلاین ثبت کن و بیرون‌بر تحویل بگیر.",
+     "address": "تهران، خیابان ولیعصر، نرسیده به پارک ساعی",
+     "hours": "هر روز ۸ تا ۲۳",
+     "phone": "۰۲۱۸۸۰۰۰۰۰۰",
+     "instagram": "@sample.cafe",
+     "booking": true,
+     "ordering": true
     }
    },
    "cols": {

@@ -1,6 +1,7 @@
 import { q } from './db.js';
 import { PRO_COLS, isPaid } from './costs.js';
 import { assertActive } from './subscription.js';
+import { cleanPage } from './public.js';
 
 // Collections a workspace may hold (union of every business template).
 export const WS_COLS = new Set([
@@ -115,6 +116,7 @@ export async function checkWrite(ctx, p, op, data) {
   // workspaces/{id}
   if (p.segs.length <= 2) {
     if (op === 'add') {
+      if (data && 'page' in data) data = { ...data, page: await cleanPage(data.page, null, null, admin) };
       if (admin) return data;
       // Only the platform admin chooses a panel's plan.
       const { example, order, legacy, plan, smsQuota, paidUntil, ...rest } = data || {};
@@ -123,6 +125,7 @@ export async function checkWrite(ctx, p, op, data) {
     const a = await wsAccess(ctx, p.wsId);
     if (!a.ws) throw new AccessError(404, 'not_found');
     if (!(a.owner || (a.write && a.role === 'gm'))) deny();
+    if (data && 'page' in data) data = { ...data, page: await cleanPage(data.page, p.wsId, a.ws.page, admin) };
     if (!admin && data) {
       const { example, order, legacy, ownerUid, plan, smsQuota, paidUntil, ...rest } = data;
       return rest;

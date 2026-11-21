@@ -46,6 +46,8 @@ alter table users add column if not exists last_login bigint;
 create index if not exists docs_parent_idx on docs(parent);
 create index if not exists docs_people_uid_idx on docs((data->>'uid')) where parent like 'workspaces/%/people';
 create index if not exists docs_people_phone_idx on docs((data->>'phone')) where parent like 'workspaces/%/people';
+create unique index if not exists docs_page_slug_idx on docs((data->'page'->>'slug')) where parent='workspaces' and data->'page'->>'slug' is not null;
+create unique index if not exists docs_page_domain_idx on docs((data->'page'->>'domain')) where parent='workspaces' and data->'page'->>'domain' is not null;
 `;
 
 export async function migrate() {

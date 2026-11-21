@@ -10,6 +10,7 @@ import { authRoutes, currentUser } from './auth.js';
 import { AccessError } from './access.js';
 import { adminRoutes } from './admin.js';
 import { clubRoutes } from './club.js';
+import { publicRoutes, wsForHost } from './public.js';
 import * as store from './store.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -49,6 +50,19 @@ app.setErrorHandler((err, req, reply) => {
 authRoutes(app);
 adminRoutes(app);
 clubRoutes(app);
+publicRoutes(app);
+
+// Public business pages: /b/<slug>, or the root of a business's own domain (VIP).
+app.get('/b/:key', (req, reply) => reply.sendFile('b.html'));
+const hostCache = new Map();
+app.addHook('onRequest', async (req, reply) => {
+  if (req.method !== 'GET' || (req.url !== '/' && req.url !== '/index.html')) return;
+  const host = String(req.headers.host || '').toLowerCase().split(':')[0];
+  if (!host.includes('.') || /^[\d.]+$/.test(host) || host === process.env.APP_HOST) return;
+  let hit = hostCache.get(host);
+  if (!hit || Date.now() - hit.at > 60000) { hit = { at: Date.now(), id: await wsForHost(host) }; hostCache.set(host, hit); }
+  if (hit.id) return reply.sendFile('b.html');
+});
 const ctxOf = (req) => ({ user: req.user });
 
 app.get('/api/col', async (req) => ({ docs: await store.list(ctxOf(req), String(req.query.path || '')) }));
