@@ -1,10 +1,12 @@
 import { q } from './db.js';
+import { PRO_COLS, isPaid } from './costs.js';
 
 // Collections a workspace may hold (union of every business template).
 export const WS_COLS = new Set([
   'people', 'products', 'sales', 'orders', 'payments', 'tasks', 'ideas', 'content', 'costs', 'salaries',
   'services', 'clients', 'appointments', 'sorders', 'menu', 'forders', 'inventory', 'jobs', 'parts',
   'rsales', 'ledger', 'checks', 'gsales', 'listings', 'visits', 'deals', 'plans', 'cars', 'cdeals',
+  'purchases',
 ]);
 const TOP = new Set(['workspaces', 'requests', 'jobtypes']);
 const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
@@ -13,6 +15,7 @@ const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
 const ROLE_ONLY = {
   salaries: ['owner', 'gm'],
   costs: ['owner', 'gm', 'manager'],
+  purchases: ['owner', 'gm', 'manager'],
 };
 const PEOPLE_EDITORS = ['owner', 'gm'];
 
@@ -79,6 +82,10 @@ function roleAllowed(a, col) {
   const only = ROLE_ONLY[col];
   return !only || only.includes(a.role);
 }
+// Collections that come with a paid plan are closed on the basic plan.
+function planAllowed(a, col) {
+  if (PRO_COLS.has(col) && !isPaid(a.ws)) throw new AccessError(403, 'plan_required');
+}
 
 // Throws unless the user may read the collection at `path` (or a doc in it).
 export async function assertRead(ctx, p) {
@@ -90,6 +97,7 @@ export async function assertRead(ctx, p) {
   if (p.segs.length <= 2) return; // the workspaces list is filtered per row
   const a = await wsAccess(ctx, p.wsId);
   if (!a.read || !roleAllowed(a, p.col)) deny();
+  planAllowed(a, p.col);
 }
 
 // Throws unless the user may write to `p` with `data`; returns the data to store.
@@ -106,20 +114,22 @@ export async function checkWrite(ctx, p, op, data) {
   if (p.segs.length <= 2) {
     if (op === 'add') {
       if (admin) return data;
-      const { example, order, legacy, ...rest } = data || {};
+      // Only the platform admin chooses a panel's plan.
+      const { example, order, legacy, plan, ...rest } = data || {};
       return { ...rest, ownerUid: ctx.user.id };
     }
     const a = await wsAccess(ctx, p.wsId);
     if (!a.ws) throw new AccessError(404, 'not_found');
     if (!(a.owner || (a.write && a.role === 'gm'))) deny();
     if (!admin && data) {
-      const { example, order, legacy, ownerUid, ...rest } = data;
+      const { example, order, legacy, ownerUid, plan, ...rest } = data;
       return rest;
     }
     return data;
   }
   const a = await wsAccess(ctx, p.wsId);
   if (!a.write || !roleAllowed(a, p.col)) deny();
+  planAllowed(a, p.col);
   if (p.col === 'people') {
     if (!PEOPLE_EDITORS.includes(a.role)) deny();
     if (data && 'uid' in data && !admin) {

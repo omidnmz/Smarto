@@ -46,6 +46,7 @@ const ICON={
   cvisits:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M12 3v7M4.5 16l5.8-3M19.5 16l-5.8-3"/></svg>',
   cdeals:'<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
   pshare:'<svg viewBox="0 0 24 24"><path d="M12 3v9l7 4"/><circle cx="12" cy="12" r="9"/></svg>',
+  cost:'<svg viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M4 7h16M4 7l-3 7a3 3 0 0 0 6 0zM20 7l-3 7a3 3 0 0 0 6 0z"/></svg>',
   payments:'<svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
 };
 const NAV={
@@ -78,7 +79,7 @@ const APPT_COLS=['people','services','clients','appointments','tasks','ideas','c
 const DENTAL_COLS=[...APPT_COLS,'plans'];
 const CAR_COLS=['people','cars','clients','visits','cdeals','checks','tasks','ideas','costs','salaries'];
 const SHOP_COLS=['people','products','sorders','tasks','ideas','costs','salaries'];
-const FOOD_COLS=['people','menu','forders','inventory','tasks','ideas','costs','salaries'];
+const FOOD_COLS=['people','menu','forders','inventory','purchases','tasks','ideas','costs','salaries'];
 const REPAIR_COLS=['people','jobs','parts','tasks','ideas','costs','salaries'];
 const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas','costs','salaries'];
 const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
@@ -97,8 +98,8 @@ function navFor(r){if(r==='specialist')return [['tasks','کارها']];
     if(r==='warehouse')return [['ship','ارسال'],['stock','انبار'],['tasks','کارها']];
     return [['sorders','سفارش‌ها'],['customers','مشتریان'],['tasks','کارها']];}
   if(ws.type==='cafe'||ws.type==='restaurant'){const k=ws.type==='cafe'?'بار':'آشپزخانه';
-    if(r==='owner')return [['fsales','فروش'],['pos','سفارش'],['menu','منو و انبار'],['money','مالی'],['tasks','کارها']];
-    if(r==='manager')return [['pos','سفارش'],['kitchen',k],['menu','منو و انبار'],['fsales','فروش'],['tasks','کارها']];
+    if(r==='owner')return [['fsales','فروش'],['pos','سفارش'],['menu','منو و انبار'],['cost','کاست'],['money','مالی'],['tasks','کارها']];
+    if(r==='manager')return [['pos','سفارش'],['kitchen',k],['menu','منو و انبار'],['cost','کاست'],['fsales','فروش'],['tasks','کارها']];
     if(r==='kitchen')return [['kitchen',k],['menu','منو و انبار'],['tasks','کارها']];
     return [['pos','سفارش'],['kitchen',k],['tasks','کارها']];}
   if(ws.type==='repair'){
@@ -715,8 +716,9 @@ function scrFSales(){
   const hk=Object.keys(hours).map(Number).sort((a,b)=>a-b), hmax=Math.max(1,...Object.values(hours));
   const low=state.inventory.filter(x=>(+x.stock||0)<=(+x.min||0)).length;
   const off=state.menu.filter(m=>m.available===false).length;
+  const over=isPaid()?overTarget().length:0;
   return `
-  ${unpaid.length||low?`<div class="kpis">${unpaid.length?alertKpi('pos','تسویه‌نشده امروز',fmtN(unpaid.length),fmtT(unpaid.reduce((a,o)=>a+itemsTotal(o),0))+' تومان'):''}${low?alertKpi('menu','مواد اولیه رو به اتمام',fmtN(low),'قلم'):''}</div>`:''}
+  ${unpaid.length||low||over?`<div class="kpis">${unpaid.length?alertKpi('pos','تسویه‌نشده امروز',fmtN(unpaid.length),fmtT(unpaid.reduce((a,o)=>a+itemsTotal(o),0))+' تومان'):''}${low?alertKpi(isPaid()?'cost':'menu','مواد اولیه رو به اتمام',fmtN(low),'قلم',isPaid()?' data-ctab="stock"':''):''}${over?alertKpi('cost','بالای سقف فود کاست',fmtN(over),'آیتم منو',' data-ctab="items"'):''}</div>`:''}
   ${periodSeg()}
   <div class="kpis">
     <div class="kpi wide"><span class="lab">فروش ${pLabel()}</span><span class="val">${fmtT(total)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(rows.length)} سفارش${off?' · '+fmtN(off)+' آیتم منو ناموجود':''}</span></div>
@@ -764,19 +766,20 @@ function scrKitchen(){
   <section class="card"><h3>صف ${ws.type==='cafe'?'بار':'آشپزخانه'}</h3>${q.length?`<ul class="list">${q.map(li).join('')}</ul>`:empty('سفارشی در صف نیست.')}</section>
   ${ready.length?`<section class="card"><h3>آماده</h3><ul class="list">${ready.map(li).join('')}</ul></section>`:''}`;
 }
-function invSection(col,title,withPrice){
+function invSection(col,title,withPrice,withCost){
   const list=[...state[col]].sort((a,b)=>((+a.stock||0)-(+a.min||0))-((+b.stock||0)-(+b.min||0)));
   const low=list.filter(x=>(+x.stock||0)<=(+x.min||0));
   return `${low.length?`<section class="card" style="border-color:var(--bad)"><div class="row"><h3>نیاز به خرید</h3><span class="pill p-bad">${fmtN(low.length)}</span></div><p class="small muted" style="margin:0">${low.map(x=>esc(x.name)+' ('+fmtN(x.stock)+' '+esc(x.unit||'عدد')+')').join('، ')}</p></section>`:''}
   <section class="card"><div class="row"><h3>${title}</h3><span class="small muted">${fmtN(list.length)} قلم</span></div>
     ${list.length?`<ul class="list">${list.map(x=>`<li class="${(+x.stock||0)<=(+x.min||0)?'late':''}"><div class="grow"><div class="t">${esc(x.name)}</div><div class="m">${withPrice?fmtN(x.price)+' تومان · ':''}حداقل ${fmtN(x.min)} ${esc(x.unit||'عدد')}</div></div>
-      <label class="small muted" style="display:grid;gap:2px">موجودی<input class="inline" style="width:64px" type="number" min="0" step="any" value="${+x.stock||0}" data-set="${col}/${x.id}" data-field="stock"></label>${delBtn(col,x.id)}</li>`).join('')}</ul>`:empty('هنوز چیزی ثبت نشده است.')}
+      <label class="small muted" style="display:grid;gap:2px">موجودی<input class="inline" style="width:64px" type="number" step="any" value="${+x.stock||0}" data-set="${col}/${x.id}" data-field="stock"></label>${withCost?`<label class="small muted" style="display:grid;gap:2px">قیمت هر ${esc(x.unit||'عدد')}<input class="inline" style="width:84px" type="number" min="0" step="any" value="${+x.cost||0}" data-set="${col}/${x.id}" data-field="cost"></label>`:''}${delBtn(col,x.id)}</li>`).join('')}</ul>`:empty('هنوز چیزی ثبت نشده است.')}
     <details class="add"><summary>افزودن قلم</summary><form class="f" data-form="inv"><input type="hidden" name="col" value="${col}">
       <label class="full">نام<input id="iv-name" name="name" required></label>
       <label>موجودی<input id="iv-stock" name="stock" type="number" min="0" step="any" value="0"></label>
       <label>حداقل<input id="iv-min" name="min" type="number" min="0" step="any" value="1"></label>
       <label>واحد<input id="iv-unit" name="unit" placeholder="کیلو، بسته، عدد"></label>
       ${withPrice?'<label>قیمت (تومان)<input id="iv-price" name="price" type="number" min="0" step="1000"></label>':''}
+      ${withCost?'<label>قیمت هر واحد (تومان)<input id="iv-cost" name="cost" type="number" min="0" step="any"></label>':''}
       <button class="btn full">افزودن</button></form></details></section>`;
 }
 function scrMenu(){
@@ -791,6 +794,107 @@ function scrMenu(){
     <label>دسته<input id="mn-cat" name="cat" list="menuCats" placeholder="مثلاً نوشیدنی گرم"><datalist id="menuCats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
     <button class="btn full">افزودن</button></form></details>`:''}
   ${invSection('inventory','مواد اولیه و انبار',false)}`;
+}
+
+// ---------- cost control (Pro/VIP plans of café & restaurant) ----------
+const PLANS={basic:'پایه',pro:'Pro',vip:'VIP'};
+const planOf=w=>w&&PLANS[w.plan]&&w.plan!=='basic'?w.plan:'basic';
+const isPaid=()=>planOf(ws)!=='basic';
+const planPill=w=>{const p=planOf(w);return `<span class="pill ${p==='basic'?'p-mute':p==='vip'?'p-warn':'p-info'}">${p==='basic'?'پلن پایه':PLANS[p]}</span>`};
+// Ingredients bought by the kilo or litre are measured in grams and millilitres inside a recipe.
+const SUBU={'کیلو':['گرم',1000],'کیلوگرم':['گرم',1000],'لیتر':['میلی‌لیتر',1000]};
+const subU=u=>SUBU[String(u||'').trim()]||[String(u||'').trim()||'عدد',1];
+const invItem=id=>state.inventory.find(x=>x.id===id);
+const lineCost=l=>{const i=invItem(l.iid);return i?(+l.qty||0)*(+i.cost||0):0};
+const recipeCost=m=>(m.recipe||[]).reduce((a,l)=>a+lineCost(l),0);
+const costTarget=()=>+ws.costTarget||30;
+const fcPct=m=>+m.price>0&&(m.recipe||[]).length?recipeCost(m)/m.price*100:null;
+const overTarget=()=>state.menu.filter(m=>{const p=fcPct(m);return p!==null&&p>costTarget()});
+const lowInv=()=>state.inventory.filter(x=>(+x.stock||0)<=(+x.min||0));
+const fmtQ=n=>(+n||0).toLocaleString('fa-IR',{maximumFractionDigits:2});
+const pctPill=m=>{const p=fcPct(m);if(p===null)return '<span class="pill p-mute">بدون دستور</span>';return `<span class="pill ${p>costTarget()?'p-bad':'p-ok'}">${fmtQ(p)}٪</span>`};
+const COST_FEATS=[
+  ['دستور تهیه هر آیتم','مثلاً لاته = ۱۸ گرم قهوه + ۲۰۰ میلی‌لیتر شیر + لیوان؛ بهای تمام‌شده هر آیتم خودش حساب می‌شود.'],
+  ['درصد فود کاست و هشدار','سهم مواد از قیمت فروش هر آیتم، با هشدار وقتی از سقف (مثلاً ۳۰٪) بالاتر برود و قیمت پیشنهادی.'],
+  ['خرید و انبار خودکار','خرید مواد اولیه را ثبت کن؛ با هر فروش موجودی خودش کم می‌شود و کمبودها هشدار می‌دهند.'],
+];
+function costLocked(){
+  const pending=needReqs.find(r=>r.kind==='upgrade'&&r.wsId===ws.id&&!['تأیید شد','رد شد'].includes(r.status));
+  const owner=me.role==='owner';
+  return `<section class="card" style="border-color:var(--accent)"><div class="row"><h3>کاست کنترل</h3><span class="pill p-info">Pro و VIP</span></div>
+    <p class="small muted" style="margin:0">بدان هر فنجان و هر پرس واقعاً چقدر برایت تمام می‌شود و سودت کجا گم می‌شود.</p>
+    <ul class="list">${COST_FEATS.map(([t,d])=>`<li><div class="grow"><div class="t">🔒 ${t}</div><div class="m">${d}</div></div></li>`).join('')}</ul>
+    ${pending?`<div class="note">درخواست ارتقا به ${PLANS[pending.plan]||'Pro'} فرستاده شد و به‌زودی فعال می‌شود.</div>`
+      :owner?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgrade="pro">ارتقا به Pro</button><button class="chip" data-upgrade="vip">ارتقا به VIP</button></div>`
+      :'<div class="note">این بخش در پلن Pro و VIP است. برای فعال شدن به مالک بگو.</div>'}
+    <p class="small muted" style="margin:0">پلن فعلی این پنل: ${planPill(ws)}</p></section>`;
+}
+function scrCost(){
+  if(!isPaid())return costLocked();
+  const canEdit=['owner','gm','manager'].includes(me.role);
+  const tab=['items','buy','stock'].includes(ui.costTab)?ui.costTab:'items';
+  const [f,t]=range();
+  const rows=state.forders.filter(o=>o.date>=f&&o.date<=t&&fValid(o));
+  const sales=rows.reduce((a,o)=>a+itemsTotal(o),0);
+  const menuById=Object.fromEntries(state.menu.map(m=>[m.id,m]));
+  const cogs=rows.reduce((a,o)=>a+(o.items||[]).reduce((b,i)=>{const m=menuById[i.mid];return b+(m?recipeCost(m)*(+i.qty||0):0)},0),0);
+  const over=overTarget(), low=lowInv(), noRecipe=state.menu.filter(m=>!(m.recipe||[]).length).length;
+  const value=state.inventory.reduce((a,x)=>a+Math.max(0,+x.stock||0)*(+x.cost||0),0);
+  const pct=sales?cogs/sales*100:0;
+  return `
+  ${over.length||low.length?`<div class="kpis">${over.length?alertKpi('cost','بالای سقف فود کاست',fmtN(over.length),'آیتم منو',' data-ctab="items"'):''}${low.length?alertKpi('cost','مواد رو به اتمام',fmtN(low.length),'قلم، نیاز به خرید',' data-ctab="stock"'):''}</div>`:''}
+  ${periodSeg()}
+  <div class="kpis">
+    <div class="kpi wide ${pct>costTarget()?'alert':''}"><span class="lab">فود کاست ${pLabel()}</span><span class="val">${sales?fmtQ(pct)+'٪':'—'}</span><span class="hint">${fmtT(cogs)} تومان مواد از ${fmtT(sales)} تومان فروش · سقف ${fmtN(costTarget())}٪</span></div>
+    <div class="kpi"><span class="lab">سود ناخالص</span><span class="val">${fmtT(sales-cogs)}</span><span class="hint">تومان، بعد از مواد</span></div>
+    <div class="kpi"><span class="lab">ارزش انبار</span><span class="val">${fmtT(value)}</span><span class="hint">تومان</span></div>
+  </div>
+  <div class="seg" role="group">${[['items','بهای منو'],['buy','خرید مواد'],['stock','انبار و قیمت']].map(([k,l])=>`<button data-ctab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>
+  ${tab==='items'?costItems(canEdit,noRecipe):tab==='buy'?costBuy(canEdit):invSection('inventory','مواد اولیه، موجودی و قیمت واحد',false,true)}`;
+}
+function costItems(canEdit,noRecipe){
+  const T=costTarget(), inv=[...state.inventory].sort((a,b)=>String(a.name).localeCompare(String(b.name),'fa'));
+  const list=[...state.menu].sort((a,b)=>(fcPct(b)??-1)-(fcPct(a)??-1));
+  return `<section class="card"><div class="row"><h3>سقف فود کاست</h3>${canEdit?`<label class="small muted" style="display:flex;gap:6px;align-items:center">درصد<input class="inline" style="width:64px" type="number" min="1" max="100" value="${T}" data-wscost="1" aria-label="سقف فود کاست"></label>`:`<span class="num">${fmtN(T)}٪</span>`}</div>
+    <p class="small muted" style="margin:0">اگر سهم مواد اولیه از قیمت فروش آیتمی بیشتر از این شود، قرمز می‌شود. برای کافه معمولاً ۲۵ تا ۳۰ و برای رستوران ۲۸ تا ۳۵ درصد است.${noRecipe?` ${fmtN(noRecipe)} آیتم هنوز دستور تهیه ندارد.`:''}</p></section>
+  ${!inv.length?`<div class="note">اول مواد اولیه را در «انبار و قیمت» یا با «خرید مواد» ثبت کن تا بتوانی دستور تهیه بنویسی.</div>`:''}
+  ${list.map(m=>{const c=recipeCost(m),p=fcPct(m),rc=m.recipe||[];
+    return `<details class="card"${ui.openRecipe===m.id?' open':''} data-recipebox="${m.id}"><summary class="row" style="cursor:pointer"><div><div class="t">${esc(m.name)}</div><div class="m">فروش ${fmtN(m.price)}${rc.length?' · مواد '+fmtN(c)+' · سود '+fmtN((+m.price||0)-c):''}</div></div>${pctPill(m)}</summary>
+      ${rc.length?`<ul class="list">${rc.map((l,k)=>{const i=invItem(l.iid),[su,f]=subU(i&&i.unit);return `<li><span class="grow">${i?esc(i.name):'<span class="muted">قلم حذف‌شده</span>'}</span><span class="small muted">${fmtQ((+l.qty||0)*f)} ${esc(su)}</span><span class="num small">${fmtN(lineCost(l))}</span>${canEdit?`<button class="lnk del" data-rcdel="${m.id}|${k}">حذف</button>`:''}</li>`}).join('')}</ul>`:empty('دستور تهیه ثبت نشده است.')}
+      ${p!==null&&p>T?`<div class="small" style="color:var(--bad)">برای رسیدن به ${fmtN(T)}٪ قیمت فروش باید حدود ${fmtN(Math.ceil(c/(T/100)/1000)*1000)} تومان باشد، یا مقدار مواد کمتر شود.</div>`:''}
+      ${rc.some(l=>{const i=invItem(l.iid);return i&&!(+i.cost)})?'<div class="small muted">قیمت واحد بعضی مواد ثبت نشده؛ با «خرید مواد» یا در «انبار و قیمت» واردش کن.</div>':''}
+      ${canEdit&&inv.length?`<form class="f" data-form="recipe" style="margin-top:6px"><input type="hidden" name="mid" value="${m.id}">
+        <label>ماده<select id="rc-i-${m.id}" name="iid">${inv.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(subU(i.unit)[0])})</option>`).join('')}</select></label>
+        <label>مقدار در هر آیتم<input id="rc-q-${m.id}" name="qty" type="number" min="0" step="any" required placeholder="مثلاً ۱۸"></label>
+        <button class="btn full">افزودن به دستور</button></form>`:''}
+    </details>`}).join('')||empty('منو خالی است.')}`;
+}
+function costBuy(canEdit){
+  const inv=[...state.inventory].sort((a,b)=>String(a.name).localeCompare(String(b.name),'fa'));
+  const list=[...state.purchases].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0));
+  const ms=monthStart(TODAY), month=list.filter(x=>x.date>=ms).reduce((a,x)=>a+(+x.total||0),0);
+  return `${canEdit?`<details class="add"${state._openAdd==='buy'||!list.length?' open':''}><summary>ثبت خرید مواد اولیه</summary><form class="f" data-form="purchase">
+      <label class="full">ماده<select id="pu-iid" name="iid">${inv.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(i.unit||'عدد')})</option>`).join('')}<option value="__new">+ قلم جدید</option></select></label>
+      <label>نام قلم جدید<input id="pu-name" name="name" placeholder="فقط برای قلم جدید"></label>
+      <label>واحد قلم جدید<input id="pu-unit" name="unit" placeholder="کیلو، لیتر، عدد"></label>
+      <label>مقدار خرید<input id="pu-qty" name="qty" type="number" min="0" step="any" required placeholder="به واحد همان قلم"></label>
+      <label>مبلغ کل (تومان)<input id="pu-total" name="total" type="number" min="0" step="1000" required></label>
+      <label>فروشنده<input id="pu-sup" name="supplier" placeholder="اختیاری"></label>
+      <label>تاریخ<input id="pu-date" name="date" type="date" value="${TODAY}"></label>
+      <label class="full" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="toCosts" value="1" checked style="width:auto"> در هزینه‌ها هم ثبت شود</label>
+      <button class="btn full">ثبت خرید</button></form>
+    <p class="small muted" style="margin:0">با هر خرید موجودی بالا می‌رود و قیمت واحد میانگین وزنی خریدها می‌شود. با هر فروش، مواد دستور تهیه از انبار کم می‌شود.</p></details>`:''}
+  <section class="card"><div class="row"><h3>خریدهای اخیر</h3><span class="small muted">این ماه ${fmtT(month)} تومان</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,40).map(x=>{const i=invItem(x.iid);return `<li><div class="grow"><div class="t">${esc(i?i.name:x.name||'—')} <span class="small muted">${fmtQ(x.qty)} ${esc(i?i.unit||'':x.unit||'')}</span></div><div class="m">${jd(x.date)}${x.supplier?' · '+esc(x.supplier):''} · واحدی ${fmtN(x.unitCost)}</div></div><span class="num">${fmtN(x.total)}</span>${canEdit?delBtn('purchases',x.id):''}</li>`}).join('')}</ul>`:empty('هنوز خریدی ثبت نشده است.')}</section>`;
+}
+function upgradeInbox(){
+  const list=needReqs.filter(r=>r.kind==='upgrade').sort((a,b)=>((a.status==='تأیید شد'||a.status==='رد شد')-(b.status==='تأیید شد'||b.status==='رد شد'))||(b.createdAt||0)-(a.createdAt||0));
+  if(!amOwner||!list.length)return '';
+  const open=r=>!['تأیید شد','رد شد'].includes(r.status);
+  return `<div class="row"><h3>درخواست‌های ارتقای پلن</h3>${list.some(open)?`<span class="pill p-warn">${fmtN(list.filter(open).length)} منتظر تو</span>`:''}</div>
+  ${list.slice(0,20).map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.name||'')} · ${PLANS[r.plan]||r.plan}</span><span class="pill ${REQ_PILL[r.status]||'p-warn'}">${esc(r.status||'در انتظار بررسی')}</span></div>
+    <div class="small muted">${[r.owner,r.userPhone,r.createdAt?jd(iso(r.createdAt)):''].filter(Boolean).map(esc).join(' · ')}</div>
+    ${open(r)?`<div class="row" style="justify-content:flex-start;gap:8px"><button class="btn" data-upgok="${r.id}">فعال‌سازی ${PLANS[r.plan]||''}</button><button class="lnk del" data-upgno="${r.id}">رد</button></div>`:''}</section>`).join('')}`;
 }
 
 // ---------- repair shop ----------
@@ -1473,7 +1577,7 @@ function myRequests(){
   const list=needReqs.filter(r=>myUid&&r.uid===myUid).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   if(!list.length)return '';
   return `<h3>درخواست‌های من</h3>${list.map(r=>`<section class="card"><div class="row"><span class="t">${esc(r.job)}${r.name?' · '+esc(r.name):''}</span><span class="pill ${REQ_PILL[r.status]||'p-mute'}">${esc(r.status||'در انتظار بررسی')}</span></div>
-    <div class="m">${r.status==='تأیید شد'?'پنلت ساخته شد و در «کسب‌وکارهای من» است.':r.status==='رد شد'?'فعلاً امکان ساخت این پنل نیست.':r.status==='در حال برنامه‌ریزی'?'در حال طراحی بخش‌های داشبورد تو هستیم.':'درخواستت رسید و به‌زودی بررسی می‌شود.'}</div>
+    <div class="m">${r.kind==='upgrade'?(r.status==='تأیید شد'?'پلن '+(PLANS[r.plan]||'')+' روی پنل فعال شد.':r.status==='رد شد'?'فعلاً امکان ارتقا نیست.':'درخواست ارتقا رسید و به‌زودی فعال می‌شود.'):r.status==='تأیید شد'?'پنلت ساخته شد و در «کسب‌وکارهای من» است.':r.status==='رد شد'?'فعلاً امکان ساخت این پنل نیست.':r.status==='در حال برنامه‌ریزی'?'در حال طراحی بخش‌های داشبورد تو هستیم.':'درخواستت رسید و به‌زودی بررسی می‌شود.'}</div>
     ${r.plan&&r.plan.note&&(r.status==='تأیید شد'||r.status==='رد شد')?`<div class="m">پیام: ${esc(r.plan.note)}</div>`:''}</section>`).join('')}`;
 }
 function readPlan(id){
@@ -1519,8 +1623,9 @@ function planForm(r){
   </form>`;
 }
 function needInbox(){
-  if(!amOwner||!needReqs.length)return '';
-  const list=[...needReqs].sort((a,b)=>((a.status==='تأیید شد'||a.status==='رد شد')-(b.status==='تأیید شد'||b.status==='رد شد'))||(b.createdAt||0)-(a.createdAt||0));
+  const reqs=needReqs.filter(r=>r.kind!=='upgrade');
+  if(!amOwner||!reqs.length)return '';
+  const list=[...reqs].sort((a,b)=>((a.status==='تأیید شد'||a.status==='رد شد')-(b.status==='تأیید شد'||b.status==='رد شد'))||(b.createdAt||0)-(a.createdAt||0));
   const pending=list.filter(r=>!['تأیید شد','رد شد'].includes(r.status)).length;
   const row=(k,v)=>v&&(!Array.isArray(v)||v.length)?`<div class="m"><b>${k}:</b> ${esc(Array.isArray(v)?v.join('، '):v)}</div>`:'';
   return `<div class="row"><h3>درخواست شغل‌های جدید</h3>${pending?`<span class="pill p-warn">${fmtN(pending)} منتظر تو</span>`:''}</div>
@@ -1606,6 +1711,7 @@ function scrLanding(){
   <section class="cta-band"><h2>آماده‌ای؟</h2><p>پنل کسب‌وکارت دو دقیقه بیشتر وقت نمی‌گیرد.</p><button class="btn big light" data-create="1">ساخت پنل رایگان</button>
     <button class="lnk light" data-need="1">کسب‌وکارم در فهرست نیست</button></section>
   ${myRequests()}
+  ${upgradeInbox()}
   ${needInbox()}`;
 }
 const FACTORY={label:'کارخانه و تولیدی',desc:'سفارش تولید، مواد اولیه، کنترل کیفیت، شیفت‌ها، تعمیرات دستگاه‌ها و طلب از مشتری‌ها؛ برای هر کارخانه جداگانه طراحی می‌شود.'};
@@ -1660,7 +1766,8 @@ function scrSettings(){
   <section class="card"><h3>کسب‌وکار</h3>
     <label class="small muted">نام<input class="inline" style="width:100%;font-size:.95rem;padding:6px 8px" value="${esc(ws.name)}" data-wsname="1"></label>
     <div class="small muted">نوع: ${esc(ws.typeLabel||t.label)}</div>
-    <label class="small muted">چند نفره<select class="inline" data-wsteam="1" style="width:100%">${opts([['','انتخاب نشده'],...TEAM_SIZES],ws.teamSize||'')}</select></label></section>
+    <label class="small muted">چند نفره<select class="inline" data-wsteam="1" style="width:100%">${opts([['','انتخاب نشده'],...TEAM_SIZES],ws.teamSize||'')}</select></label>
+    <div class="row" style="justify-content:flex-start;gap:8px"><span class="small muted">پلن:</span>${amOwner?`<select class="inline" data-wsplan="1">${opts(Object.entries(PLANS),planOf(ws))}</select>`:planPill(ws)}${!amOwner&&!isPaid()&&(ws.type==='cafe'||ws.type==='restaurant')&&me.role==='owner'?'<button class="chip" data-go="cost">ارتقا و کاست کنترل</button>':''}</div></section>
   ${teamGroup('کارمندان',emps,roles,isStore)}
   ${teamGroup('متخصصان و همکاران بیرونی',specs,roles,isStore,'مثلاً عکاس محصول، مشاور مالی، طراح، ادمین اینستاگرام. هر متخصص فقط بخش «کارها» را می‌بیند تا کار و درخواست بگیرد و گزارش بدهد.')}
   <section class="card"><h3>افزودن کارمند یا متخصص</h3><form class="f" data-form="person">
@@ -1706,7 +1813,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,cost:scrCost,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -1769,12 +1876,20 @@ V.addEventListener('click',async e=>{
   if(d.delreq){if(armed!=='req/'+d.delreq){armed='req/'+d.delreq;render();return}armed=null;try{await db.doc('requests/'+d.delreq).delete();toast('حذف شد')}catch(e){toast('حذف نشد')}return}
   if(d.open){const w=workspaces.find(x=>x.id===d.open);if(w){openWs(w);window.scrollTo({top:0})}return}
   if(d.closeset){ui.screen=null;render();return}
-  if(d.go){ui.screen=d.go;if(d.cat){ui.taskCat=d.cat}if(d.ost)ui.ost=d.ost;if(d.jst)ui.jst=d.jst;render();window.scrollTo({top:0});return}
+  if(d.go){ui.screen=d.go;if(d.ctab)ui.costTab=d.ctab;if(d.cat){ui.taskCat=d.cat}if(d.ost)ui.ost=d.ost;if(d.jst)ui.jst=d.jst;render();window.scrollTo({top:0});return}
   if(d.period){ui.period=d.period;render();return}
   if(d.source){ui.source=d.source;render();return}
   if(d.ost&&!d.go){ui.ost=d.ost;render();return}
   if(d.jst&&!d.go){ui.jst=d.jst;render();return}
   if(d.mcat){ui.mcat=d.mcat;render();return}
+  if(d.ctab&&!d.go){ui.costTab=d.ctab;render();return}
+  if(d.rcdel){const [id,k]=d.rcdel.split('|');const m=state.menu.find(x=>x.id===id);if(!m)return;ui.openRecipe=id;
+    await write(()=>D('menu/'+id).update({recipe:(m.recipe||[]).filter((_,i)=>i!==+k),updatedAt:Date.now()}),'از دستور حذف شد');return}
+  if(d.upgrade){if(!myUid){needLogin(null);return}if(ws.example){toast('این نمونه فقط برای تماشاست');return}
+    try{const r=await db.collection('requests').add({kind:'upgrade',job:'ارتقای پنل به '+PLANS[d.upgrade],name:ws.name,wsId:ws.id,plan:d.upgrade,owner:me.name,createdAt:Date.now()});
+      needReqs=[...needReqs,{id:r.id,kind:'upgrade',wsId:ws.id,plan:d.upgrade,uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست ارتقا فرستاده شد')}catch(e){toast('فرستاده نشد، دوباره امتحان کن')}return}
+  if(d.upgok||d.upgno){const r=needReqs.find(x=>x.id===(d.upgok||d.upgno));if(!r)return;
+    await write(async()=>{if(d.upgok)await db.doc('workspaces/'+r.wsId).update({plan:r.plan});await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
   if(d.ldeal){ui.ldeal=d.ldeal;render();return}
   if(d.lst){ui.lst=d.lst;render();return}
   if(d.lmine){ui.lmine=!ui.lmine;render();return}
@@ -1817,6 +1932,8 @@ V.addEventListener('change',async e=>{
   if(el.dataset.planitem){const [id,k]=el.dataset.planitem.split('|');const p=state.plans.find(x=>x.id===id);if(!p)return;const items=(p.items||[]).map((x,i)=>i===+k?{...x,done:el.checked}:x);
     const all=items.length&&items.every(x=>x.done);
     await write(()=>D('plans/'+id).update({items,...(all&&p.status==='در حال درمان'?{status:'تمام‌شده'}:{}),updatedAt:Date.now()}),el.checked?(all?'همه درمان‌ها انجام شد':'انجام شد'):'برگشت');return}
+  if(el.dataset.wscost){const v=Math.min(100,Math.max(1,+el.value||30));await write(()=>db.doc('workspaces/'+ws.id).update({costTarget:v}),'سقف فود کاست '+fmtN(v)+'٪ شد');return}
+  if(el.dataset.wsplan){await write(()=>db.doc('workspaces/'+ws.id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');return}
   if(el.dataset.wsteam){await write(()=>db.doc('workspaces/'+ws.id).update({teamSize:el.value}),'ذخیره شد');return}
   if(el.dataset.wsrate){await write(()=>db.doc('workspaces/'+ws.id).update({goldRate:+el.value||0,goldRateDate:TODAY}),'نرخ طلا ذخیره شد');return}
   if(el.id==='gs-p'){const p=state.products.find(x=>x.id===el.value);if(p){const set=(id,v)=>{const i=document.getElementById(id);if(i)i.value=v};set('gs-name',p.name);set('gs-w',p.weight);set('gs-k',String(p.karat||750));set('gs-wage',p.wage??15)}const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm());return}
@@ -1837,7 +1954,7 @@ V.addEventListener('change',async e=>{
       if(el.checked&&t.repeat&&t.repeat!=='none'&&!t.spawned){const nd=nextDue(t);await C('tasks').add({title:t.title,from:t.from,to:t.to,due:nd,repeat:t.repeat,category:t.category||'سایر',note:t.note||'',done:false,createdAt:Date.now()});await D('tasks/'+t.id).update({spawned:true})}},
       el.checked?(t.repeat&&t.repeat!=='none'?'انجام شد، نوبت بعدی ساخته شد':'انجام شد'):'دوباره باز شد');}
 });
-V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}},true);
+V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
 V.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
 V.addEventListener('submit',async e=>{
   const f=e.target.closest('form.f');if(!f)return;e.preventDefault();
@@ -1866,7 +1983,21 @@ V.addEventListener('submit',async e=>{
       await write(()=>createBusiness(v),'پنل ساخته شد');return}
     case 'person':col='people';data={name:v.name,role:v.role,kind:v.kind||'employee',title:v.title||'',phone:v.phone||'',payType:v.payType||'',pay:+v.pay||0,commission:v.payType==='درصدی'?(+v.pay||0):0,branch:v.branch||''};msg=(v.kind==='specialist'?'متخصص':'کارمند')+' اضافه شد';break;
     case 'item':col=(TEMPLATES[ws.type]||{}).items||'services';data={name:v.name,price:+v.price||0};if(['shop','retail','repair'].includes(ws.type)){data.stock=+v.stock||0;data.min=+v.min||0}if(col==='menu'){data.cat='سایر';data.available=true}break;
-    case 'inv':col=v.col;data={name:v.name,stock:+v.stock||0,min:+v.min||0,unit:v.unit||'',price:+v.price||0};break;
+    case 'inv':col=v.col;data={name:v.name,stock:+v.stock||0,min:+v.min||0,unit:v.unit||'',price:+v.price||0};if(v.cost)data.cost=+v.cost||0;break;
+    case 'recipe':{const m=state.menu.find(x=>x.id===v.mid),i=invItem(v.iid),q=+toEn(v.qty)||0;if(!m||!i||!(q>0)){toast('ماده و مقدار را بنویس');return}
+      const base=q/subU(i.unit)[1], rc=[...(m.recipe||[])], k=rc.findIndex(l=>l.iid===i.id);
+      if(k>=0)rc[k]={...rc[k],qty:base};else rc.push({iid:i.id,qty:base});
+      ui.openRecipe=m.id;
+      const ok=await write(()=>D('menu/'+m.id).update({recipe:rc,updatedAt:now}),i.name+' به دستور '+m.name+' اضافه شد');if(ok)resetForm(f);return}
+    case 'purchase':{if(!db){toast('اتصال به سرور برقرار نیست');return}
+      const qty=+toEn(v.qty)||0,total=+toEn(v.total)||0;if(!(qty>0)){toast('مقدار خرید را بنویس');return}
+      if(v.iid==='__new'&&!v.name){toast('نام قلم جدید را بنویس');return}
+      state._openAdd='buy';
+      const ok=await write(async()=>{let iid=v.iid,name=(invItem(iid)||{}).name,unit=(invItem(iid)||{}).unit||'';
+        if(iid==='__new'||!iid){const r=await C('inventory').add({name:v.name,unit:v.unit||'عدد',stock:0,min:0,cost:0,price:0,createdAt:now});iid=r.id;name=v.name;unit=v.unit||'عدد'}
+        await C('purchases').add({date:v.date||TODAY,iid,name,unit,qty,total,supplier:v.supplier||'',by:me.id,createdAt:now});
+        if(v.toCosts&&total)await C('costs').add({title:'خرید '+name+' ('+fmtQ(qty)+' '+unit+')',amount:total,category:'خرید و تأمین',date:v.date||TODAY,by:me.id,createdAt:now})},'خرید ثبت شد و انبار به‌روز شد');
+      if(ok)resetForm(f);return}
     case 'menuitem':col='menu';data={name:v.name,price:+v.price||0,cat:v.cat||'سایر',available:true};break;
     case 'check':col='checks';data={party:v.party,amount:+v.amount||0,due:v.due,kind:v.kind,note:v.note,paid:false};break;
     case 'ledger':col='ledger';data={name:v.name,phone:v.phone,amount:(v.type==='pay'?-1:1)*(+v.amount||0),date:TODAY,note:v.note||(v.type==='pay'?'دریافت':'خرید نسیه'),by:me.id};msg=v.type==='pay'?'دریافت ثبت شد':'نسیه ثبت شد';break;

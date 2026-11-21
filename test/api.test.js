@@ -145,6 +145,77 @@ test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => 
   });
 });
 
+test('cost control for café and restaurant plans', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const cashier = new Client();
+  const admin = new Client();
+  await owner.login('09124444441');
+  await admin.login(ADMIN);
+  const get = async (c, path) => (await c.get(path)).body.docs;
+  const doc = async (c, col, id) => (await get(c, col)).find((x) => x.id === id).data;
+
+  // Owners cannot pick their own plan; cost control stays closed on the basic plan.
+  const w = await owner.add('workspaces', { name: 'کافه من', type: 'cafe', plan: 'vip' });
+  const ws = `workspaces/${w.body.id}`;
+  assert.equal((await doc(owner, 'workspaces', w.body.id)).plan, undefined);
+  assert.equal((await owner.patch(ws, { plan: 'pro' })).status, 200);
+  assert.equal((await doc(owner, 'workspaces', w.body.id)).plan, undefined);
+  assert.equal((await owner.get(`${ws}/purchases`)).status, 403);
+  assert.equal((await owner.get(`${ws}/purchases`)).body.error, 'plan_required');
+
+  const milk = (await owner.add(`${ws}/inventory`, { name: 'شیر', unit: 'لیتر', stock: 10, min: 2, cost: 40000 })).body.id;
+  const latte = (await owner.add(`${ws}/menu`, { name: 'لاته', price: 150000, recipe: [{ iid: milk, qty: 0.2 }] })).body.id;
+  // On the basic plan sales do not touch stock.
+  const o0 = await owner.add(`${ws}/forders`, { items: [{ mid: latte, qty: 1, price: 150000 }], status: 'ثبت‌شده' });
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 10);
+  assert.equal((await doc(owner, `${ws}/forders`, o0.body.id)).stockOut, undefined);
+
+  assert.equal((await admin.patch(ws, { plan: 'pro' })).status, 200);
+  assert.equal((await doc(owner, 'workspaces', w.body.id)).plan, 'pro');
+
+  // A purchase raises stock and moves the unit cost to the weighted average.
+  const buy = await owner.add(`${ws}/purchases`, { iid: milk, qty: 10, total: 600000, date: '2026-11-01' });
+  assert.equal(buy.status, 200);
+  let m = await doc(owner, `${ws}/inventory`, milk);
+  assert.equal(m.stock, 20);
+  assert.equal(m.cost, 50000);
+  assert.equal((await owner.add(`${ws}/purchases`, { iid: 'nope', qty: 1, total: 1 })).status, 400);
+  assert.equal((await owner.patch(`${ws}/purchases/${buy.body.id}`, { qty: 100 })).status, 403);
+
+  // Each sale takes its recipe out of stock; clients cannot write stockOut themselves.
+  const o1 = await owner.add(`${ws}/forders`, { items: [{ mid: latte, qty: 3, price: 150000 }], status: 'ثبت‌شده', stockOut: { [milk]: -100 } });
+  assert.deepEqual((await doc(owner, `${ws}/forders`, o1.body.id)).stockOut, { [milk]: 0.6 });
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 19.4);
+  assert.equal((await owner.patch(`${ws}/forders/${o1.body.id}`, { stockOut: { [milk]: 50 } })).status, 200);
+  assert.deepEqual((await doc(owner, `${ws}/forders`, o1.body.id)).stockOut, { [milk]: 0.6 });
+
+  // Cancelling or deleting an order gives the ingredients back, once.
+  assert.equal((await owner.patch(`${ws}/forders/${o1.body.id}`, { status: 'لغو' })).status, 200);
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 20);
+  assert.equal((await owner.call('DELETE', `/api/doc?path=${ws}/forders/${o1.body.id}`)).status, 200);
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 20);
+  const o2 = await owner.add(`${ws}/forders`, { items: [{ mid: latte, qty: 1, price: 150000 }], status: 'ثبت‌شده' });
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 19.8);
+  await owner.call('DELETE', `/api/doc?path=${ws}/forders/${o2.body.id}`);
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 20);
+
+  // Deleting a purchase takes its quantity back out of stock.
+  assert.equal((await owner.call('DELETE', `/api/doc?path=${ws}/purchases/${buy.body.id}`)).status, 200);
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 10);
+
+  // A cashier sells (and moves stock) but does not see purchase prices.
+  await owner.add(`${ws}/people`, { name: 'صندوقدار', role: 'cashier', phone: '09124444442' });
+  await cashier.login('09124444442');
+  assert.equal((await cashier.get(`${ws}/purchases`)).status, 403);
+  assert.equal((await cashier.add(`${ws}/forders`, { items: [{ mid: latte, qty: 1, price: 150000 }] })).status, 200);
+  assert.equal((await doc(owner, `${ws}/inventory`, milk)).stock, 9.8);
+
+  // The café and restaurant samples show the feature.
+  const anon = new Client();
+  assert.ok((await get(anon, 'workspaces/cafe1/purchases')).length > 0);
+  assert.ok((await get(anon, 'workspaces/rest1/menu')).some((x) => x.data.recipe?.length));
+});
+
 test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const port = 3998;
   let log = '';
