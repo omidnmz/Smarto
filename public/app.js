@@ -84,13 +84,15 @@ const REPAIR_COLS=['people','jobs','parts','tasks','ideas','costs','salaries'];
 const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas','costs','salaries'];
 const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
 const RE_COLS=['people','listings','clients','visits','deals','tasks','ideas','costs','salaries'];
-const colsFor=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS}[t]||APPT_COLS);
+const colsFor=t=>[...new Set([...colsFor0(t),'ledger'])];
+const colsFor0=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS}[t]||APPT_COLS);
 let ws=null, workspaces=[], unsubs=[];
 const L=k=>(ws&&ws.labels&&ws.labels[k])||(LBL[ws&&ws.type]||LBL.salon)[k];
 const rolesOf=()=>({...baseRoles(ws.type),...(ws.roleLabels||{})});
 const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES,cars:CAR_ROLES}[type]||APPT_ROLES[type]||{});
 const roleLabel=r=>rolesOf()[r]||r;
-function navFor(r){if(r==='specialist')return [['tasks','کارها']];
+function navFor(r){const n=navBase(r);return ['owner','gm','manager','front','reception','cashier'].includes(r)&&!n.some(x=>x[0]==='debts')?[...n,['debts','',1]]:n}
+function navBase(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='store')return NAV[r]||NAV.team;
   if(ws.type==='shop'){
     if(r==='owner')return [['ssales','فروش'],['sorders','سفارش‌ها'],['stock','انبار'],['money','مالی'],['tasks','کارها']];
@@ -273,7 +275,8 @@ function scrTasks(){
 }
 
 function scrMoney(){
-  const tabs=`<div class="seg">${[['costs','هزینه‌های روزانه'],['salaries','حقوق تیم']].map(([k,l])=>`<button data-moneytab="${k}" aria-pressed="${ui.moneyTab===k}">${l}</button>`).join('')}</div>`;
+  const tabs=`<div class="seg">${[['costs','هزینه‌ها'],['debts','بدهکاران'],['salaries','حقوق تیم']].map(([k,l])=>`<button data-moneytab="${k}" aria-pressed="${ui.moneyTab===k}">${l}</button>`).join('')}</div>`;
+  if(ui.moneyTab==='debts')return tabs+debtsBody();
   if(ui.moneyTab==='costs'){
     const ms=monthStart(TODAY);
     const today=state.costs.filter(c=>c.date===TODAY).reduce((a,c)=>a+(+c.amount||0),0);
@@ -527,7 +530,7 @@ function scrIncome(){
   <div class="kpis">
     <div class="kpi wide"><span class="lab">درآمد ${periodLabel}</span><span class="val">${fmtT(total)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(done.length)} نوبت انجام‌شده</span></div>
     <div class="kpi ${missed?'alert':''}"><span class="lab">لغو و غیبت</span><span class="val">${fmtN(missed)}</span><span class="hint">در ${periodLabel}</span></div>
-    <div class="kpi ${unpaid?'alert':''}"><span class="lab">طلب از ${L('clients')}</span><span class="val">${fmtT(unpaid)}</span><span class="hint">نوبت انجام‌شده، پرداخت‌نشده</span></div>
+    <button class="kpi ${unpaid?'alert':''}" data-go="debts" style="text-align:start;cursor:pointer"><span class="lab">طلب از ${L('clients')}</span><span class="val">${fmtT(unpaid)}</span><span class="hint">نوبت انجام‌شده، پرداخت‌نشده</span></button>
   </div>
   <section class="card"><div class="row"><h3>${ui.period==='today'?'۷ روز اخیر':'روند درآمد'}</h3><span class="small muted">میلیون تومان</span></div>
     ${cr.length?`<div class="bars" role="img" aria-label="نمودار درآمد">${b.keys.map((k,i)=>`<div class="bar ${k===b.now?'now':''}" title="${fmtN(sums[k]||0)} تومان"><span>${sums[k]&&b.keys.length<=16?(sums[k]/1e6).toLocaleString('fa-IR',{maximumFractionDigits:0}):''}</span><i style="height:${Math.round((sums[k]||0)/max*90)}px"></i><span>${i%step===0||k===b.now?esc(b.label(k)):''}</span></div>`).join('')}</div>`:empty('در این بازه درآمدی ثبت نشده است.')}
@@ -710,7 +713,7 @@ function scrFSales(){
   const [f,t]=range();
   const rows=state.forders.filter(o=>o.date>=f&&o.date<=t&&fValid(o));
   const total=rows.reduce((a,o)=>a+itemsTotal(o),0);
-  const unpaid=state.forders.filter(o=>fValid(o)&&!o.paid&&o.date===TODAY);
+  const unpaid=state.forders.filter(o=>fValid(o)&&!o.paid&&o.pay!=='نسیه'&&o.date===TODAY);
   const byKind=groupSum(rows,o=>o.kind,itemsTotal), byPay=groupSum(rows.filter(o=>o.paid),o=>o.pay,itemsTotal);
   const byItem={};rows.forEach(o=>(o.items||[]).forEach(i=>{(byItem[i.name]=byItem[i.name]||{n:0,a:0}).n+=+i.qty||0;byItem[i.name].a+=(+i.qty||0)*(+i.price||0)}));
   const hours={};rows.forEach(o=>{const h=+(o.time||'0').split(':')[0];hours[h]=(hours[h]||0)+1});
@@ -737,7 +740,7 @@ function scrPos(){
   const cat=cats.includes(ui.mcat)?ui.mcat:cats[0];
   const items=state.menu.filter(m=>(m.cat||'سایر')===cat);
   const cb=cartBox(state.menu,'از منو آیتم‌ها را لمس کن تا به سفارش اضافه شوند.');
-  const open=state.forders.filter(o=>o.date===TODAY&&o.status!=='لغو'&&(o.status!=='تحویل‌شده'||!o.paid)).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
+  const open=state.forders.filter(o=>o.date===TODAY&&o.status!=='لغو'&&(o.status!=='تحویل‌شده'||(!o.paid&&o.pay!=='نسیه'))).sort((a,b)=>(b.time||'').localeCompare(a.time||''));
   const done=state.forders.filter(o=>o.date===TODAY&&o.status==='تحویل‌شده'&&o.paid);
   return `
   <div class="chips">${cats.map(c=>`<button class="chip" data-mcat="${esc(c)}" aria-pressed="${c===cat}">${esc(c)}</button>`).join('')}</div>
@@ -746,14 +749,16 @@ function scrPos(){
     ${cb.rows.length?`<form class="f" data-form="forder">
       <label>نوع<select id="fo-kind" name="kind">${opts(FOOD_KIND,'سالن')}</select></label>
       <label>میز یا آدرس<input id="fo-table" name="table" placeholder="مثلاً میز ۴"></label>
-      <label>پرداخت<select id="fo-pay" name="pay">${opts([['','بعداً'],...PAY_M.map(x=>[x,x])],'')}</select></label>
+      <label>پرداخت<select id="fo-pay" name="pay">${opts([['','بعداً'],...PAY_M.map(x=>[x,x]),['نسیه','نسیه (حساب مشتری)']],'')}</select></label>
+      <label>مشتری (برای نسیه)<input id="fo-cust" name="customer" list="foCust" placeholder="نام"><datalist id="foCust">${[...new Set(state.forders.filter(o=>o.customer).map(o=>o.customer))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label>
+      <label>موبایل مشتری<input id="fo-phone" name="phone" inputmode="tel" placeholder="اختیاری"></label>
       <label>توضیح<input id="fo-note" name="note" placeholder="مثلاً بدون شکر"></label>
       <button class="btn full">ثبت و ارسال به ${ws.type==='cafe'?'بار':'آشپزخانه'}</button>
       <button type="button" class="lnk full" data-cartclear="1">خالی کردن</button></form>`:''}</section>
   <section class="card"><div class="row"><h3>سفارش‌های باز امروز</h3><span class="small muted">${fmtN(done.length)} سفارش بسته شد</span></div>
     ${open.length?`<ul class="list">${open.map(o=>`<li><div class="grow"><div class="t">${esc(o.kind)}${o.table?' · '+esc(o.table):''} <span class="small muted">${esc(o.time||'')}</span></div><div class="m">${esc(itemsTxt(o))}${o.note?' · '+esc(o.note):''}</div>
       <div class="row" style="justify-content:flex-start;gap:6px;margin-top:4px">${o.status==='آماده'?`<button class="btn" style="padding:4px 10px;font-size:.8rem" data-fstatus="${o.id}|تحویل‌شده">تحویل شد</button>`:''}
-      <select class="inline" data-set="forders/${o.id}" data-field="pay" aria-label="روش پرداخت">${opts([['','پرداخت‌نشده'],...PAY_M.map(x=>[x,x])],o.paid?o.pay:'')}</select></div></div>
+      <select class="inline" data-set="forders/${o.id}" data-field="pay" aria-label="روش پرداخت">${opts([['','پرداخت‌نشده'],...PAY_M.map(x=>[x,x]),['نسیه','نسیه']],o.paid||o.pay==='نسیه'?o.pay:'')}</select>${o.customer?`<span class="small muted">${esc(o.customer)}</span>`:''}</div></div>
       <div style="display:grid;justify-items:end;gap:4px"><span class="num">${fmtN(itemsTotal(o))}</span>${fPill(o)}${o.paid?'<span class="pill p-ok">پرداخت شد</span>':''}${delBtn('forders',o.id,'لغو')}</div></li>`).join('')}</ul>`:empty('سفارش بازی نیست.')}</section>`;
 }
 function scrKitchen(){
@@ -1622,6 +1627,52 @@ function admWsRow(w){
     <button class="lnk del ${armed==='admdel/'+w.id?'armed':''}" data-admdel="${w.id}">${armed==='admdel/'+w.id?'همه داده‌ها پاک شود؟':'حذف پنل'}</button></div></div></li>`;
 }
 
+// ---------- debtors: one list of who owes the business, from every place money is left unpaid ----------
+const nameKey=s=>String(s||'').trim().replace(/\s+/g,' ')||'بدون نام';
+function debtors(){
+  const o={}, add=(name,phone,it)=>{if(!(it.amount>0))return;const k=nameKey(name);const d=o[k]||(o[k]={name:k,phone:'',amount:0,since:it.date||TODAY,items:[]});
+    d.amount+=it.amount;if(phone&&!d.phone)d.phone=phone;if(it.date&&it.date<d.since)d.since=it.date;d.items.push(it)};
+  const clientPhone=id=>(state.clients.find(c=>c.id===id)||{}).phone||'';
+  // Credit book (nasieh and manual debts): one balance per person.
+  ledgerBalances().forEach(c=>{if(c.bal>0){const first=state.ledger.filter(l=>nameKey(l.name)===nameKey(c.name)&&+l.amount>0).map(l=>l.date).sort()[0];
+    add(c.name,c.phone,{src:'ledger',id:c.name,label:'دفتر نسیه',amount:c.bal,date:first||c.last})}});
+  state.appointments.filter(a=>a.status==='انجام‌شده'&&!a.paid&&+a.price>0).forEach(a=>add(a.clientName,a.phone||clientPhone(a.clientId),{src:'appt',id:a.id,label:(a.serviceName||'نوبت')+' · '+jd(a.date),amount:+a.price,date:a.date}));
+  state.plans.filter(p=>planDue(p)>0).forEach(p=>add(p.clientName,p.phone,{src:'plan',id:p.id,label:'طرح درمان',amount:planDue(p),date:p.date}));
+  state.jobs.filter(j=>j.status==='تحویل‌شده'&&!j.paid).forEach(j=>add(j.customer,j.phone,{src:'job',id:j.id,label:'تعمیر '+(j.device||'')+' · '+fmtN(j.code),amount:jAmt(j)-(+j.deposit||0),date:j.deliveredOn||j.date}));
+  state.forders.filter(x=>fValid(x)&&!x.paid&&(x.pay==='نسیه'||x.date<TODAY)).forEach(x=>add(x.customer||'سفارش‌های بی‌نام تسویه‌نشده',x.phone,{src:'forder',id:x.id,label:itemsTxt(x)+' · '+jd(x.date)+(x.customer?'':' · '+(x.table||x.kind||'')),amount:itemsTotal(x),date:x.date}));
+  state.sorders.filter(x=>x.status==='در انتظار پرداخت').forEach(x=>add(x.customer,x.phone,{src:'sorder',id:x.id,label:'سفارش '+jd(x.date),amount:itemsTotal(x)+(+x.fee||0),date:x.date}));
+  state.checks.filter(c=>c.kind==='دریافتنی'&&!c.paid).forEach(c=>add(c.party,'',{src:'check',id:c.id,label:'چک · سررسید '+jd(c.due),amount:+c.amount||0,date:c.due}));
+  return Object.values(o).sort((a,b)=>b.amount-a.amount);
+}
+async function settleItem(it){
+  const now=Date.now();
+  if(it.src==='ledger'){const c=ledgerBalances().find(x=>x.name===it.id);if(c&&c.bal>0)await C('ledger').add({name:c.name,phone:c.phone||'',amount:-c.bal,date:TODAY,note:'تسویه',by:me.id,createdAt:now});return}
+  if(it.src==='plan'){const p=state.plans.find(x=>x.id===it.id);if(p)await D('plans/'+p.id).update({payments:[...(p.payments||[]),{date:TODAY,amount:planDue(p),by:me.id}],updatedAt:now});return}
+  const col={appt:'appointments',job:'jobs',forder:'forders',sorder:'sorders',check:'checks'}[it.src];
+  const data=it.src==='sorder'?{status:'پرداخت‌شده'}:it.src==='forder'?{paid:true,pay:'نقد'}:{paid:true};
+  await D(col+'/'+it.id).update({...data,updatedAt:now});
+}
+function debtsBody(){
+  const q=(ui.q||'').trim(), all=debtors();
+  const list=q?all.filter(d=>d.name.includes(q)||String(d.phone).includes(q)):all;
+  const total=all.reduce((a,d)=>a+d.amount,0), old=all.filter(d=>d.since<addDays(TODAY,-30));
+  return `<div class="kpis"><div class="kpi wide"><span class="lab">طلب از مشتری‌ها</span><span class="val">${fmtT(total)} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">${fmtN(all.length)} بدهکار</span></div>
+    ${old.length?`<div class="kpi alert"><span class="lab">بیش از ۳۰ روز</span><span class="val">${fmtT(old.reduce((a,d)=>a+d.amount,0))}</span><span class="hint">${fmtN(old.length)} نفر</span></div>`:''}</div>
+  <details class="add"><summary>ثبت بدهی یا دریافت دستی</summary><form class="f" data-form="ledger">
+    <label>نام مشتری<input id="db-name" name="name" required list="debtNames"><datalist id="debtNames">${all.map(d=>`<option value="${esc(d.name)}">`).join('')}</datalist></label>
+    <label>موبایل<input id="db-phone" name="phone" inputmode="tel"></label>
+    <label>نوع<select id="db-type" name="type">${opts([['debt','بدهی جدید'],['pay','دریافت پول']],'debt')}</select></label>
+    <label>مبلغ<input id="db-amt" name="amount" type="number" min="0" step="1000" required></label>
+    <label class="full">توضیح<input id="db-note" name="note" placeholder="مثلاً باقی پول خرید"></label>
+    <button class="btn full">ثبت</button></form></details>
+  ${all.length>6?searchBox('جستجوی نام یا موبایل'):''}
+  ${list.length?list.map(d=>{const k='debt/'+d.name;return `<details class="card"${ui.openDebt===d.name?' open':''} data-debtbox="${esc(d.name)}"><summary class="row" style="cursor:pointer"><div><div class="t">${esc(d.name)}</div><div class="m">${d.phone?esc(d.phone)+' · ':''}از ${rel(d.since)} · ${fmtN(d.items.length)} مورد</div></div><span class="num t" style="color:${d.since<addDays(TODAY,-30)?'var(--bad)':'inherit'}">${fmtN(d.amount)}</span></summary>
+    <ul class="list">${d.items.map((it,i)=>`<li><span class="grow small">${esc(it.label)}</span><span class="num small">${fmtN(it.amount)}</span><button class="lnk" data-settle1="${esc(d.name)}|${i}">تسویه</button></li>`).join('')}</ul>
+    <div class="row" style="justify-content:flex-start;gap:8px">${d.phone?`<a class="chip" href="tel:${esc(d.phone)}">تماس</a>`:''}<button class="btn" style="padding:6px 14px" data-settleall="${esc(d.name)}">${armed===k?'مطمئنی؟ همه تسویه شود':'تسویه همه ('+fmtN(d.amount)+')'}</button></div></details>`}).join('')
+    :empty(all.length?'کسی با این نام پیدا نشد.':'هیچ‌کس به کسب‌وکار بدهکار نیست.')}`;
+}
+const scrDebts=()=>`<div class="row"><h2>بدهکاران</h2><button class="lnk" data-go="money" data-mtab="costs">مالی</button></div>`+debtsBody();
+
 // ---------- needs form for businesses not in the samples ----------
 let amOwner=false, needReqs=[], needResult=null, needJob='';
 const NQ={
@@ -1957,7 +2008,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={settings:scrSettings,debts:scrDebts,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -2029,12 +2080,15 @@ V.addEventListener('click',async e=>{
   if(d.delreq){if(armed!=='req/'+d.delreq){armed='req/'+d.delreq;render();return}armed=null;try{await db.doc('requests/'+d.delreq).delete();toast('حذف شد')}catch(e){toast('حذف نشد')}return}
   if(d.open){const w=workspaces.find(x=>x.id===d.open);if(w){openWs(w);window.scrollTo({top:0})}return}
   if(d.closeset){ui.screen=null;render();return}
-  if(d.go){ui.screen=d.go;if(d.ctab)ui.costTab=d.ctab;if(d.cat){ui.taskCat=d.cat}if(d.ost)ui.ost=d.ost;if(d.jst)ui.jst=d.jst;render();window.scrollTo({top:0});return}
+  if(d.go){ui.screen=d.go;if(d.mtab)ui.moneyTab=d.mtab;if(d.ctab)ui.costTab=d.ctab;if(d.cat){ui.taskCat=d.cat}if(d.ost)ui.ost=d.ost;if(d.jst)ui.jst=d.jst;render();window.scrollTo({top:0});return}
   if(d.period){ui.period=d.period;render();return}
   if(d.source){ui.source=d.source;render();return}
   if(d.ost&&!d.go){ui.ost=d.ost;render();return}
   if(d.jst&&!d.go){ui.jst=d.jst;render();return}
   if(d.mcat){ui.mcat=d.mcat;render();return}
+  if(d.settle1){const [n,i]=d.settle1.split('|');const it=(debtors().find(x=>x.name===n)||{items:[]}).items[+i];if(!it)return;ui.openDebt=n;await write(()=>settleItem(it),'تسویه شد');return}
+  if(d.settleall){const dd=debtors().find(x=>x.name===d.settleall);if(!dd)return;const k='debt/'+dd.name;if(armed!==k){armed=k;render();return}armed=null;
+    await write(async()=>{for(const it of dd.items)await settleItem(it)},dd.name+' تسویه شد');return}
   if(d.ctab&&!d.go){ui.costTab=d.ctab;render();return}
   if(d.rcdel){const [id,k]=d.rcdel.split('|');const src=costSrc(),m=src.items.find(x=>x.id===id);if(!m)return;ui.openRecipe=id;
     await write(()=>D(src.col+'/'+id).update({recipe:(m.recipe||[]).filter((_,i)=>i!==+k),updatedAt:Date.now()}),'از دستور حذف شد');return}
@@ -2095,7 +2149,8 @@ V.addEventListener('change',async e=>{
   if(el.id&&el.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm());return}
   if(el.dataset.wsname){const nv=el.value.trim();if(nv)await write(()=>db.doc('workspaces/'+ws.id).update({name:nv}),'نام ذخیره شد');return}
   if(el.dataset.avail){await write(()=>D('menu/'+el.dataset.avail).update({available:el.checked,updatedAt:Date.now()}),el.checked?'موجود شد':'ناموجود شد');return}
-  if(el.dataset.set&&el.dataset.set.startsWith('forders/')&&el.dataset.field==='pay'){await write(()=>D(el.dataset.set).update({pay:el.value,paid:!!el.value,updatedAt:Date.now()}),el.value?'پرداخت ثبت شد':'پرداخت برداشته شد');return}
+  if(el.dataset.set&&el.dataset.set.startsWith('forders/')&&el.dataset.field==='pay'){const o=state.forders.find(x=>'forders/'+x.id===el.dataset.set);if(el.value==='نسیه'&&!(o&&o.customer)){toast('برای نسیه، سفارش را با نام مشتری ثبت کن');render();return}
+    await write(()=>D(el.dataset.set).update({pay:el.value,paid:!!el.value&&el.value!=='نسیه',updatedAt:Date.now()}),el.value==='نسیه'?'به حساب '+o.customer+' رفت':el.value?'پرداخت ثبت شد':'پرداخت برداشته شد');return}
   if(el.dataset.set&&el.dataset.set.startsWith('jobs/')&&el.dataset.field==='status'){await write(()=>D(el.dataset.set).update({status:el.value,...(el.value==='تحویل‌شده'?{deliveredOn:TODAY}:{}),updatedAt:Date.now()}),el.value==='آماده تحویل'?'آماده تحویل؛ به مشتری خبر بده':'ذخیره شد');return}
   if(el.dataset.planbase){const id=el.dataset.planbase;const pl=readPlan(id);if(pl){pl.base=el.value;pl.roleLabels={...baseRoles(el.value)};pl.roleLabels.owner='مالک';pl.labels={};try{await db.doc('requests/'+id).update({plan:pl,status:'در حال برنامه‌ریزی'})}catch(e){toast('ذخیره نشد')}}return}
   if(el.id==='pe-kind'){const r=document.getElementById('pe-role');if(r){if(el.value==='specialist')r.value='specialist';else if(r.value==='specialist')r.value=TEMPLATES[ws.type]?.staffRole||'team'}return}
@@ -2109,7 +2164,7 @@ V.addEventListener('change',async e=>{
       if(el.checked&&t.repeat&&t.repeat!=='none'&&!t.spawned){const nd=nextDue(t);await C('tasks').add({title:t.title,from:t.from,to:t.to,due:nd,repeat:t.repeat,category:t.category||'سایر',note:t.note||'',done:false,createdAt:Date.now()});await D('tasks/'+t.id).update({spawned:true})}},
       el.checked?(t.repeat&&t.repeat!=='none'?'انجام شد، نوبت بعدی ساخته شد':'انجام شد'):'دوباره باز شد');}
 });
-V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
+V.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.reqbox){if(d.open)ui.openReq=d.dataset.reqbox;else if(ui.openReq===d.dataset.reqbox)ui.openReq=null}if(d.dataset&&d.dataset.debtbox){if(d.open)ui.openDebt=d.dataset.debtbox;else if(ui.openDebt===d.dataset.debtbox)ui.openDebt=null}if(d.dataset&&d.dataset.recipebox){if(d.open)ui.openRecipe=d.dataset.recipebox;else if(ui.openRecipe===d.dataset.recipebox)ui.openRecipe=null}},true);
 V.addEventListener('input',e=>{if(e.target.id==='admq'){ui.admQ=e.target.value;render();const i=document.getElementById('admq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}else if(e.target.id==='q'){ui.q=e.target.value;render()}else if(e.target.id&&e.target.id.startsWith('gs-')){const b=document.getElementById('gs-sum');if(b)b.innerHTML=goldSumHtml(readGoldForm())}});
 V.addEventListener('submit',async e=>{
   const f=e.target.closest('form.f');if(!f)return;e.preventDefault();
@@ -2160,7 +2215,8 @@ V.addEventListener('submit',async e=>{
     case 'forder':{if(!db){toast('اتصال به سرور برقرار نیست');return}
       const items=Object.keys(ui.cart).filter(k=>ui.cart[k]>0).map(id=>{const m=state.menu.find(x=>x.id===id);return m?{mid:id,name:m.name,qty:ui.cart[id],price:+m.price||0}:null}).filter(Boolean);
       if(!items.length){toast('اول از منو انتخاب کن');return}
-      const ok=await write(()=>C('forders').add({date:TODAY,time:nowTime(),kind:v.kind,table:v.table,items,note:v.note,pay:v.pay,paid:!!v.pay,status:'ثبت‌شده',by:me.id,createdAt:now}),'سفارش ثبت شد');
+      if(v.pay==='نسیه'&&!v.customer){toast('برای نسیه نام مشتری را بنویس');return}
+      const ok=await write(()=>C('forders').add({date:TODAY,time:nowTime(),kind:v.kind,table:v.table,items,note:v.note,pay:v.pay,paid:!!v.pay&&v.pay!=='نسیه',...(v.customer?{customer:v.customer,phone:v.phone||''}:{}),status:'ثبت‌شده',by:me.id,createdAt:now}),v.pay==='نسیه'?'سفارش به حساب '+v.customer+' ثبت شد':'سفارش ثبت شد');
       if(ok){ui.cart={};render()}return}
     case 'rsale':{if(!db){toast('اتصال به سرور برقرار نیست');return}
       const items=Object.keys(ui.cart).filter(k=>ui.cart[k]>0).map(id=>{const p=state.products.find(x=>x.id===id);return p?{pid:id,name:p.name,qty:ui.cart[id],price:+p.price||0,cost:+p.cost||0}:null}).filter(Boolean);
