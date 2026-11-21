@@ -283,6 +283,29 @@ test('the platform admin manages accounts', { skip: !DB && 'TEST_DATABASE_URL no
   assert.equal((await admin.call('POST', '/api/admin/user', { id: me.id, blocked: false })).status, 200);
 });
 
+test('customer club SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const admin = new Client();
+  await owner.login('09127777771');
+  await admin.login(ADMIN);
+  const w = await owner.add('workspaces', { name: 'کافه باشگاه', type: 'cafe' });
+  const ws = `workspaces/${w.body.id}`;
+  assert.equal((await owner.add(`${ws}/members`, { name: 'سارا', phone: '09121112222' })).status, 200);
+  const send = (body) => owner.call('POST', '/api/sms', { ws: w.body.id, text: '{نام} عزیز سلام', to: [{ phone: '09121112222', name: 'سارا' }], ...body });
+  assert.equal((await send()).body.error, 'plan_required');
+  await admin.patch(ws, { plan: 'pro', smsQuota: 2 });
+  const r = await send({ kind: 'promo', to: [{ phone: '۰۹۱۲۱۱۱۲۲۲۲' }, { phone: '09121112222' }, { phone: 'bad' }] });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.status, 'آزمایشی');
+  assert.equal(r.body.count, 1);
+  const log = (await owner.get(`${ws}/smslog`)).body.docs;
+  assert.equal(log.length, 1);
+  assert.match(log[0].data.text, /لغو۱۱$/);
+  assert.equal((await owner.add(`${ws}/smslog`, { count: -100 })).status, 403);
+  assert.equal((await send({ to: [{ phone: '09121113333' }, { phone: '09121114444' }] })).body.error, 'quota');
+  assert.deepEqual((await owner.call('GET', `/api/sms/status?ws=${w.body.id}`)).body, { quota: 2, used: 1, live: false });
+});
+
 test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
   const port = 3998;
   let log = '';

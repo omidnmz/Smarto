@@ -9,6 +9,7 @@ import { seedSamples } from './seed.js';
 import { authRoutes, currentUser } from './auth.js';
 import { AccessError } from './access.js';
 import { adminRoutes } from './admin.js';
+import { clubRoutes } from './club.js';
 import * as store from './store.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -47,6 +48,7 @@ app.setErrorHandler((err, req, reply) => {
 
 authRoutes(app);
 adminRoutes(app);
+clubRoutes(app);
 const ctxOf = (req) => ({ user: req.user });
 
 app.get('/api/col', async (req) => ({ docs: await store.list(ctxOf(req), String(req.query.path || '')) }));
