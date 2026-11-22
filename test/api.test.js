@@ -362,3 +362,75 @@ test('monthly subscription: one free month, then read-only until renewed', { ski
   await admin.patch(ws, { paidUntil: '2099-01-01' });
   assert.equal((await owner.add(`${ws}/products`, { name: 'ب' })).status, 200);
 });
+
+test('public business page', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const other = new Client();
+  const anon = new Client();
+  const admin = await adminClient();
+  await owner.login('09129999991');
+  await other.login('09129999992');
+  const w = await owner.add('workspaces', { name: 'سالن صفحه', type: 'salon' });
+  const ws = `workspaces/${w.body.id}`;
+  const sv = await owner.add(`${ws}/services`, { name: 'کوتاهی', price: 300000 });
+  assert.equal((await anon.call('GET', '/api/public/salon-page')).status, 404);
+
+  // Slugs are checked and unique; the owner cannot set a custom domain.
+  assert.equal((await owner.patch(ws, { page: { on: true, slug: 'Bad Slug!' } })).body.error, 'bad_slug');
+  assert.equal((await owner.patch(ws, { page: { on: true, slug: 'salon-page', domain: 'x.ir', about: 'سلام' } })).status, 200);
+  const w2 = await other.add('workspaces', { name: 'دیگری', type: 'cafe' });
+  assert.equal((await other.patch(`workspaces/${w2.body.id}`, { page: { on: true, slug: 'salon-page' } })).status, 409);
+
+  const page = (await anon.call('GET', '/api/public/salon-page')).body;
+  assert.equal(page.name, 'سالن صفحه');
+  assert.equal(page.page.about, 'سلام');
+  assert.equal(page.book, false); // basic plan: no booking
+  assert.equal(page.badge, true);
+  assert.deepEqual(page.items.map((x) => x.name), ['کوتاهی']);
+
+  // Joining the club works on every plan, once per phone.
+  const join = (b) => anon.call('POST', '/api/public/salon-page/join', b);
+  assert.equal((await join({ name: 'مینا', phone: 'bad' })).body.error, 'bad_contact');
+  assert.equal((await join({ name: 'مینا', phone: '۰۹۱۲۵۵۵۶۶۶۶', birthday: '6-15' })).status, 200);
+  assert.equal((await join({ name: 'مینا', phone: '09125556666' })).body.already, true);
+  const members = (await owner.get(`${ws}/members`)).body.docs;
+  assert.equal(members.length, 1);
+  assert.equal(members[0].data.birthday, '6-15');
+
+  const day = new Date(Date.now() + 3.5 * 3600000 + 86400000).toISOString().slice(0, 10);
+  const book = (b) => anon.call('POST', '/api/public/salon-page/book', { name: 'مینا', phone: '09125556666', serviceId: sv.body.id, date: day, time: '10:30', ...b });
+  assert.equal((await book()).body.error, 'not_available');
+  await admin.patch(ws, { plan: 'pro' });
+  assert.equal((await anon.call('GET', '/api/public/salon-page')).body.book, true);
+  assert.equal((await book({ date: '2020-01-01' })).body.error, 'bad_date');
+  assert.equal((await book()).status, 200);
+  const ap = (await owner.get(`${ws}/appointments`)).body.docs;
+  assert.equal(ap.length, 1);
+  assert.equal(ap[0].data.status, 'رزرو');
+  assert.equal(ap[0].data.price, 300000);
+  assert.equal(ap[0].data.source, 'سایت');
+  assert.equal((await owner.get(`${ws}/clients`)).body.docs.length, 1);
+
+  // Orders go into the café's orders and take ingredients out of stock.
+  const cafe = `workspaces/${w2.body.id}`;
+  await admin.patch(cafe, { plan: 'pro' });
+  await other.patch(cafe, { page: { on: true, slug: 'cafe-page' } });
+  const inv = await other.add(`${cafe}/inventory`, { name: 'قهوه', stock: 1, unit: 'کیلو' });
+  const m = await other.add(`${cafe}/menu`, { name: 'اسپرسو', price: 90000, available: true, recipe: [{ iid: inv.body.id, qty: 0.02 }] });
+  const order = (b) => anon.call('POST', '/api/public/cafe-page/order', { name: 'رضا', phone: '09127778888', items: [{ id: m.body.id, qty: 2 }, { id: 'nope', qty: 1 }], ...b });
+  assert.equal((await order({ mode: 'delivery' })).body.error, 'bad_address');
+  const o = await order();
+  assert.equal(o.status, 200);
+  assert.equal(o.body.total, 180000);
+  const fo = (await other.get(`${cafe}/forders`)).body.docs;
+  assert.equal(fo[0].data.kind, 'بیرون‌بر');
+  assert.equal(fo[0].data.status, 'ثبت‌شده');
+  const stock = (await other.get(`${cafe}/inventory`)).body.docs[0].data.stock;
+  assert.equal(stock, 0.96);
+
+  // Turned off or expired: no page, no orders.
+  await admin.patch(cafe, { paidUntil: '2020-01-01' });
+  assert.equal((await order()).body.error, 'subscription_expired');
+  await owner.patch(ws, { page: { on: false, slug: 'salon-page' } });
+  assert.equal((await anon.call('GET', '/api/public/salon-page')).status, 404);
+});

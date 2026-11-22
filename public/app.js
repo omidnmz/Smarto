@@ -62,7 +62,7 @@ const SHOP_ROLES={owner:'مالک',manager:'مدیر فروش',warehouse:'انب
 const SHOP_ST=['جدید','در انتظار پرداخت','پرداخت‌شده','بسته‌بندی','ارسال‌شده','تحویل‌شده','مرجوعی','لغو'];
 const PAID_ST=['پرداخت‌شده','بسته‌بندی','ارسال‌شده','تحویل‌شده'];
 const SHOP_CH=['اینستاگرام','سایت','دیجی‌کالا','باسلام','تلگرام'];
-const SHIP=['پست','تیپاکس','پیک'];
+const SHIP=['پست','تیپاکس','پیک','حضوری'];
 const CAFE_ROLES={owner:'مالک',manager:'مدیر کافه',cashier:'صندوقدار',waiter:'گارسون',kitchen:'باریستا و بار',specialist:'متخصص'};
 const REST_ROLES={owner:'مالک',manager:'مدیر سالن',cashier:'صندوقدار',waiter:'گارسون',kitchen:'آشپزخانه',specialist:'متخصص'};
 const REPAIR_ROLES={owner:'مالک',reception:'پذیرش',tech:'تعمیرکار',specialist:'متخصص'};
@@ -72,6 +72,7 @@ const RE_ROLES={owner:'مدیر املاک',agent:'مشاور',specialist:'مت�
 const CAR_ROLES={owner:'مدیر نمایشگاه',seller:'فروشنده',partner:'شریک',specialist:'کارشناس فنی'};
 const PAY_TYPES=['حقوق ماهانه','درصدی','پروژه‌ای','ساعتی'];
 const LBL={salon:{client:'مشتری',clients:'مشتریان',staff:'آرایشگر',note:'یادداشت (مثلاً فرمول رنگ)'},clinic:{client:'بیمار',clients:'بیماران',staff:'پزشک',note:'یادداشت ویزیت'},dental:{client:'بیمار',clients:'بیماران',staff:'دندانپزشک',note:'یادداشت درمان'}};
+const srcPill=x=>x&&x.source==='سایت'?' <span class="pill p-info">از سایت</span>':'';
 const APPT_ST=['رزرو','تأیید شده','انجام‌شده','لغو','نیامد'];
 const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',cars:'نمایشگاه ماشین',salon:'سالن زیبایی',clinic:'کلینیک'};
 const STORE_COLS=['people','products','sales','orders','payments','tasks','ideas','content','costs','salaries'];
@@ -326,7 +327,7 @@ function balances(){
   const brs=[...new Set([...state.people.filter(p=>p.role==='branch').map(p=>p.branch||p.name),...state.orders.map(o=>o.branch).filter(b=>b&&b!==CENTRAL)])];
   return brs.map(b=>{const ord=state.orders.filter(o=>o.branch===b).reduce((a,o)=>a+(+o.amount||0),0);const pay=state.payments.filter(p=>p.branch===b&&p.confirmed).reduce((a,p)=>a+(+p.amount||0),0);const pend=state.payments.filter(p=>p.branch===b&&!p.confirmed).length;return {b,bal:ord-pay,pend}});
 }
-const orderPill=o=>{const m={'ثبت‌شده':'p-mute','در حال آماده‌سازی':'p-warn','ارسال‌شده':'p-info','تحویل‌شده':'p-ok'};return `<span class="pill ${m[o.status]||'p-mute'}">${esc(o.status)}</span>`};
+const orderPill=o=>{const m={'ثبت‌شده':'p-mute','در حال آماده‌سازی':'p-warn','ارسال‌شده':'p-info','تحویل‌شده':'p-ok'};return `<span class="pill ${m[o.status]||'p-mute'}">${esc(o.status)}</span>`+srcPill(o)};
 function scrBranches(){
   const bal=balances();
   const open=state.orders.filter(o=>o.status!=='تحویل‌شده').sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -413,7 +414,7 @@ const svc=id=>state.services.find(x=>x.id===id);
 const client=id=>state.clients.find(x=>x.id===id);
 const staffList=()=>state.people.filter(p=>p.role==='staff');
 const isDone=a=>a.status==='انجام‌شده';
-const apptPill=a=>{const m={'رزرو':'p-mute','تأیید شده':'p-info','انجام‌شده':'p-ok','لغو':'p-bad','نیامد':'p-warn'};return `<span class="pill ${m[a.status]||'p-mute'}">${esc(a.status)}</span>`};
+const apptPill=a=>{const m={'رزرو':'p-mute','تأیید شده':'p-info','انجام‌شده':'p-ok','لغو':'p-bad','نیامد':'p-warn'};return `<span class="pill ${m[a.status]||'p-mute'}">${esc(a.status)}</span>`+srcPill(a)};
 const tm=t=>(t||'').replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
 function clientStats(id){const as=state.appointments.filter(a=>a.clientId===id);const done=as.filter(isDone).sort((a,b)=>b.date.localeCompare(a.date));return {as,done,last:done[0]?.date||null,total:done.reduce((x,a)=>x+(+a.price||0),0),next:as.filter(a=>a.date>=TODAY&&!['لغو','نیامد','انجام‌شده'].includes(a.status)).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0]}}
 
@@ -2119,6 +2120,7 @@ function scrSettings(){
     <div class="small muted">نوع: ${esc(ws.typeLabel||t.label)}</div>
     <label class="small muted">چند نفره<select class="inline" data-wsteam="1" style="width:100%">${opts([['','انتخاب نشده'],...TEAM_SIZES],ws.teamSize||'')}</select></label>
     <div class="row" style="justify-content:flex-start;gap:8px"><span class="small muted">پلن:</span>${amOwner?`<select class="inline" data-wsplan="1">${opts(Object.entries(PLANS),planOf(ws))}</select>`:planPill(ws)}${!amOwner&&!isPaid()&&(ws.type==='cafe'||ws.type==='restaurant')&&me.role==='owner'?'<button class="chip" data-go="cost">ارتقا و کاست کنترل</button>':''}</div></section>
+  ${pageCard()}
   ${teamGroup('کارمندان',emps,roles,isStore)}
   ${teamGroup('متخصصان و همکاران بیرونی',specs,roles,isStore,'مثلاً عکاس محصول، مشاور مالی، طراح، ادمین اینستاگرام. هر متخصص فقط بخش «کارها» را می‌بیند تا کار و درخواست بگیرد و گزارش بدهد.')}
   <section class="card"><h3>افزودن کارمند یا متخصص</h3><form class="f" data-form="person">
@@ -2141,6 +2143,28 @@ function scrSettings(){
       ${['shop','retail','repair'].includes(ws.type)?'<label>موجودی<input id="it-stock" name="stock" type="number" min="0" value="10"></label><label>حداقل موجودی<input id="it-min" name="min" type="number" min="0" value="3"></label>':''}
       <button class="btn full">افزودن</button></form></details>
   </section>`}`;
+}
+// The business's public page: menu or services, contact, club sign-up; booking and ordering on Pro/VIP.
+const PAGE_BOOK=['salon','clinic','dental'], PAGE_ORDER=['cafe','restaurant','shop','retail'];
+const pageUrl=w=>location.origin+'/b/'+((w.page&&w.page.slug)||w.id);
+function pageCard(){
+  if(!(me.role==='owner'||me.role==='gm'))return '';
+  const pg=ws.page||{}, paid=isPaid(), url=pageUrl(ws);
+  const what=PAGE_BOOK.includes(ws.type)?'رزرو نوبت آنلاین':PAGE_ORDER.includes(ws.type)?'سفارش آنلاین':'';
+  const t=(k,l,ph,max)=>`<label>${l}<input name="${k}" value="${esc(pg[k]||'')}" placeholder="${ph}" maxlength="${max}"></label>`;
+  return `<section class="card"><div class="row"><h3>صفحه عمومی کسب‌وکار</h3>${pg.on?'<span class="pill p-ok">روشن</span>':'<span class="pill p-mute">خاموش</span>'}</div>
+    <p class="small muted" style="margin:0">یک صفحه برای مشتری‌ها با ${esc(ws.itemsLabel||(TEMPLATES[ws.type]||{}).itemsLabel||'خدمات')} و قیمت‌ها، ساعت کار، آدرس و عضویت در باشگاه مشتری. لینکش را در بیو اینستاگرام یا گوگل‌مپ بگذار.${what?(paid?' '+what+' هم روی صفحه فعال است و مستقیم در پنل ثبت می‌شود.':' '+what+' با پلن Pro یا VIP روی صفحه باز می‌شود.'):''}</p>
+    ${pg.on?`<div class="row" style="justify-content:flex-start;gap:6px;flex-wrap:wrap"><a class="chip" href="${esc(url)}" target="_blank" rel="noopener" dir="ltr" style="text-decoration:none">${esc(url.replace(/^https?:\/\//,''))}</a><button class="chip" data-copypage="1">کپی لینک</button>${pg.domain?`<span class="pill p-info" dir="ltr">${esc(pg.domain)}</span>`:''}</div>`:''}
+    <form class="f" data-form="page" style="padding:0">
+      <label style="grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--fg)"><input type="checkbox" style="width:auto;flex:none" name="on" ${pg.on?'checked':''}> صفحه روشن باشد</label>
+      ${t('slug','آدرس صفحه (انگلیسی)','مثلاً cafe-danj',32)}${t('phone','تلفن','۰۲۱…',30)}
+      ${t('hours','ساعت کار','هر روز ۹ تا ۲۲',300)}${t('instagram','اینستاگرام','@page',60)}
+      <label style="grid-column:1/-1">آدرس<input name="address" value="${esc(pg.address||'')}" maxlength="300"></label>
+      <label style="grid-column:1/-1">درباره ما<textarea name="about" maxlength="600">${esc(pg.about||'')}</textarea></label>
+      ${what&&paid?`<label style="grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--fg)"><input type="checkbox" style="width:auto;flex:none" name="${PAGE_BOOK.includes(ws.type)?'booking':'ordering'}" ${(PAGE_BOOK.includes(ws.type)?pg.booking:pg.ordering)!==false?'checked':''}> ${what} روشن باشد</label>`:''}
+      ${amOwner?`<label style="grid-column:1/-1">دامنه اختصاصی (VIP، فقط مدیر سامانه)<input name="domain" dir="ltr" value="${esc(pg.domain||'')}" placeholder="example.ir"></label>`:''}
+      <button class="btn full" style="grid-column:1/-1">ذخیره صفحه</button></form>
+    ${!amOwner&&planOf(ws)==='vip'?'<p class="small muted" style="margin:0">برای وصل کردن دامنه خودت به این صفحه، از پشتیبانی بخواه.</p>':''}</section>`;
 }
 async function createWorkspace(o){
   const t=tplOf(o.tpl), type=t.base, j=t.jt, now=Date.now();
@@ -2269,6 +2293,7 @@ V.addEventListener('click',async e=>{
   if(d.upgrade){if(!myUid){needLogin(null);return}if(ws.example){toast('این نمونه فقط برای تماشاست');return}
     try{const r=await db.collection('requests').add({kind:'upgrade',job:'ارتقای پنل به '+PLANS[d.upgrade],name:ws.name,wsId:ws.id,plan:d.upgrade,owner:me.name,createdAt:Date.now()});
       needReqs=[...needReqs,{id:r.id,kind:'upgrade',wsId:ws.id,plan:d.upgrade,uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست ارتقا فرستاده شد')}catch(e){toast('فرستاده نشد، دوباره امتحان کن')}return}
+  if(d.copypage){const u=pageUrl(ws);try{await navigator.clipboard.writeText(u);toast('لینک کپی شد')}catch(e){toast(u)}return}
   if(d.renew){try{await db.collection('requests').add({kind:'upgrade',renew:true,job:'تمدید اشتراک '+PLANS[planOf(ws)],name:ws.name,wsId:ws.id,plan:planOf(ws),owner:me.name,createdAt:Date.now()});
       needReqs=[...needReqs,{kind:'upgrade',wsId:ws.id,plan:planOf(ws),uid:myUid,status:'در انتظار بررسی'}];render();toast('درخواست تمدید فرستاده شد')}catch(e){toast('فرستاده نشد')}return}
   if(d.upgok||d.upgno){const r=needReqs.find(x=>x.id===(d.upgok||d.upgno));if(!r)return;
@@ -2359,6 +2384,14 @@ V.addEventListener('submit',async e=>{
     try{await smarto.verify(loginStep.phone,code);toast('خوش آمدی');await afterLogin()}
     catch(err){toast(err.status===403?'این حساب مسدود شده است':err.code==='wrong_code'?(loginStep.pl?'شماره را درست تکرار کن':'کد اشتباه است'):err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
   const v={};new FormData(f).forEach((x,k)=>v[k]=String(x).trim());
+  if(f.dataset.form==='page'){const pg=ws.page||{};
+    const page={...pg,on:v.on==='on',slug:toEn(v.slug||'').toLowerCase(),phone:v.phone||'',hours:v.hours||'',instagram:v.instagram||'',address:v.address||'',about:v.about||''};
+    if(PAGE_BOOK.includes(ws.type)&&isPaid())page.booking=v.booking==='on';
+    if(PAGE_ORDER.includes(ws.type)&&isPaid())page.ordering=v.ordering==='on';
+    if(amOwner)page.domain=v.domain||'';
+    try{await db.doc('workspaces/'+ws.id).update({page});ws.page=page;render();toast(page.on?'صفحه ذخیره شد':'ذخیره شد؛ صفحه خاموش است')}
+    catch(err){toast(err.code==='slug_taken'?'این آدرس را کسب‌وکار دیگری گرفته است':err.code==='bad_slug'?'آدرس صفحه فقط حروف انگلیسی کوچک، عدد و خط تیره (۳ تا ۳۲ حرف)':err.code==='bad_domain'?'دامنه درست نیست':'ذخیره نشد')}
+    return}
   const now=Date.now();let col,data,msg='ثبت شد';
   switch(f.dataset.form){
     case 'task':col='tasks';data={title:v.title,from:me.id,to:v.to||me.id,due:v.due,repeat:v.repeat,category:v.category,note:v.note,done:false};msg=v.to&&v.to!==me.id?'برای '+pname(v.to)+' فرستاده شد':'به کارهایت اضافه شد';break;
