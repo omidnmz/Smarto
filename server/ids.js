@@ -23,3 +23,21 @@ export function normalizePhone(raw) {
   else if (s.startsWith('9') && s.length === 10) s = '0' + s;
   return /^09\d{9}$/.test(s) ? s : null;
 }
+
+// Passwords are stored as scrypt$<salt>$<hash>. Persian and Arabic digits count as the same digits,
+// so a password typed on either keyboard works.
+const toLatin = (s) => String(s || '').replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+export const cleanPassword = (pw) => toLatin(pw).normalize('NFC');
+export function hashPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const h = crypto.scryptSync(cleanPassword(pw), salt, 32).toString('base64url');
+  return `scrypt$${salt}$${h}`;
+}
+export function checkPassword(pw, stored) {
+  const [kind, salt, h] = String(stored || '').split('$');
+  if (kind !== 'scrypt' || !salt || !h) return false;
+  const a = crypto.scryptSync(cleanPassword(pw), salt, 32);
+  const b = Buffer.from(h, 'base64url');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+export const tempPassword = () => String(crypto.randomInt(100000, 1000000));

@@ -1,6 +1,7 @@
 import { q } from './db.js';
 import { isAdmin, AccessError } from './access.js';
 import { paidUntil } from './subscription.js';
+import { hashPassword, tempPassword } from './ids.js';
 
 // The platform admin's own panel: every account and every business, with plans and blocking.
 const need = (req) => {
@@ -12,7 +13,7 @@ export function adminRoutes(app) {
   app.get('/api/admin/overview', async (req) => {
     need(req);
     const [users, wss, members, active] = await Promise.all([
-      q('select id, phone, created_at, last_login, coalesce(blocked,false) as blocked from users order by created_at desc'),
+      q('select id, phone, created_at, last_login, coalesce(blocked,false) as blocked, password_hash is not null as has_password from users order by created_at desc'),
       q(`select id, data from docs where parent='workspaces'`),
       q(`select split_part(parent,'/',2) as ws, data->>'uid' as uid, data->>'role' as role, data->>'name' as name from docs where parent like 'workspaces/%/people'`),
       q(`select split_part(path,'/',2) as ws, max(updated_at) as t from docs where path like 'workspaces/%/%' group by 1`),
@@ -28,7 +29,7 @@ export function adminRoutes(app) {
     return {
       users: users.rows.map((u) => ({
         id: u.id, phone: u.phone, createdAt: Number(u.created_at), lastLogin: Number(u.last_login) || null,
-        blocked: u.blocked, admin: isAdmin(u), panels: memberOf[u.id] || [],
+        blocked: u.blocked, hasPassword: u.has_password, admin: isAdmin(u), panels: memberOf[u.id] || [],
       })),
       workspaces: wss.rows.map((w) => ({
         id: w.id, name: w.data.name, type: w.data.type, typeLabel: w.data.typeLabel || '', plan: w.data.plan || 'basic',
@@ -49,5 +50,18 @@ export function adminRoutes(app) {
     await q('update users set blocked=$2 where id=$1', [id, blocked]);
     if (blocked) await q('delete from sessions where user_id=$1', [id]);
     return { ok: true };
+  });
+
+  // A forgotten password: the admin gives the user a one-time 6-digit password by phone,
+  // which signs the account out everywhere. The user changes it from «حساب من».
+  app.post('/api/admin/password', async (req) => {
+    need(req);
+    const u = (await q('select id, phone from users where id=$1', [String(req.body?.id || '')])).rows[0];
+    if (!u) throw new AccessError(404, 'not_found');
+    if (isAdmin(u)) throw new AccessError(400, 'cannot_reset_admin');
+    const password = tempPassword();
+    await q('update users set password_hash=$2, failed_logins=0, locked_until=0 where id=$1', [u.id, hashPassword(password)]);
+    await q('delete from sessions where user_id=$1', [u.id]);
+    return { password };
   });
 }
