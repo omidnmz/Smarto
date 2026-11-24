@@ -69,12 +69,17 @@ const REPAIR_ROLES={owner:'مالک',reception:'پذیرش',tech:'تعمیرکا
 const RETAIL_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
 const GOLD_ROLES={owner:'مالک',seller:'فروشنده',specialist:'متخصص'};
 const RE_ROLES={owner:'مدیر املاک',agent:'مشاور',specialist:'متخصص'};
+const BLD_TYPES=['building','complex'];
+const BLD_ROLES={owner:'مدیر ساختمان',board:'هیئت مدیره',accountant:'حسابدار',staff:'سرایدار و نگهبان',specialist:'متخصص'};
+const BLD_COLS=['people','units','dues','tickets','notices','costs','tasks','ideas','salaries'];
+const BLD_COST_CATS=['نظافت','آسانسور','آب و برق و گاز مشاع','نگهبانی و سرایداری','تعمیرات و نگهداری','باغبانی','بیمه و عوارض','سایر'];
+const costCats=()=>ws&&BLD_TYPES.includes(ws.type)?BLD_COST_CATS:COST_CATS;
 const CAR_ROLES={owner:'مدیر نمایشگاه',seller:'فروشنده',partner:'شریک',specialist:'کارشناس فنی'};
 const PAY_TYPES=['حقوق ماهانه','درصدی','پروژه‌ای','ساعتی'];
 const LBL={salon:{client:'مشتری',clients:'مشتریان',staff:'آرایشگر',note:'یادداشت (مثلاً فرمول رنگ)'},clinic:{client:'بیمار',clients:'بیماران',staff:'پزشک',note:'یادداشت ویزیت'},dental:{client:'بیمار',clients:'بیماران',staff:'دندانپزشک',note:'یادداشت درمان'}};
 const srcPill=x=>x&&x.source==='سایت'?' <span class="pill p-info">از سایت</span>':'';
 const APPT_ST=['رزرو','تأیید شده','انجام‌شده','لغو','نیامد'];
-const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',cars:'نمایشگاه ماشین',salon:'سالن زیبایی',clinic:'کلینیک'};
+const TYPE_LABEL={store:'فروشگاه',shop:'فروشگاه آنلاین',cafe:'کافه',restaurant:'رستوران',repair:'تعمیرگاه',retail:'مغازه',dental:'کلینیک دندانپزشکی',gold:'طلافروشی',realestate:'املاک',cars:'نمایشگاه ماشین',salon:'سالن زیبایی',clinic:'کلینیک',building:'مجتمع مسکونی',complex:'مجتمع تجاری'};
 const STORE_COLS=['people','products','sales','orders','payments','tasks','ideas','content','costs','salaries'];
 const APPT_COLS=['people','services','clients','appointments','inventory','purchases','tasks','ideas','costs','salaries'];
 const DENTAL_COLS=[...APPT_COLS,'plans'];
@@ -86,14 +91,14 @@ const RETAIL_COLS=['people','products','rsales','ledger','checks','tasks','ideas
 const GOLD_COLS=['people','products','gsales','ledger','checks','tasks','ideas','costs','salaries'];
 const RE_COLS=['people','listings','clients','visits','deals','tasks','ideas','costs','salaries'];
 const colsFor=t=>[...new Set([...colsFor0(t),'ledger','members','smslog'])];
-const colsFor0=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS}[t]||APPT_COLS);
+const colsFor0=t=>({store:STORE_COLS,shop:SHOP_COLS,cafe:FOOD_COLS,restaurant:FOOD_COLS,repair:REPAIR_COLS,retail:RETAIL_COLS,gold:GOLD_COLS,realestate:RE_COLS,dental:DENTAL_COLS,cars:CAR_COLS,building:BLD_COLS,complex:BLD_COLS}[t]||APPT_COLS);
 let ws=null, workspaces=[], unsubs=[];
 const L=k=>(ws&&ws.labels&&ws.labels[k])||(LBL[ws&&ws.type]||LBL.salon)[k];
 const rolesOf=()=>({...baseRoles(ws.type),...(ws.roleLabels||{})});
-const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES,cars:CAR_ROLES}[type]||APPT_ROLES[type]||{});
+const baseRoles=type=>({store:ROLES,shop:SHOP_ROLES,cafe:CAFE_ROLES,restaurant:REST_ROLES,repair:REPAIR_ROLES,retail:RETAIL_ROLES,gold:GOLD_ROLES,realestate:RE_ROLES,cars:CAR_ROLES,building:BLD_ROLES,complex:{...BLD_ROLES,owner:'مدیر مجتمع',staff:'نگهبان و خدمات'}}[type]||APPT_ROLES[type]||{});
 const roleLabel=r=>rolesOf()[r]||r;
-const DESK=['owner','gm','manager','front','reception','cashier','seller','agent','support'];
-function navFor(r){const n=navBase(r);if(!DESK.includes(r))return n;return [...n,...(n.some(x=>x[0]==='debts')?[]:[['debts','',1]]),['club','',1]]}
+const DESK=['accountant','owner','gm','manager','front','reception','cashier','seller','agent','support'];
+function navFor(r){const n=navBase(r);if(!DESK.includes(r))return n;return [...n,...(n.some(x=>x[0]==='debts')?[]:[['debts','',1]]),...(BLD_TYPES.includes(ws.type)?[]:[['club','',1]])]}
 function navBase(r){if(r==='specialist')return [['tasks','کارها']];
   if(ws.type==='store')return NAV[r]||NAV.team;
   if(ws.type==='shop'){
@@ -120,6 +125,11 @@ function navBase(r){if(r==='specialist')return [['tasks','کارها']];
     if(r==='owner')return [['cdash','داشبورد'],['ccars','ماشین‌ها'],['leads','مشتریان'],['cdeals','فروش'],['tasks','کارها'],['cvisits','',1],['checks','',1],['money','',1],['cprofit','',1]];
     if(r==='partner')return [['pshare','سهم من'],['ccars','ماشین‌ها'],['tasks','کارها']];
     return [['ccars','ماشین‌ها'],['leads','مشتریان'],['cvisits','تست‌درایو'],['cdeals','فروش'],['tasks','کارها']];}
+  if(BLD_TYPES.includes(ws.type)){
+    if(r==='owner'||r==='gm')return [['bdash','داشبورد'],['units','واحدها'],['dues','شارژ'],['tickets','درخواست‌ها'],['money','هزینه‌ها'],['tasks','کارها']];
+    if(r==='board')return [['bdash','داشبورد'],['dues','شارژ'],['money','هزینه‌ها'],['tickets','درخواست‌ها'],['tasks','کارها']];
+    if(r==='accountant')return [['dues','شارژ'],['money','هزینه‌ها'],['units','واحدها'],['tickets','درخواست‌ها'],['tasks','کارها']];
+    return [['tickets','درخواست‌ها'],['tasks','کارها']];}
   if(ws.type==='realestate'){
     if(r==='owner')return [['edash','داشبورد'],['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['tasks','کارها'],['edeals','',1],['money','',1]];
     return [['listings','فایل‌ها'],['buyers','مشتریان'],['visits','بازدید'],['edeals','قرارداد'],['tasks','کارها']];}
@@ -132,18 +142,19 @@ function navBase(r){if(r==='specialist')return [['tasks','کارها']];
   return [['myappts','نوبت‌های من'],['earn','درآمد من'],['tasks','کارها']];}
 const P=x=>'workspaces/'+ws.id+'/'+x;
 const D=x=>db.doc(P(x)), C=x=>db.collection(P(x));
-const catsFor=()=>ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:ws.type==='gold'?['فروش','ویترین و ساخت','نسیه و چک','مالی','سایر']:ws.type==='cars'?['خرید ماشین','فروش','تعمیر و آماده‌سازی','انتقال سند','مالی','سایر']:ws.type==='realestate'?['فایل‌ها','مشتریان','بازدید','قرارداد','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
+const catsFor=()=>BLD_TYPES.includes(ws.type)?['تعمیرات','نظافت','آسانسور','تأسیسات','مالی و شارژ','جلسه و ساکنین','سایر']:ws.type==='store'?CATS:ws.type==='shop'?['سفارش‌ها','ارسال','انبار','اینستاگرام','سایت','مالی','سایر']:ws.type==='cafe'||ws.type==='restaurant'?['سالن','آشپزخانه و بار','خرید و انبار','نظافت','اینستاگرام','مالی','سایر']:ws.type==='repair'?['پذیرش','تعمیر','قطعات','مشتریان','مالی','سایر']:ws.type==='retail'?['فروش','خرید و انبار','چک و بدهی','مالی','سایر']:ws.type==='gold'?['فروش','ویترین و ساخت','نسیه و چک','مالی','سایر']:ws.type==='cars'?['خرید ماشین','فروش','تعمیر و آماده‌سازی','انتقال سند','مالی','سایر']:ws.type==='realestate'?['فایل‌ها','مشتریان','بازدید','قرارداد','مالی','سایر']:['پذیرش و نوبت','خرید و انبار',L('clients'),'مالی','اینستاگرام','سایر'];
 const CENTRAL='مرکزی';
 const CHANNELS=['حضوری','سایت','اینستاگرام'];
 const ORDER_ST=['ثبت‌شده','در حال آماده‌سازی','ارسال‌شده','تحویل‌شده'];
 const CONTENT_ST=['ایده','در حال تولید','آماده انتشار','منتشرشده'];
+Object.assign(ICON,{bdash:ICON.edash,units:ICON.listings,dues:ICON.nasieh,tickets:ICON.jobs});
 const PLATFORMS=['پست اینستاگرام','ریلز','استوری','سایت'];
 const CATS=['فروشگاه','شعبه‌ها','سایت','اینستاگرام','مالی','پرداخت','سایر'];
 const REPEAT={none:'یک‌بار',daily:'روزانه',weekly:'هفتگی',monthly:'ماهانه'};
 const COST_CATS=['خرید و تأمین','حمل‌ونقل','قبوض','اجاره','تبلیغات','پذیرایی','سایر'];
 const JMONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 
-const state={};const resetState=()=>[...new Set(['ledger','members','smslog','rsales','gsales','sorders','jobs','cdeals','deals','clients','appointments','forders','plans','checks','purchases','inventory',...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS,...CAR_COLS])].forEach(c=>state[c]=[]);resetState();
+const state={};const resetState=()=>[...new Set(['ledger','members','smslog','rsales','gsales','sorders','jobs','cdeals','deals','clients','appointments','forders','plans','checks','purchases','inventory',...STORE_COLS,...APPT_COLS,...SHOP_COLS,...FOOD_COLS,...REPAIR_COLS,...RETAIL_COLS,...GOLD_COLS,...RE_COLS,...DENTAL_COLS,...CAR_COLS,...BLD_COLS])].forEach(c=>state[c]=[]);resetState();
 const ui={day:null,staffF:'همه',q:'',period:'today',source:'all',from:'',to:'',taskTab:'received',taskCat:'همه',moneyTab:'costs',salMonth:null,contentSt:'همه'};
 let db=null, me=null, armed=null, loaded=new Set();
 
@@ -290,7 +301,7 @@ function scrMoney(){
     <details class="add"><summary>ثبت هزینه</summary><form class="f" data-form="cost">
       <label class="full">شرح<input id="co-title" name="title" required placeholder="مثلاً کرایه پیک"></label>
       <label>مبلغ (تومان)<input id="co-amount" name="amount" type="number" min="0" step="1000" required></label>
-      <label>دسته<select id="co-cat" name="category">${opts(COST_CATS)}</select></label>
+      <label>دسته<select id="co-cat" name="category">${opts(costCats())}</select></label>
       <label class="full">تاریخ<input type="date" id="co-date" name="date" value="${TODAY}"></label>
       <button class="btn full">ثبت هزینه</button></form></details>
     ${rows.length?Object.entries(groups).map(([d,cs])=>`<section class="card"><div class="row"><h3>${jd(d,{weekday:'long',day:'numeric',month:'long'})}</h3><span class="num small">${fmtT(cs.reduce((a,c)=>a+(+c.amount||0),0))}</span></div><ul class="list">${cs.map(c=>`<li><div class="grow"><div class="t">${esc(c.title)}</div><div class="m">${esc(c.category)}</div></div><span class="num">${fmtN(c.amount)}</span>${delBtn('costs',c.id)}</li>`).join('')}</ul></section>`).join(''):empty('هزینه‌های روزانه مثل کرایه پیک و قبوض را این‌جا ثبت کن.')}`;
@@ -1646,6 +1657,177 @@ function admWsRow(w){
     <button class="lnk del ${armed==='admdel/'+w.id?'armed':''}" data-admdel="${w.id}">${armed==='admdel/'+w.id?'همه داده‌ها پاک شود؟':'حذف پنل'}</button></div></div></li>`;
 }
 
+
+// ---------- building management: residential (building) and commercial (complex) complexes ----------
+// Units with owner and resident, a monthly charge per unit, collection and debtors, building costs,
+// the fund balance, residents' requests, announcements, and a monthly report to share with residents.
+const isBld=()=>ws&&BLD_TYPES.includes(ws.type);
+const isMall=()=>ws&&ws.type==='complex';
+const UNIT_OCC=()=>isMall()?['بهره‌بردار مالک','مستأجر','خالی']:['مالک ساکن','مستأجر','خالی'];
+const TICKET_ST=['جدید','در حال انجام','انجام شد'];
+const chargeCfg=()=>({base:0,perM:0,perPerson:0,dueDay:10,fund0:0,...(ws.charge||{})});
+const uName=u=>(isMall()?'واحد ':'واحد ')+(u.no||'—');
+// Who pays the charge: the resident or tenant when there is one, otherwise the owner.
+const payer=u=>u.occ!=='خالی'&&u.resident?{name:u.resident,phone:u.residentPhone||''}:{name:u.owner||uName(u),phone:u.ownerPhone||''};
+const unitCharge=u=>{if(+u.fixed>0)return +u.fixed;const c=chargeCfg();const v=(+c.base||0)+(+u.area||0)*(+c.perM||0)+(isMall()?0:(u.occ==='خالی'?0:(+u.people||0))*(+c.perPerson||0));return Math.round(v/1000)*1000};
+const unitById=id=>state.units.find(u=>u.id===id);
+const dueLeft=d=>Math.max(0,(+d.amount||0)-(d.paid?(+d.amount||0):(+d.paidAmt||0)));
+const sortUnits=a=>[...a].sort((x,y)=>String(x.no).localeCompare(String(y.no),'fa',{numeric:true}));
+const fundIn=()=>state.dues.reduce((a,d)=>a+(d.paid?(+d.amount||0):(+d.paidAmt||0)),0);
+const fundOut=()=>state.costs.reduce((a,c)=>a+(+c.amount||0),0);
+const fundBal=()=>(+chargeCfg().fund0||0)+fundIn()-fundOut();
+function monthDues(k){return state.dues.filter(d=>d.month===k)}
+function bldDebts(){
+  const o={};
+  state.dues.filter(d=>dueLeft(d)>0).forEach(d=>{const u=unitById(d.unit)||{no:d.unitNo};const k=d.unit||d.unitNo;
+    const x=o[k]||(o[k]={u,amount:0,months:[],dues:[]});x.amount+=dueLeft(d);x.months.push(d.month);x.dues.push(d)});
+  return Object.values(o).sort((a,b)=>b.amount-a.amount);
+}
+function scrBDash(){
+  const k=jkey(TODAY), md=monthDues(k), cfg=chargeCfg();
+  const billed=md.reduce((a,d)=>a+(+d.amount||0),0), got=md.reduce((a,d)=>a+(+d.amount||0)-dueLeft(d),0);
+  const debts=bldDebts(), owed=debts.reduce((a,d)=>a+d.amount,0);
+  const ms=monthStart(TODAY), mCosts=state.costs.filter(c=>c.date>=ms&&c.date<=TODAY);
+  const byCat=groupSum(mCosts,c=>c.category||'سایر',c=>+c.amount||0);
+  const open=state.tickets.filter(t=>t.status!=='انجام شد');
+  const occ={};state.units.forEach(u=>{occ[u.occ||'—']=(occ[u.occ||'—']||0)+1});
+  const issued=md.length>0, pct=billed?Math.round(got/billed*100):0;
+  return `
+  <div class="kpis">
+    <div class="kpi wide"><span class="lab">موجودی صندوق ساختمان</span><span class="val" style="color:${fundBal()<0?'var(--bad)':'inherit'}">${fmtT(fundBal())} <span class="small muted" style="font-weight:400">تومان</span></span><span class="hint">همه شارژهای وصول‌شده${+cfg.fund0?' و موجودی اول':''} منهای همه هزینه‌ها</span></div>
+    <button class="kpi" data-go="dues" style="text-align:start;cursor:pointer"><span class="lab">شارژ ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${issued?fmtN(pct)+'٪':'—'}</span><span class="hint">${issued?fmtT(got)+' از '+fmtT(billed)+' وصول شد':'هنوز صادر نشده'}</span></button>
+    ${owed?alertKpi('dues','بدهی شارژ',fmtT(owed),fmtN(debts.length)+' واحد بدهکار'):`<div class="kpi"><span class="lab">بدهی شارژ</span><span class="val">۰</span><span class="hint">همه واحدها تسویه‌اند</span></div>`}
+    <div class="kpi"><span class="lab">هزینه ${JMONTHS[jp(TODAY).m-1]}</span><span class="val">${fmtT(mCosts.reduce((a,c)=>a+(+c.amount||0),0))}</span><span class="hint">تومان</span></div>
+    ${open.length?alertKpi('tickets','درخواست باز',fmtN(open.length),fmtN(open.filter(t=>t.status==='جدید').length)+' جدید'):''}
+  </div>
+  ${!issued&&state.units.length?`<button class="btn" data-issuedues="${k}" style="justify-self:start">صدور شارژ ${monthLabel(k)} برای ${fmtN(state.units.length)} واحد</button>`:''}
+  ${!state.units.length?`<section class="card"><h3>شروع</h3><p class="small muted" style="margin:0">اول واحدها را با متراژ و تعداد نفرات ثبت کن، بعد در «شارژ» روش محاسبه را بگذار و شارژ ماه را صادر کن.</p><button class="chip" data-go="units" style="justify-self:start">ثبت واحدها</button></section>`:''}
+  ${Object.keys(byCat).length?`<section class="card"><div class="row"><h3>هزینه‌های این ماه</h3><button class="lnk" data-go="money">همه هزینه‌ها</button></div>${sumTbl(byCat,'دسته','مورد')}</section>`:''}
+  <section class="card"><div class="row"><h3>واحدها</h3><span class="small muted">${fmtN(state.units.length)} واحد</span></div>
+    ${state.units.length?`<div class="chips">${Object.entries(occ).map(([k,n])=>`<span class="pill p-mute">${esc(k)}: ${fmtN(n)}</span>`).join(' ')}</div>`:empty('واحدی ثبت نشده است.')}</section>
+  <section class="card"><h3>گزارش برای ساکنین</h3><p class="small muted" style="margin:0">خلاصه دخل‌وخرج ماه و موجودی صندوق را کپی کن و در گروه ساختمان بفرست.</p><button class="chip" data-copybreport="1" style="justify-self:start">کپی گزارش ${JMONTHS[jp(TODAY).m-1]}</button></section>`;
+}
+function bldReport(){
+  const k=jkey(TODAY), md=monthDues(k), ms=monthStart(TODAY), mCosts=state.costs.filter(c=>c.date>=ms&&c.date<=TODAY);
+  const billed=md.reduce((a,d)=>a+(+d.amount||0),0), got=md.reduce((a,d)=>a+(+d.amount||0)-dueLeft(d),0);
+  const byCat=groupSum(mCosts,c=>c.category||'سایر',c=>+c.amount||0);
+  const late=bldDebts();
+  return [`گزارش ${ws.name} · ${monthLabel(k)}`,
+    `شارژ صادرشده: ${fmtN(billed)} تومان · وصول‌شده: ${fmtN(got)} تومان`,
+    `هزینه‌های ماه: ${fmtN(mCosts.reduce((a,c)=>a+(+c.amount||0),0))} تومان`,
+    ...Object.entries(byCat).sort((a,b)=>b[1].a-a[1].a).map(([c,v])=>`  - ${c}: ${fmtN(v.a)}`),
+    `موجودی صندوق: ${fmtN(fundBal())} تومان`,
+    late.length?`واحدهای دارای بدهی: ${late.map(d=>String(d.u.no||'')).join('، ')}`:'همه واحدها شارژ را پرداخت کرده‌اند.',
+  ].join('\n');
+}
+function scrUnits(){
+  const q=(ui.q||'').trim(), canEdit=['owner','gm','accountant'].includes(me.role);
+  let list=sortUnits(state.units);
+  if(q)list=list.filter(u=>[u.no,u.owner,u.ownerPhone,u.resident,u.residentPhone].some(x=>String(x||'').includes(q)));
+  const debt=Object.fromEntries(bldDebts().map(d=>[d.u.id,d.amount]));
+  const lbl=isMall()?{res:'بهره‌بردار',people:'تعداد کارکنان'}:{res:'ساکن یا مستأجر',people:'تعداد نفرات'};
+  return `
+  ${canEdit?`<details class="add"><summary>ثبت واحد</summary><form class="f" data-form="unit">
+    <label>شماره واحد<input id="un-no" name="no" required placeholder="مثلاً ۱۲"></label>
+    <label>طبقه<input id="un-floor" name="floor" placeholder="مثلاً ۳"></label>
+    <label>متراژ<input id="un-area" name="area" type="number" min="0" step="0.1"></label>
+    <label>وضعیت<select id="un-occ" name="occ">${opts(UNIT_OCC(),UNIT_OCC()[0])}</select></label>
+    <label>نام مالک<input id="un-owner" name="owner"></label>
+    <label>موبایل مالک<input id="un-ophone" name="ownerPhone" inputmode="tel"></label>
+    <label>${lbl.res}<input id="un-res" name="resident" placeholder="اگر مالک ساکن است خالی بگذار"></label>
+    <label>موبایل ${lbl.res}<input id="un-rphone" name="residentPhone" inputmode="tel"></label>
+    ${isMall()?'<label>نام کسب‌وکار<input id="un-biz" name="biz" placeholder="مثلاً لوازم‌التحریر"></label>':''}
+    <label>${lbl.people}<input id="un-people" name="people" type="number" min="0" value="${isMall()?'':'2'}"></label>
+    <label>پارکینگ<input id="un-park" name="parking" type="number" min="0" value="1"></label>
+    <label>شارژ ثابت (اختیاری)<input id="un-fixed" name="fixed" type="number" min="0" step="1000" placeholder="جای محاسبه خودکار"></label>
+    <button class="btn full">ثبت واحد</button></form></details>`:''}
+  ${state.units.length>8?searchBox('جستجوی شماره واحد، نام یا موبایل'):''}
+  <section class="card"><div class="row"><h3>واحدها</h3><span class="small muted">${fmtN(list.length)} واحد · ${fmtN(state.units.reduce((a,u)=>a+(+u.area||0),0))} متر</span></div>
+    ${list.length?`<ul class="list">${list.map(u=>{const p=payer(u);return `<li><div class="grow"><div class="t">${esc(uName(u))}${u.floor?` <span class="small muted">طبقه ${esc(u.floor)}</span>`:''}${u.biz?` <span class="small muted">${esc(u.biz)}</span>`:''} <span class="pill ${u.occ==='خالی'?'p-mute':u.occ==='مستأجر'?'p-info':'p-ok'}">${esc(u.occ||'—')}</span>${debt[u.id]?` <span class="pill p-bad">بدهی ${fmtT(debt[u.id])}</span>`:''}</div>
+      <div class="m">${+u.area?fmtN(u.area)+' متر · ':''}${+u.people?fmtN(u.people)+' نفر · ':''}${+u.parking?fmtN(u.parking)+' پارکینگ · ':''}شارژ ${fmtN(unitCharge(u))}${+u.fixed>0?' (ثابت)':''}</div>
+      <div class="m">مالک: ${esc(u.owner||'—')}${u.ownerPhone?` <a href="tel:${esc(u.ownerPhone)}" style="color:inherit">${esc(u.ownerPhone)}</a>`:''}</div>
+      ${u.resident?`<div class="m">${lbl.res}: ${esc(u.resident)}${u.residentPhone?` <a href="tel:${esc(u.residentPhone)}" style="color:inherit">${esc(u.residentPhone)}</a>`:''}</div>`:''}
+      <div class="m small">پرداخت‌کننده شارژ: ${esc(p.name)}</div></div>
+      ${canEdit?`<div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="units/${u.id}" data-field="occ" aria-label="وضعیت">${opts(UNIT_OCC(),u.occ)}</select>${delBtn('units',u.id)}</div>`:''}</li>`}).join('')}</ul>`:empty('واحدها را با متراژ، مالک و ساکن ثبت کن تا شارژ هر واحد خودکار حساب شود.')}</section>`;
+}
+function scrDues(){
+  const cfg=chargeCfg(), canEdit=['owner','gm','accountant'].includes(me.role);
+  const months=[...new Set([jkey(TODAY),...state.dues.map(d=>d.month)])].sort().reverse();
+  const k=ui.dueMonth&&months.includes(ui.dueMonth)?ui.dueMonth:months[0];
+  const md=monthDues(k), byUnit=Object.fromEntries(md.map(d=>[d.unit,d]));
+  const missing=sortUnits(state.units).filter(u=>!byUnit[u.id]);
+  const billed=md.reduce((a,d)=>a+(+d.amount||0),0), left=md.reduce((a,d)=>a+dueLeft(d),0);
+  const debts=bldDebts(), late=debts.filter(d=>d.months.some(m=>m<jkey(TODAY))||(jp(TODAY).d>(+cfg.dueDay||10)));
+  const rows=[...md].sort((a,b)=>(dueLeft(b)>0)-(dueLeft(a)>0)||String(a.unitNo).localeCompare(String(b.unitNo),'fa',{numeric:true}));
+  const sms=isPaid()?(late.filter(d=>payer(d.u).phone).length?`<button class="chip" data-duesms="1">${armed==='duesms'?'پیامک برود؟':'پیامک یادآوری به '+fmtN(late.filter(d=>payer(d.u).phone).length)+' بدهکار'}</button>`:''):'<span class="small muted">پیامک یادآوری بدهی با پلن Pro</span>';
+  return `
+  <div class="chips">${months.map(m=>`<button class="chip" data-duemonth="${m}" aria-pressed="${m===k}">${monthLabel(m)}</button>`).join('')}</div>
+  <div class="kpis"><div class="kpi"><span class="lab">شارژ ${monthLabel(k)}</span><span class="val">${fmtT(billed)}</span><span class="hint">${fmtN(md.length)} واحد</span></div>
+    <div class="kpi ${left>0?'alert':''}"><span class="lab">مانده این ماه</span><span class="val">${fmtT(left)}</span><span class="hint">${fmtN(md.filter(d=>dueLeft(d)>0).length)} واحد پرداخت نکرده</span></div>
+    <div class="kpi wide ${debts.length?'alert':''}"><span class="lab">کل بدهی شارژ</span><span class="val">${fmtT(debts.reduce((a,d)=>a+d.amount,0))}</span><span class="hint">${fmtN(debts.length)} واحد · مهلت پرداخت تا ${fmtN(cfg.dueDay||10)}ام هر ماه</span></div></div>
+  ${canEdit&&missing.length?`<button class="btn" data-issuedues="${k}" style="justify-self:start">صدور شارژ ${monthLabel(k)} برای ${fmtN(missing.length)} واحد</button>`:''}
+  ${debts.length?`<div class="row" style="justify-content:flex-start;gap:8px">${sms}</div>`:''}
+  <section class="card"><div class="row"><h3>شارژ ${monthLabel(k)}</h3><span class="small muted">${fmtN(md.length)} از ${fmtN(state.units.length)} واحد</span></div>
+    ${rows.length?`<ul class="list">${rows.map(d=>{const u=unitById(d.unit)||{no:d.unitNo};const p=payer(u);const l=dueLeft(d);return `<li class="${l>0?'':'done'}">${canEdit?`<input type="checkbox" class="chk" ${l>0?'':'checked'} data-duepaid="${d.id}" aria-label="پرداخت شد">`:''}<div class="grow"><div class="t">${esc(uName(u))} · ${esc(p.name)}</div>
+      <div class="m">${l>0?(+d.paidAmt?'علی‌الحساب '+fmtN(d.paidAmt)+' · مانده '+fmtN(l):'پرداخت نشده'):'پرداخت شد'+(d.paidOn?' · '+jd(d.paidOn):'')}</div>
+      ${l>0||canEdit?`<div class="row" style="justify-content:flex-start;gap:10px">${p.phone&&l>0?`<a class="lnk" href="tel:${esc(p.phone)}">تماس</a>`:''}${canEdit&&l>0?`<button class="lnk" data-duepart="${d.id}">علی‌الحساب</button>`:''}${canEdit?delBtn('dues',d.id):''}</div>`:''}</div>
+      <span class="num">${fmtN(d.amount)}</span></li>`}).join('')}</ul>`:empty(state.units.length?'شارژ این ماه هنوز صادر نشده است.':'اول واحدها را ثبت کن.')}</section>
+  ${ui.duePart?`<section class="card"><h3>پرداخت علی‌الحساب</h3><form class="f" data-form="duepart" style="padding:0"><input type="hidden" name="id" value="${esc(ui.duePart)}"><label>مبلغ پرداختی (تومان)<input id="dp-amt" name="amount" type="number" min="0" step="1000" required></label><button class="btn full">ثبت</button></form></section>`:''}
+  ${debts.length?`<section class="card"><h3>بدهکاران شارژ</h3><ul class="list">${debts.map(d=>{const p=payer(d.u);return `<li><div class="grow"><div class="t">${esc(uName(d.u))} · ${esc(p.name)}</div><div class="m">${d.months.sort().map(monthLabel).join('، ')}</div></div><span class="num">${fmtN(d.amount)}</span></li>`}).join('')}</ul></section>`:''}
+  ${['owner','gm'].includes(me.role)?`<section class="card"><h3>روش محاسبه شارژ</h3>
+    <p class="small muted" style="margin:0">شارژ هر واحد = مبلغ پایه + متراژ × نرخ هر متر${isMall()?'':' + نفرات × سهم هر نفر'}. برای واحدی که شارژ ثابت دارد همان عدد حساب می‌شود. تغییر این‌ها فقط روی شارژهای بعدی اثر دارد.</p>
+    <div class="f" style="padding:0">
+      <label>مبلغ پایه هر واحد<input class="inline" style="width:100%" type="number" min="0" step="1000" value="${+cfg.base||0}" data-chargecfg="base"></label>
+      <label>نرخ هر متر<input class="inline" style="width:100%" type="number" min="0" step="100" value="${+cfg.perM||0}" data-chargecfg="perM"></label>
+      ${isMall()?'':`<label>سهم هر نفر<input class="inline" style="width:100%" type="number" min="0" step="1000" value="${+cfg.perPerson||0}" data-chargecfg="perPerson"></label>`}
+      <label>مهلت پرداخت (روز ماه)<input class="inline" style="width:100%" type="number" min="1" max="29" value="${+cfg.dueDay||10}" data-chargecfg="dueDay"></label>
+      <label>موجودی اول صندوق<input class="inline" style="width:100%" type="number" step="1000" value="${+cfg.fund0||0}" data-chargecfg="fund0"></label>
+    </div></section>`:''}`;
+}
+function scrTickets(){
+  const tab=ui.tTab||'open', canEdit=me.role!=='board';
+  const list=state.tickets.filter(t=>tab==='open'?t.status!=='انجام شد':t.status==='انجام شد').sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0));
+  const notices=[...state.notices].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const staff=state.people.filter(p=>p.role==='staff'||p.role==='owner'||p.role==='specialist');
+  const unitOpts=[['','مشاعات'],...sortUnits(state.units).map(u=>[u.id,uName(u)])];
+  const head=`<div class="seg">${[['open','درخواست‌های باز'],['done','انجام‌شده'],['notices','اطلاعیه‌ها']].map(([k,l])=>`<button data-ttab="${k}" aria-pressed="${tab===k}">${l}</button>`).join('')}</div>`;
+  if(tab==='notices'){
+    const phones=[...new Set(state.units.map(u=>normPh(payer(u).phone)).filter(Boolean))];
+    return head+(['owner','gm','accountant'].includes(me.role)?`<details class="add"><summary>اطلاعیه جدید</summary><form class="f" data-form="notice">
+      <label class="full">عنوان<input id="nt-title" name="title" required placeholder="مثلاً قطعی آب پنجشنبه"></label>
+      <label class="full">متن<textarea id="nt-text" name="text" required></textarea></label>
+      ${isPaid()&&phones.length?`<label class="full" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="nt-sms" name="sms" style="width:auto;flex:none"> پیامک به ${fmtN(phones.length)} ${isMall()?'واحد':'ساکن'} هم برود</label>`:''}
+      <button class="btn full">انتشار</button></form></details>`:'')+
+      `<section class="card"><h3>اطلاعیه‌ها</h3>${notices.length?`<ul class="list">${notices.map(n=>`<li><div class="grow"><div class="t">${esc(n.title)}</div><div class="m" style="white-space:pre-line">${esc(n.text)}</div><div class="m">${jd(n.date)}${n.sms?' · با پیامک':''}</div></div>${['owner','gm'].includes(me.role)?delBtn('notices',n.id):''}</li>`).join('')}</ul>`:empty('اطلاعیه‌ای منتشر نشده است.')}</section>
+      ${isPaid()?'':'<p class="small muted" style="margin:0">با پلن Pro اطلاعیه‌ها با پیامک هم به ساکنین می‌رسند.</p>'}`;
+  }
+  return head+(canEdit?`<details class="add"><summary>ثبت درخواست یا خرابی</summary><form class="f" data-form="ticket">
+    <label class="full">موضوع<input id="tk-title" name="title" required placeholder="مثلاً چکه لوله پارکینگ"></label>
+    <label>واحد<select id="tk-unit" name="unit">${opts(unitOpts,'')}</select></label>
+    <label>مسئول<select id="tk-to" name="to">${opts([['','—'],...staff.map(p=>[p.id,p.name])],'')}</select></label>
+    <label class="full">توضیح<input id="tk-note" name="note"></label>
+    <button class="btn full">ثبت</button></form></details>`:'')+
+  `<section class="card"><div class="row"><h3>${tab==='open'?'درخواست‌های باز':'انجام‌شده'}</h3><span class="small muted">${fmtN(list.length)} مورد</span></div>
+    ${list.length?`<ul class="list">${list.slice(0,80).map(t=>{const u=unitById(t.unit);return `<li class="${t.status==='جدید'&&t.date<addDays(TODAY,-3)?'late':''}"><div class="grow"><div class="t">${esc(t.title)}</div>
+      <div class="m">${u?esc(uName(u)):'مشاعات'} · ${rel(t.date)}${t.to?' · '+esc(pname(t.to)):''}${+t.cost?' · هزینه '+fmtN(t.cost):''}</div>${t.note?`<div class="m">${esc(t.note)}</div>`:''}</div>
+      ${canEdit?`<div style="display:grid;gap:4px;justify-items:end"><select class="inline" data-set="tickets/${t.id}" data-field="status" aria-label="وضعیت">${opts(TICKET_ST,t.status)}</select>${['owner','gm'].includes(me.role)?delBtn('tickets',t.id):''}</div>`:`<span class="pill p-mute">${esc(t.status)}</span>`}</li>`}).join('')}</ul>`:empty(tab==='open'?'درخواست بازی نیست.':'هنوز چیزی انجام نشده است.')}</section>`;
+}
+async function issueDues(k){
+  const have=new Set(monthDues(k).map(d=>d.unit)), now=Date.now();
+  const todo=state.units.filter(u=>!have.has(u.id)&&unitCharge(u)>0);
+  if(!todo.length){toast(state.units.length?'مبلغ شارژ صفر است؛ روش محاسبه را تنظیم کن':'اول واحدها را ثبت کن');return}
+  await write(async()=>{for(const u of todo)await C('dues').add({unit:u.id,unitNo:String(u.no||''),month:k,amount:unitCharge(u),paid:false,paidAmt:0,by:me.id,createdAt:now})},'شارژ '+monthLabel(k)+' برای '+fmtN(todo.length)+' واحد صادر شد');
+}
+async function duesSms(){
+  const cfg=chargeCfg(), to=bldDebts().map(d=>({...payer(d.u),amount:d.amount,no:d.u.no})).filter(p=>normPh(p.phone));
+  let sent=0;
+  for(const p of to){
+    const text=`${p.name} عزیز، بدهی شارژ ${uName({no:p.no})} ${ws.name}: ${fmtN(p.amount)} تومان. لطفاً تا ${fmtN(cfg.dueDay||10)}ام ماه پرداخت کنید.`;
+    try{await smarto.sms.send({ws:ws.id,to:[{phone:normPh(p.phone),name:p.name}],text,kind:'service',segment:'بدهی شارژ'});sent++}catch(e){toast(e.code==='quota'?'سهمیه پیامک این ماه تمام شده':'پیامک فرستاده نشد');break}
+  }
+  if(sent)toast('یادآوری برای '+fmtN(sent)+' واحد فرستاده شد');
+}
+
 // ---------- debtors: one list of who owes the business, from every place money is left unpaid ----------
 const nameKey=s=>String(s||'').trim().replace(/\s+/g,' ')||'بدون نام';
 function debtors(){
@@ -1660,6 +1842,7 @@ function debtors(){
   state.jobs.filter(j=>j.status==='تحویل‌شده'&&!j.paid).forEach(j=>add(j.customer,j.phone,{src:'job',id:j.id,label:'تعمیر '+(j.device||'')+' · '+fmtN(j.code),amount:jAmt(j)-(+j.deposit||0),date:j.deliveredOn||j.date}));
   state.forders.filter(x=>fValid(x)&&!x.paid&&(x.pay==='نسیه'||x.date<TODAY)).forEach(x=>add(x.customer||'سفارش‌های بی‌نام تسویه‌نشده',x.phone,{src:'forder',id:x.id,label:itemsTxt(x)+' · '+jd(x.date)+(x.customer?'':' · '+(x.table||x.kind||'')),amount:itemsTotal(x),date:x.date}));
   state.sorders.filter(x=>x.status==='در انتظار پرداخت').forEach(x=>add(x.customer,x.phone,{src:'sorder',id:x.id,label:'سفارش '+jd(x.date),amount:itemsTotal(x)+(+x.fee||0),date:x.date}));
+  state.dues.filter(d=>dueLeft(d)>0).forEach(d=>{const u=unitById(d.unit)||{no:d.unitNo};const p=payer(u);add(p.name,p.phone,{src:'due',id:d.id,label:'شارژ '+monthLabel(d.month)+' · '+uName(u),amount:dueLeft(d),date:d.createdAt?iso(d.createdAt):TODAY})});
   state.checks.filter(c=>c.kind==='دریافتنی'&&!c.paid).forEach(c=>add(c.party,'',{src:'check',id:c.id,label:'چک · سررسید '+jd(c.due),amount:+c.amount||0,date:c.due}));
   return Object.values(o).sort((a,b)=>b.amount-a.amount);
 }
@@ -1669,6 +1852,7 @@ async function settleItem(it){
   const now=Date.now();
   if(it.src==='ledger'){const c=ledgerBalances().find(x=>x.name===it.id);if(c&&c.bal>0)await C('ledger').add({name:c.name,phone:c.phone||'',amount:-c.bal,date:TODAY,note:'تسویه',by:me.id,createdAt:now});return}
   if(it.src==='plan'){const p=state.plans.find(x=>x.id===it.id);if(p)await D('plans/'+p.id).update({payments:[...(p.payments||[]),{date:TODAY,amount:planDue(p),by:me.id}],updatedAt:now});return}
+  if(it.src==='due'){await D('dues/'+it.id).update({paid:true,paidOn:TODAY,updatedAt:now});return}
   const col={appt:'appointments',job:'jobs',forder:'forders',sorder:'sorders',check:'checks'}[it.src];
   const data=it.src==='sorder'?{status:'پرداخت‌شده'}:it.src==='forder'?{paid:true,pay:'نقد'}:{paid:true};
   await D(col+'/'+it.id).update({...data,updatedAt:now});
@@ -1847,6 +2031,7 @@ const NEED_SECTIONS={
 function needSuggest(r){
   const has=k=>(r.income||[]).includes(k), t=(r.job||'')+' '+(r.pain||'');
   if(/طلا|جواهر|سکه/.test(t))return 'gold';
+  if(/مدیریت ساختمان|مدیر ساختمان|مجتمع|برج|شارژ ساختمان|پاساژ|مرکز خرید/.test(t))return /تجاری|اداری|پاساژ|مرکز خرید|مال/.test(t)?'complex':'building';
   if(/املاک|بنگاه|مسکن|مشاور املاک/.test(t))return 'realestate';
   if(/نمایشگاه ماشین|نمایشگاه خودرو|اتوگالری|خرید و فروش خودرو|ماشین/.test(t))return 'cars';
   if(has('غذا و نوشیدنی')||/کافه|رستوران|فست|قنادی|آبمیوه|کترینگ/.test(t))return /رستوران|فست|کترینگ/.test(t)?'restaurant':'cafe';
@@ -1990,6 +2175,8 @@ const TEMPLATES={
   gold:{label:'طلافروشی و جواهری',desc:'فاکتور طلا با وزن، عیار، اجرت و نرخ روز، خرید طلای کهنه، ویترین به گرم، نسیه و چک',defaults:'انگشتر زنانه - 3.2\nگردنبند - 5.8\nدستبند - 9.4',staffRole:'seller',staffLabel:'فروشنده',items:'products',itemsLabel:'اجناس ویترین',itemsHint:'نام - وزن به گرم',noItemSettings:true},
   cars:{label:'نمایشگاه ماشین',desc:'ماشین‌های موجود و امانی، روزهای خوابیده، هزینه و سود هر ماشین، سهم شریک‌ها، مشتری‌ها و ماشین مناسبشان، فروش با چک و قسط و کارهای انتقال سند',defaults:'',staffRole:'seller',staffLabel:'فروشنده',items:'cars',itemsLabel:'ماشین‌ها',noItems:true,noItemSettings:true},
   realestate:{label:'املاک و مشاور املاک',desc:'فایل‌های فروش و اجاره، مشتریان و فایل‌های مناسب هرکدام، بازدیدها، قراردادها و کمیسیون هر مشاور',defaults:'',staffRole:'agent',staffLabel:'مشاور',items:'listings',itemsLabel:'فایل‌ها',noItems:true,noItemSettings:true},
+  building:{label:'مدیریت مجتمع مسکونی',desc:'واحدها با مالک و ساکن، شارژ ماهانه با متراژ و نفرات، وصول و بدهکاران، هزینه‌ها و صندوق ساختمان، درخواست تعمیر و اطلاعیه ساکنین',defaults:'',staffRole:'staff',staffLabel:'سرایدار و نگهبان',items:'units',itemsLabel:'واحدها',noItems:true,noItemSettings:true},
+  complex:{label:'مدیریت مجتمع تجاری و اداری',desc:'مغازه‌ها و دفترها با مالک و بهره‌بردار، شارژ ماهانه به متراژ، وصول و بدهکاران، هزینه‌های مشاع و صندوق، درخواست‌ها و اطلاعیه‌ها',defaults:'',staffRole:'staff',staffLabel:'نگهبان و خدمات',items:'units',itemsLabel:'واحدها',noItems:true,noItemSettings:true},
   salon:{label:'سالن زیبایی و آرایشگاه',desc:'نوبت‌دهی، مشتریان، سهم آرایشگرها، یادآوری مشتری‌های برنگشته',defaults:'کوتاهی مو - 450000\nرنگ مو - 2500000\nبراشینگ - 400000\nمانیکور - 500000',staffRole:'staff',staffLabel:'آرایشگر',items:'services',itemsLabel:'خدمات'},
   dental:{label:'کلینیک دندانپزشکی',desc:'نوبت بیماران، طرح درمان با شماره دندان، پیش‌پرداخت و قسط، مانده هر بیمار، سهم هر دندانپزشک',defaults:'معاینه و مشاوره - 500000\nجرم‌گیری - 1200000\nترمیم کامپوزیت - 2800000\nعصب‌کشی - 4500000\nروکش زیرکونیا - 9000000\nایمپلنت - 35000000',staffRole:'staff',staffLabel:'دندانپزشک',items:'services',itemsLabel:'خدمات'},
   clinic:{label:'کلینیک و مطب',desc:'نوبت بیماران، پرونده و یادداشت ویزیت، پیگیری ویزیت بعدی، سهم پزشکان',defaults:'ویزیت - 600000\nلیزر - 2500000\nپاکسازی پوست - 1500000',staffRole:'staff',staffLabel:'پزشک',items:'services',itemsLabel:'خدمات'},
@@ -2003,8 +2190,8 @@ const tplOf=k=>{if(TEMPLATES[k])return {...TEMPLATES[k],base:k};const j=jobTypes
 const allTemplates=()=>[...Object.keys(TEMPLATES),...jobTypes.map(j=>'jt:'+j.id)];
 const toEn=s=>String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
 function parseItems(txt){return String(txt||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.split(/\s+[-–]\s+|،|,/);const name=(m[0]||'').trim();const price=parseInt(toEn(m[1]||'').replace(/[^\d]/g,''),10)||0;return {name,price}}).filter(x=>x.name)}
-const TYPE_ICON={store:'order',shop:'sorders',cafe:'kitchen',restaurant:'menu',repair:'jobs',retail:'rsell',salon:'appts',clinic:'clients',gold:'gstock',realestate:'listings',dental:'plans'};
-const TYPE_HUE={store:'#0d7a5f',shop:'#1d5fa8',cafe:'#8a5a2b',restaurant:'#c2410c',repair:'#475569',retail:'#15803d',salon:'#be185d',clinic:'#0e7490',gold:'#b7791f',realestate:'#6d28d9',dental:'#0891b2'};
+const TYPE_ICON={store:'order',shop:'sorders',cafe:'kitchen',restaurant:'menu',repair:'jobs',retail:'rsell',salon:'appts',clinic:'clients',gold:'gstock',realestate:'listings',dental:'plans',building:'bdash',complex:'units'};
+const TYPE_HUE={store:'#0d7a5f',shop:'#1d5fa8',cafe:'#8a5a2b',restaurant:'#c2410c',repair:'#475569',retail:'#15803d',salon:'#be185d',clinic:'#0e7490',gold:'#b7791f',realestate:'#6d28d9',dental:'#0891b2',building:'#4d7c0f',complex:'#9f1239'};
 const typeIcon=t=>`<span class="ti" style="--h:${TYPE_HUE[t]||'#0d7a5f'}">${ICON[TYPE_ICON[t]]||ICON.home}</span>`;
 const FEATURES=[
   ['clients','هر نفر، صفحه خودش','مالک عدد سود را می‌بیند، منشی نوبت‌ها را، فروشنده فقط فاکتور را. هر کس با شماره موبایلش وارد می‌شود.'],
@@ -2148,7 +2335,7 @@ function scrSettings(){
 const PAGE_BOOK=['salon','clinic','dental'], PAGE_ORDER=['cafe','restaurant','shop','retail'];
 const pageUrl=w=>location.origin+'/b/'+((w.page&&w.page.slug)||w.id);
 function pageCard(){
-  if(!(me.role==='owner'||me.role==='gm'))return '';
+  if(!(me.role==='owner'||me.role==='gm')||BLD_TYPES.includes(ws.type))return '';
   const pg=ws.page||{}, paid=isPaid(), url=pageUrl(ws);
   const what=PAGE_BOOK.includes(ws.type)?'رزرو نوبت آنلاین':PAGE_ORDER.includes(ws.type)?'سفارش آنلاین':'';
   const t=(k,l,ph,max)=>`<label>${l}<input name="${k}" value="${esc(pg[k]||'')}" placeholder="${ph}" maxlength="${max}"></label>`;
@@ -2188,7 +2375,7 @@ async function createBusiness(v){
 }
 function closeWs(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];ws=null;me=null;ls.set('ws','');uiView='landing';resetState();render();window.scrollTo({top:0})}
 
-const SCREENS={settings:scrSettings,club:scrClub,debts:scrDebts,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
+const SCREENS={bdash:scrBDash,units:scrUnits,dues:scrDues,tickets:scrTickets,settings:scrSettings,club:scrClub,debts:scrDebts,cost:scrCost,cprofit:scrCProfit,gprofit:scrGProfit,fsales:scrFSales,pos:scrPos,kitchen:scrKitchen,menu:scrMenu,rdash:scrRDash,jobs:scrJobs,myjobs:scrMyJobs,parts:scrParts,rhome:scrRHome,rsell:scrRSell,ghome:scrGHome,plans:scrPlans,cdash:scrCDash,ccars:scrCCars,leads:scrLeads,cvisits:scrCVisits,cdeals:scrCDeals,pshare:scrPShare,gsell:scrGSell,gstock:scrGStock,edash:scrEDash,listings:scrListings,buyers:scrBuyers,visits:scrVisits,edeals:scrEDeals,nasieh:scrNasieh,checks:scrChecks,ssales:scrSSales,sorders:scrSOrders,ship:scrShip,stock:scrStock,customers:scrCustomers,income:scrIncome,appts:scrAppts,myappts:scrMyAppts,clients:scrClients,earn:scrEarn,home:scrHome,tasks:scrTasks,money:scrMoney,ideas:scrIdeas,branches:scrBranches,content:scrContent,report:scrReport,order:scrOrder,payments:scrPayments};
 
 // ---------- render ----------
 // Owners, managers, the platform admin and anyone looking at a sample may view the panel as any role.
@@ -2198,7 +2385,7 @@ function renderWs(){
   document.querySelector('nav.bottom').hidden=!ws;
   document.getElementById('whoWrap').hidden=!(ws&&canPreview());
   document.getElementById('gear').hidden=!(ws&&me&&['owner','gm'].includes(me.role));
-  document.getElementById('clubBtn').hidden=!(ws&&me&&DESK.includes(me.role));
+  document.getElementById('clubBtn').hidden=!(ws&&me&&DESK.includes(me.role)&&!BLD_TYPES.includes(ws.type));
   document.getElementById('wsname').textContent=ws?ws.name:'اسمارتو';
 }
 function renderWho(){
@@ -2299,6 +2486,12 @@ V.addEventListener('click',async e=>{
   if(d.upgok||d.upgno){const r=needReqs.find(x=>x.id===(d.upgok||d.upgno));if(!r)return;
     await write(async()=>{if(d.upgok){const w=workspaces.find(x=>x.id===r.wsId);await db.doc('workspaces/'+r.wsId).update({plan:r.plan,paidUntil:extendMonth(w)})}await db.doc('requests/'+r.id).update({status:d.upgok?'تأیید شد':'رد شد',updatedAt:Date.now()})},d.upgok?'پلن '+(PLANS[r.plan]||'')+' فعال شد':'درخواست رد شد');return}
   if(d.ldeal){ui.ldeal=d.ldeal;render();return}
+  if(d.issuedues){await issueDues(d.issuedues);return}
+  if(d.duemonth){ui.dueMonth=d.duemonth;ui.duePart=null;render();return}
+  if(d.duepart){ui.duePart=ui.duePart===d.duepart?null:d.duepart;render();document.getElementById('dp-amt')?.focus();return}
+  if(d.duesms){if(armed!=='duesms'){armed='duesms';render();return}armed=null;render();await duesSms();return}
+  if(d.ttab){ui.tTab=d.ttab;render();return}
+  if(d.copybreport){const t=bldReport();try{await navigator.clipboard.writeText(t);toast('گزارش کپی شد')}catch(e){toast('کپی نشد')}return}
   if(d.lst){ui.lst=d.lst;render();return}
   if(d.lmine){ui.lmine=!ui.lmine;render();return}
   if(d.cst){ui.cst=d.cst;render();return}
@@ -2336,6 +2529,9 @@ V.addEventListener('change',async e=>{
   if(el.id==='cr-team'){createTeam=el.value;const keep=saveForms();render();restoreForms(keep);return}
   if(el.dataset.cdoc){const [id,k]=el.dataset.cdoc.split('|');const d=state.cdeals.find(x=>x.id===id);if(!d)return;
     await write(()=>D('cdeals/'+id).update({docs:{...(d.docs||{}),[k]:el.checked},updatedAt:Date.now()}),el.checked?'انجام شد':'برگشت');return}
+  if(el.dataset.duepaid){const dd=state.dues.find(x=>x.id===el.dataset.duepaid);await write(()=>D('dues/'+el.dataset.duepaid).update(el.checked?{paid:true,paidOn:TODAY,updatedAt:Date.now()}:{paid:false,paidOn:'',paidAmt:0,updatedAt:Date.now()}),el.checked?'شارژ '+(dd?uName(unitById(dd.unit)||{no:dd.unitNo}):'')+' وصول شد':'برگشت به پرداخت‌نشده');return}
+  if(el.dataset.chargecfg){const k=el.dataset.chargecfg;const charge={...chargeCfg(),[k]:Math.max(k==='fund0'?-1e15:0,+toEn(el.value)||0)};ws.charge=charge;await write(()=>db.doc('workspaces/'+ws.id).update({charge}),'ذخیره شد');return}
+  if(el.dataset.set&&el.dataset.set.startsWith('tickets/')&&el.dataset.field==='status'){await write(()=>D(el.dataset.set).update({status:el.value,...(el.value==='انجام شد'?{doneOn:TODAY}:{}),updatedAt:Date.now()}),el.value==='انجام شد'?'انجام شد':'ذخیره شد');return}
   if(el.id==='cd-car'){const c=state.cars.find(x=>x.id===el.value);const pr=document.getElementById('cd-price');if(c&&pr)pr.value=+c.price||'';return}
   if(el.dataset.planitem){const [id,k]=el.dataset.planitem.split('|');const p=state.plans.find(x=>x.id===id);if(!p)return;const items=(p.items||[]).map((x,i)=>i===+k?{...x,done:el.checked}:x);
     const all=items.length&&items.every(x=>x.done);
@@ -2344,7 +2540,7 @@ V.addEventListener('change',async e=>{
   if(el.dataset.wsnum){const k=el.dataset.wsnum;if(!['capRate','goldMakerWage'].includes(k))return;const v=Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({[k]:v}),'ذخیره شد');return}
   if(el.dataset.admuntil){const w=adm&&adm.workspaces.find(x=>x.id===el.dataset.admuntil);if(!w||!el.value)return;const ok=await write(()=>db.doc('workspaces/'+w.id).update({paidUntil:el.value}),'اعتبار تا '+jd(el.value));if(ok){w.paidUntil=el.value;render()}return}
   if(el.dataset.admsetplan){const id=el.dataset.admsetplan;const ok=await write(()=>db.doc('workspaces/'+id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');if(ok&&adm){const w=adm.workspaces.find(x=>x.id===id);if(w)w.plan=el.value;render()}return}
-  if(el.dataset.clubcfg){const k=el.dataset.clubcfg;const v=k==='reward'?el.value.trim():Math.max(0,+el.value||0);await write(()=>db.doc('workspaces/'+ws.id).update({club:{...(ws.club||{}),[k]:v}}),'ذخیره شد');return}
+  if(el.dataset.clubcfg){const k=el.dataset.clubcfg;const v=k==='reward'?el.value.trim():Math.max(0,+el.value||0);const club={...(ws.club||{}),[k]:v};ws.club=club;await write(()=>db.doc('workspaces/'+ws.id).update({club}),'ذخیره شد');return}
   if(el.dataset.mbday){const [id,part]=el.dataset.mbday.split('|');const m=state.members.find(x=>x.id===id);if(!m)return;const [bm,bd]=String(m.birthday||'-').split('-');const nm=part==='m'?el.value:bm,nd=part==='d'?el.value:bd;
     await write(()=>D('members/'+id).update({birthday:nm&&nd?(+nm)+'-'+(+nd):'',updatedAt:Date.now()}),'ذخیره شد');return}
   if(el.dataset.wsplan){await write(()=>db.doc('workspaces/'+ws.id).update({plan:el.value}),'پلن '+PLANS[el.value]+' شد');return}
@@ -2479,6 +2675,15 @@ V.addEventListener('submit',async e=>{
         if(p)await D('products/'+p.id).update({stock:Math.max(0,(+p.stock||0)-1),updatedAt:now})},'فاکتور '+fmtN(c.amount)+' تومان ثبت شد');
       if(ok){resetForm(f);render()}return}
     case 'gbuy':{const w=toNum(v.weight);col='gsales';data={kind:'خرید',date:TODAY,time:nowTime(),name:'طلای کهنه',weight:w,karat:+v.karat||750,rate:+v.rate||0,amount:Math.round(w*(+v.rate||0)*((+v.karat||750)/750)/1000)*1000,customer:v.customer||'',note:v.note||'',by:me.id};if(!data.amount){toast('وزن و نرخ را بنویس');return}msg='خرید '+fmtG(w)+' گرم ثبت شد';break}
+    case 'unit':{const no=toEn(v.no);if(state.units.some(u=>toEn(u.no)===no)){toast('این شماره واحد قبلاً ثبت شده');return}
+      col='units';data={no:v.no,floor:v.floor||'',area:+toEn(v.area)||0,occ:v.occ,owner:v.owner||'',ownerPhone:normPh(v.ownerPhone)||v.ownerPhone||'',resident:v.occ==='خالی'?'':(v.resident||''),residentPhone:v.occ==='خالی'?'':(normPh(v.residentPhone)||v.residentPhone||''),biz:v.biz||'',people:+toEn(v.people)||0,parking:+toEn(v.parking)||0,fixed:+toEn(v.fixed)||0};msg=uName(data)+' ثبت شد';break}
+    case 'ticket':col='tickets';data={title:v.title,unit:v.unit||'',to:v.to||'',note:v.note||'',status:'جدید',date:TODAY,cost:0,by:me.id};msg='درخواست ثبت شد';break;
+    case 'duepart':{const dd=state.dues.find(x=>x.id===v.id);const a=+toEn(v.amount)||0;if(!dd||!(a>0))return;const tot=(+dd.paidAmt||0)+a;
+      const ok=await write(()=>D('dues/'+dd.id).update(tot>=(+dd.amount||0)?{paid:true,paidAmt:+dd.amount||0,paidOn:TODAY,updatedAt:now}:{paidAmt:tot,paidOn:TODAY,updatedAt:now}),tot>=(+dd.amount||0)?'کامل پرداخت شد':'علی‌الحساب ثبت شد');if(ok){ui.duePart=null;render()}return}
+    case 'notice':{const sms=v.sms==='on';const ok=await write(()=>C('notices').add({title:v.title,text:v.text,date:TODAY,sms,by:me.id,createdAt:now}),'اطلاعیه منتشر شد');if(!ok)return;resetForm(f);
+      if(sms){const to=[...new Map(state.units.map(u=>payer(u)).filter(p=>normPh(p.phone)).map(p=>[normPh(p.phone),{phone:normPh(p.phone),name:p.name}])).values()];
+        try{const r=await smarto.sms.send({ws:ws.id,to,text:v.title+'\n'+v.text,kind:'service',segment:'اطلاعیه'});toast('اطلاعیه برای '+fmtN(r.count||to.length)+' نفر پیامک شد')}catch(e){toast(e.code==='quota'?'سهمیه پیامک این ماه تمام شده':'پیامک فرستاده نشد')}}
+      return}
     case 'listing':{const n=state.listings.reduce((a,l)=>Math.max(a,+l.code||0),100)+1;col='listings';data={code:String(n),deal:v.deal,kind:v.kind,region:v.region,area:+v.area||0,rooms:+v.rooms||0,price:+v.price||0,deposit:+v.deposit||0,rent:+v.rent||0,owner:v.owner,ownerPhone:v.ownerPhone,agent:v.agent||me.id,note:v.note,status:'فعال',date:TODAY,by:me.id};msg='فایل '+fmtN(n)+' ثبت شد';break}
     case 'buyer':col='clients';data={name:v.name,phone:v.phone,want:v.want,kind:v.kind,region:v.region,budget:+v.budget||0,deposit:+v.deposit||0,rent:+v.rent||0,agent:v.agent||me.id,note:v.note,status:'فعال',date:TODAY,by:me.id};msg='مشتری ثبت شد';break;
     case 'visit':{const l=state.listings.find(x=>x.id===v.listing);if(!l){toast('فایل را انتخاب کن');return}col='visits';data={date:v.date||TODAY,time:v.time,listing:l.id,listingTitle:fmtN(l.code)+' · '+lTitle(l),client:v.client,agent:v.agent||me.id,note:v.note,result:'برنامه‌ریزی‌شده',by:me.id};msg='بازدید ثبت شد';break}

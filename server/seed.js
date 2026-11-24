@@ -8,7 +8,17 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DAY = 86400000;
 
 // Each sample was captured on its baseDate; shift every YYYY-MM-DD so the samples always look current.
+// "@m0", "@m-1", … stand for the Persian month key (YYYY-MM) of this month, last month, …
+const JMONTH = /^@m(-?\d+)$/;
+function jMonth(off) {
+  const p = {};
+  new Intl.DateTimeFormat('en-US-u-ca-persian', { year: 'numeric', month: 'numeric', timeZone: 'Asia/Tehran' })
+    .formatToParts(new Date()).forEach((x) => { if (x.type !== 'literal') p[x.type] = parseInt(x.value, 10); });
+  const n = p.year * 12 + (p.month - 1) + off;
+  return `${Math.floor(n / 12)}-${String((n % 12) + 1).padStart(2, '0')}`;
+}
 function shiftDates(v, days) {
+  if (typeof v === 'string' && JMONTH.test(v)) return jMonth(Number(JMONTH.exec(v)[1]));
   if (typeof v === 'string' && DATE.test(v)) {
     const d = new Date(Date.parse(v + 'T00:00:00Z') + days * DAY);
     return d.toISOString().slice(0, 10);

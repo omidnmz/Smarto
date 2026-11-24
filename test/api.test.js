@@ -67,7 +67,7 @@ test('access rules', { skip: !DB && 'TEST_DATABASE_URL not set' }, async (t) => 
 
   await t.test('visitors see only the samples, read-only', async () => {
     const ws = await anon.get('workspaces');
-    assert.equal(ws.body.docs.length, 12);
+    assert.equal(ws.body.docs.length, 13);
     assert.ok(ws.body.docs.every((w) => w.data.example));
     assert.equal((await anon.get('workspaces/salon1/appointments')).status, 200);
     assert.equal((await anon.add('workspaces/salon1/tasks', { title: 'x' })).status, 401);
@@ -433,4 +433,32 @@ test('public business page', { skip: !DB && 'TEST_DATABASE_URL not set' }, async
   assert.equal((await order()).body.error, 'subscription_expired');
   await owner.patch(ws, { page: { on: false, slug: 'salon-page' } });
   assert.equal((await anon.call('GET', '/api/public/salon-page')).status, 404);
+});
+
+test('building management collections and roles', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const owner = new Client();
+  const janitor = new Client();
+  const board = new Client();
+  await owner.login('09124444441');
+  await janitor.login('09124444442');
+  await board.login('09124444443');
+  const w = await owner.add('workspaces', { name: 'برج نمونه', type: 'building' });
+  const ws = `workspaces/${w.body.id}`;
+  await owner.add(`${ws}/people`, { name: 'مالک', role: 'owner', uid: (await owner.call('GET', '/api/me')).body.id });
+  await owner.add(`${ws}/people`, { name: 'سرایدار', role: 'staff', phone: '09124444442' });
+  await owner.add(`${ws}/people`, { name: 'هیئت مدیره', role: 'board', phone: '09124444443' });
+  await janitor.login('09124444442');
+  await board.login('09124444443');
+  const u = await owner.add(`${ws}/units`, { no: '۱۲', area: 100, occ: 'مالک ساکن', people: 3 });
+  assert.equal(u.status, 200);
+  assert.equal((await owner.add(`${ws}/dues`, { unit: u.body.id, month: '1405-09', amount: 2000000, paid: false })).status, 200);
+  assert.equal((await owner.add(`${ws}/tickets`, { title: 'لامپ', status: 'جدید' })).status, 200);
+  assert.equal((await owner.add(`${ws}/notices`, { title: 'جلسه', text: 'جمعه' })).status, 200);
+  // The janitor works on requests but does not see the charge book or the costs.
+  assert.equal((await janitor.get(`${ws}/tickets`)).body.docs.length, 1);
+  assert.equal((await janitor.get(`${ws}/dues`)).status, 403);
+  assert.equal((await janitor.get(`${ws}/costs`)).status, 403);
+  // The board sees the money.
+  assert.equal((await board.get(`${ws}/dues`)).body.docs.length, 1);
+  assert.equal((await board.get(`${ws}/costs`)).status, 200);
 });
