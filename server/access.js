@@ -8,7 +8,7 @@ export const WS_COLS = new Set([
   'people', 'products', 'sales', 'orders', 'payments', 'tasks', 'ideas', 'content', 'costs', 'salaries',
   'services', 'clients', 'appointments', 'sorders', 'menu', 'forders', 'inventory', 'jobs', 'parts',
   'rsales', 'ledger', 'checks', 'gsales', 'listings', 'visits', 'deals', 'plans', 'cars', 'cdeals',
-  'purchases', 'members', 'smslog',
+  'purchases', 'members', 'smslog', 'units', 'dues', 'tickets', 'notices',
 ]);
 const TOP = new Set(['workspaces', 'requests', 'jobtypes']);
 const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
@@ -16,7 +16,8 @@ const SEG = /^[A-Za-z0-9_\-.:]{1,100}$/;
 // Collections only some roles may open; everyone else in the workspace is refused.
 const ROLE_ONLY = {
   salaries: ['owner', 'gm'],
-  costs: ['owner', 'gm', 'manager'],
+  costs: ['owner', 'gm', 'manager', 'board', 'accountant'],
+  dues: ['owner', 'gm', 'board', 'accountant'],
   purchases: ['owner', 'gm', 'manager'],
   smslog: ['owner', 'gm', 'manager'],
 };
