@@ -77,6 +77,9 @@
     me: () => call('GET', '/api/me'),
     requestCode: (phone) => call('POST', '/api/auth/request', { phone }),
     verify: (phone, code) => call('POST', '/api/auth/verify', { phone, code }),
+    signup: (phone, password) => call('POST', '/api/auth/signup', { phone, password }),
+    login: (phone, password) => call('POST', '/api/auth/login', { phone, password }),
+    setPassword: (current, next) => call('POST', '/api/auth/password', { current, next }),
     logout: () => call('POST', '/api/auth/logout', {}),
     sms: {
       status: (ws) => call('GET', '/api/sms/status?ws=' + encodeURIComponent(ws)),
@@ -85,6 +88,7 @@
     admin: {
       overview: () => call('GET', '/api/admin/overview'),
       block: (id, blocked) => call('POST', '/api/admin/user', { id, blocked }),
+      resetPassword: (id) => call('POST', '/api/admin/password', { id }),
     },
     reconnect: () => { stream(); subs.forEach((_, p) => soon(p)); },
     start: stream,

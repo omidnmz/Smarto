@@ -1635,10 +1635,10 @@ function scrAdmin(){
   if(tab==='users'){
     const list=adm.users.filter(u=>!q||toEn(u.phone).includes(toEn(q))||u.panels.some(p=>String(wsById[p.ws]?.name||'').includes(q)));
     return head+search('جستجوی شماره یا نام کسب‌وکار')+`<section class="card"><div class="row"><h3>کاربران</h3><span class="small muted">${fmtN(list.length)} نفر${adm.users.some(u=>u.blocked)?' · '+fmtN(adm.users.filter(u=>u.blocked).length)+' مسدود':''}</span></div>
-      ${list.length?`<ul class="list">${list.slice(0,150).map(u=>`<li class="${u.blocked?'done':''}"><div class="grow"><div class="t"><span class="num">${esc(u.phone)}</span> ${u.admin?'<span class="pill p-info">مدیر سامانه</span>':''}${u.blocked?'<span class="pill p-bad">مسدود</span>':''}</div>
+      ${list.length?`<ul class="list">${list.slice(0,150).map(u=>`<li class="${u.blocked?'done':''}"><div class="grow"><div class="t"><span class="num">${esc(u.phone)}</span> ${u.admin?'<span class="pill p-info">مدیر سامانه</span>':''}${u.blocked?'<span class="pill p-bad">مسدود</span>':''}${u.admin||u.hasPassword?'':'<span class="pill p-mute">بدون رمز</span>'}</div>${ui.admTemp&&ui.admTemp.id===u.id?`<div class="m">رمز موقت: <b class="num" dir="ltr">${esc(ui.admTemp.pw)}</b> · این را تلفنی به کاربر بده تا وارد شود و رمزش را عوض کند.</div>`:''}
         <div class="m">عضو از ${jd(tsDay(u.createdAt))} · آخرین ورود ${ago(u.lastLogin)}</div>
         ${u.panels.length?`<div class="m">${u.panels.map(p=>{const w=wsById[p.ws];return w?`<button class="pill p-mute" data-open="${w.id}" style="border:0;cursor:pointer">${esc(w.name)} · ${esc(p.role==='owner'?'مالک':p.role||'')}</button>`:''}).join(' ')}</div>`:'<div class="m muted">هنوز پنلی ندارد</div>'}</div>
-        ${u.admin?'':`<button class="lnk ${u.blocked?'':'del'} ${armed==='blk/'+u.id?'armed':''}" data-admblock="${u.id}">${u.blocked?'رفع مسدودی':armed==='blk/'+u.id?'مسدود شود؟':'مسدود کردن'}</button>`}</li>`).join('')}</ul>`:empty('کاربری پیدا نشد.')}</section>
+        ${u.admin?'':`<button class="lnk ${armed==='admpw/'+u.id?'armed':''}" data-admpw="${u.id}">${armed==='admpw/'+u.id?'رمز موقت ساخته شود؟':'رمز موقت'}</button>`}${u.admin?'':`<button class="lnk ${u.blocked?'':'del'} ${armed==='blk/'+u.id?'armed':''}" data-admblock="${u.id}">${u.blocked?'رفع مسدودی':armed==='blk/'+u.id?'مسدود شود؟':'مسدود کردن'}</button>`}</li>`).join('')}</ul>`:empty('کاربری پیدا نشد.')}</section>
       <p class="small muted" style="margin:0">حساب مسدود از همه دستگاه‌ها خارج می‌شود و دیگر نمی‌تواند وارد شود. پنل‌ها و داده‌هایش پاک نمی‌شوند.</p>`;
   }
   if(tab==='panels'){
@@ -2431,6 +2431,8 @@ V.addEventListener('click',async e=>{
   if(d.create){if(ws)closeWs();if(!myUid){needLogin('create');return}uiView='create';createTeam='2-5';render();window.scrollTo({top:0});return}
   if(d.login){needLogin(null);return}
   if(d.relogin){loginStep.sent=false;render();return}
+  if(d.lgmode){const ph=document.getElementById('lg-phone');if(ph)loginStep.phone=ph.value.trim();loginStep.mode=d.lgmode;loginStep.sent=false;render();return}
+  if(d.admpw){if(armed!=='admpw/'+d.admpw){armed='admpw/'+d.admpw;render();return}armed=null;try{const r=await smarto.admin.resetPassword(d.admpw);ui.admTemp={id:d.admpw,pw:r.password};render()}catch(e){toast('رمز موقت ساخته نشد')}return}
   if(d.logout){try{await smarto.logout()}catch(e){}myUid=null;myPhone=null;amOwner=false;renderAcct();smarto.reconnect();subscribeAccountData();uiView='landing';render();toast('از حساب خارج شدی');return}
   if(d.admin){uiView='admin';adm=null;ui.admQ='';render();window.scrollTo({top:0});return}
   if(d.admreload){adm=null;render();return}
@@ -2574,11 +2576,24 @@ V.addEventListener('submit',async e=>{
     if(db){try{await db.collection('requests').add(r)}catch(err){}}
     uiView='needDone';render();window.scrollTo({top:0});return}
   if(f.dataset.form==='otp'){const phone=String(new FormData(f).get('phone')||'').trim();
-    try{const r=await smarto.requestCode(phone);loginStep.phone=phone;loginStep.sent=true;loginStep.pl=!!r?.phoneLogin;render();document.getElementById('lg-code')?.focus()}
+    try{const r=await smarto.requestCode(phone);loginStep.phone=phone;loginStep.sent=true;render();document.getElementById('lg-code')?.focus()}
     catch(err){toast(err.code==='bad_phone'?'شماره موبایل درست نیست':err.code==='wait'?'کمی صبر کن و دوباره بخواه':err.code==='sms_failed'?'پیامک ارسال نشد، دوباره امتحان کن':'خطا، دوباره امتحان کن')}return}
+  if(f.dataset.form==='pwlogin'||f.dataset.form==='pwsignup'){const fd=new FormData(f), phone=String(fd.get('phone')||'').trim(), pw=String(fd.get('password')||'');loginStep.phone=phone;
+    if(f.dataset.form==='pwsignup'&&pw!==String(fd.get('password2')||'')){toast('رمز و تکرارش یکی نیستند');return}
+    try{await (f.dataset.form==='pwsignup'?smarto.signup(phone,pw):smarto.login(phone,pw));toast(f.dataset.form==='pwsignup'?'حسابت ساخته شد':'خوش آمدی');await afterLogin()}
+    catch(err){const c=err.code;
+      if(c==='no_account'){loginStep.mode='signup';render();toast('حسابی با این شماره نیست؛ رمز بگذار و ثبت‌نام کن');return}
+      if(c==='exists'){loginStep.mode='login';render();toast('این شماره قبلاً ثبت‌نام کرده؛ وارد شو');return}
+      if(c==='admin_use_code'){loginStep.mode='code';render();toast('مدیر سامانه با کد وارد می‌شود');return}
+      toast(err.status===403||c==='blocked'?'این حساب مسدود شده است':c==='wrong_password'?'رمز اشتباه است':c==='locked'?'چند بار رمز اشتباه زده شد؛ ۱۵ دقیقه دیگر امتحان کن':c==='weak_password'?'رمز باید دست‌کم ۶ حرف یا رقم باشد':c==='bad_phone'?'شماره موبایل درست نیست':c==='too_many'?'چند دقیقه دیگر امتحان کن':'خطا، دوباره امتحان کن')}
+    return}
+  if(f.dataset.form==='setpw'){const fd=new FormData(f), next=String(fd.get('next')||'');if(next!==String(fd.get('next2')||'')){toast('رمز جدید و تکرارش یکی نیستند');return}
+    try{await smarto.setPassword(String(fd.get('current')||''),next);myHasPw=true;render();toast('رمز ذخیره شد')}
+    catch(err){toast(err.code==='wrong_password'?'رمز فعلی اشتباه است':err.code==='weak_password'?'رمز باید دست‌کم ۶ حرف یا رقم باشد':'ذخیره نشد')}
+    return}
   if(f.dataset.form==='verify'){const code=String(new FormData(f).get('code')||'').trim();
     try{await smarto.verify(loginStep.phone,code);toast('خوش آمدی');await afterLogin()}
-    catch(err){toast(err.status===403?'این حساب مسدود شده است':err.code==='wrong_code'?(loginStep.pl?'شماره را درست تکرار کن':'کد اشتباه است'):err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
+    catch(err){toast(err.status===403?'این حساب مسدود شده است':err.code==='wrong_code'?'کد اشتباه است':err.code==='expired'?'کد منقضی شده؛ دوباره بگیر':'خطا، دوباره امتحان کن')}return}
   const v={};new FormData(f).forEach((x,k)=>v[k]=String(x).trim());
   if(f.dataset.form==='page'){const pg=ws.page||{};
     const page={...pg,on:v.on==='on',slug:toEn(v.slug||'').toLowerCase(),phone:v.phone||'',hours:v.hours||'',instagram:v.instagram||'',address:v.address||'',about:v.about||''};
@@ -2714,14 +2729,14 @@ async function write(fn,msg){
 }
 
 // ---------- boot ----------
-let myPhone=null, loginStep={phone:'',sent:false,next:null}, reqUnsub=null, wsFirst=true;
+let myPhone=null, myHasPw=false, loginStep={phone:'',sent:false,next:null,mode:'login'}, reqUnsub=null, wsFirst=true;
 function subscribeAccountData(){
   if(reqUnsub){reqUnsub();reqUnsub=null}needReqs=[];
   if(myUid)reqUnsub=db.collection('requests').onSnapshot(snap=>{needReqs=snap.docs.map(d=>({id:d.id,...d.data()}));if(!ws&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('form[data-form=plan]')))render()},()=>{});
 }
 async function loadAccount(){
   let u={id:null};try{u=await smarto.me()}catch(e){}
-  myUid=u.id||null;myPhone=u.phone||null;amOwner=!!u.isAdmin;renderAcct();
+  myUid=u.id||null;myPhone=u.phone||null;myHasPw=!!u.hasPassword;amOwner=!!u.isAdmin;renderAcct();
 }
 function renderAcct(){const b=document.getElementById('acct');b.hidden=false;b.textContent=myUid?'حساب من':'ورود'}
 render();
@@ -2736,24 +2751,34 @@ render();
 })();
 async function afterLogin(){
   await loadAccount();smarto.reconnect();subscribeAccountData();
-  const next=loginStep.next;loginStep={phone:'',sent:false,next:null};
+  const next=loginStep.next;loginStep={phone:'',sent:false,next:null,mode:'login'};
   uiView=next||'landing';render();window.scrollTo({top:0});
 }
-function needLogin(next){loginStep={phone:'',sent:false,next};uiView='login';render();window.scrollTo({top:0})}
+function needLogin(next){loginStep={phone:'',sent:false,next,mode:'login'};uiView='login';render();window.scrollTo({top:0})}
 function scrLogin(){
-  return `
-  <div class="row"><h2>ورود یا ثبت‌نام</h2><button class="lnk" data-landing="1">انصراف</button></div>
-  <p class="muted" style="margin:0">با شماره موبایلت وارد شو. اگر صاحب کسب‌وکار شماره‌ات را در تیم ثبت کرده باشد، بعد از ورود پنل آن کسب‌وکار را هم می‌بینی.</p>
-  ${loginStep.sent?`<form class="f card" data-form="verify" style="padding:14px">
-      ${loginStep.pl?`<p class="full small muted" style="margin:0">فعلاً ورود بدون پیامک است: همان شماره موبایلت را دوباره بنویس.</p>
-      <label class="full">رمز (همان شماره موبایل)<input id="lg-code" name="code" inputmode="tel" placeholder="0912…" required></label>`
-      :`<p class="full small muted" style="margin:0">کد ۵ رقمی به ${esc(loginStep.phone)} پیامک شد.</p>
-      <label class="full">کد ورود<input id="lg-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="5" required></label>`}
+  const m=loginStep.mode||'login';
+  const phone=`<label class="full">شماره موبایل<input id="lg-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="0912…" required value="${esc(loginStep.phone)}"></label>`;
+  const tabs=`<div class="seg" role="group"><button data-lgmode="login" aria-pressed="${m==='login'}">ورود</button><button data-lgmode="signup" aria-pressed="${m==='signup'}">ثبت‌نام</button></div>`;
+  let body;
+  if(m==='code')body=loginStep.sent?`<form class="f card" data-form="verify" style="padding:14px">
+      <p class="full small muted" style="margin:0">کد ۵ رقمی به ${esc(loginStep.phone)} فرستاده شد.</p>
+      <label class="full">کد ورود<input id="lg-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="5" required></label>
       <button class="btn full">ورود</button>
       <button type="button" class="lnk full" data-relogin="1">تغییر شماره یا ارسال دوباره</button></form>`
-  :`<form class="f card" data-form="otp" style="padding:14px">
-      <label class="full">شماره موبایل<input id="lg-phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="0912…" required value="${esc(loginStep.phone)}"></label>
-      <button class="btn full">دریافت کد</button></form>`}`;
+    :`<form class="f card" data-form="otp" style="padding:14px">${phone}<button class="btn full">دریافت کد</button></form>`;
+  else if(m==='signup')body=`<form class="f card" data-form="pwsignup" style="padding:14px">${phone}
+      <label class="full">رمز عبور (حداقل ۶ حرف یا رقم)<input id="lg-pw" name="password" type="password" autocomplete="new-password" minlength="6" required></label>
+      <label class="full">تکرار رمز<input id="lg-pw2" name="password2" type="password" autocomplete="new-password" minlength="6" required></label>
+      <button class="btn full">ساخت حساب</button></form>`;
+  else body=`<form class="f card" data-form="pwlogin" style="padding:14px">${phone}
+      <label class="full">رمز عبور<input id="lg-pw" name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn full">ورود</button></form>
+    <p class="small muted" style="margin:0">رمزت را فراموش کرده‌ای؟ به پشتیبانی اسمارتو پیام بده تا یک رمز موقت برایت بسازد.</p>`;
+  return `
+  <div class="row"><h2>${m==='signup'?'ثبت‌نام':'ورود'}</h2><button class="lnk" data-landing="1">انصراف</button></div>
+  <p class="muted" style="margin:0">با شماره موبایل و رمز عبور وارد شو. اگر صاحب کسب‌وکار شماره‌ات را در تیم ثبت کرده باشد، بعد از ورود پنل آن کسب‌وکار را هم می‌بینی.</p>
+  ${m==='code'?'':tabs}${body}
+  <button class="lnk" data-lgmode="${m==='code'?'login':'code'}" style="justify-self:start">${m==='code'?'ورود با رمز عبور':'ورود با کد پیامکی'}</button>`;
 }
 function scrAccount(){
   const mine=workspaces.filter(w=>w._access==='owner'||w._access==='member');
@@ -2761,6 +2786,13 @@ function scrAccount(){
   <div class="row"><h2>حساب من</h2><button class="lnk" data-landing="1">بازگشت</button></div>
   <section class="card"><div class="row"><span class="t">${esc(myPhone||'')}</span>${amOwner?'<span class="pill p-info">مدیر سامانه</span>':''}</div>
     <div class="m">${fmtN(mine.length)} کسب‌وکار</div></section>
+  <section class="card"><h3>${myHasPw?'تغییر رمز عبور':'ساخت رمز عبور'}</h3>${myHasPw?'':'<p class="small muted" style="margin:0">برای این حساب هنوز رمزی نساخته‌ای. با رمز، دفعه بعد با شماره و رمز وارد می‌شوی.</p>'}
+    <form class="f" data-form="setpw" style="padding:0">
+      ${myHasPw?'<label class="full">رمز فعلی<input id="pw-cur" name="current" type="password" autocomplete="current-password" required></label>':''}
+      <label>رمز جدید<input id="pw-new" name="next" type="password" autocomplete="new-password" minlength="6" required></label>
+      <label>تکرار رمز جدید<input id="pw-new2" name="next2" type="password" autocomplete="new-password" minlength="6" required></label>
+      <button class="btn full">ذخیره رمز</button></form>
+    ${myHasPw?'<p class="small muted" style="margin:0">با تغییر رمز، حسابت روی دستگاه‌های دیگر خارج می‌شود.</p>':''}</section>
   ${amOwner?'<button class="btn" data-admin="1" style="justify-self:start">پنل مدیریت سامانه</button>':''}
   <button class="btn" data-logout="1" style="justify-self:start;background:var(--bad)">خروج از حساب</button>`;
 }

@@ -19,7 +19,7 @@ before(async () => {
   await c.query('drop table if exists sessions, otps, users, docs cascade');
   await c.end();
   srv = spawn(process.execPath, ['server/index.js'], {
-    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '0', LOGIN_IP_LIMIT: '1000' },
+    env: { ...process.env, DATABASE_URL: DB, PORT: String(PORT), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', LOGIN_IP_LIMIT: '1000' },
   });
   srv.stdout.on('data', (d) => { out += d; });
   srv.stderr.on('data', (d) => { out += d; });
@@ -305,34 +305,42 @@ test('customer club SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async ()
   assert.deepEqual((await owner.call('GET', `/api/sms/status?ws=${w.body.id}`)).body, { quota: 2, used: 1, live: false });
 });
 
-test('temporary phone login without SMS', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
-  const port = 3998;
-  let log = '';
-  const s2 = spawn(process.execPath, ['server/index.js'], {
-    env: { ...process.env, DATABASE_URL: DB, PORT: String(port), ADMIN_PHONE: ADMIN, SESSION_SECRET: 'test', KAVENEGAR_API_KEY: '', PHONE_LOGIN: '' },
-  });
-  s2.stdout.on('data', (d) => { log += d; });
-  s2.stderr.on('data', (d) => { log += d; });
-  try {
-    for (let i = 0; i < 50 && !log.includes('Server listening'); i++) await new Promise((r) => setTimeout(r, 100));
-    const post = (url, body) => fetch(`http://127.0.0.1:${port}${url}`, {
-      method: 'POST', headers: { 'content-type': 'application/json', 'x-smarto': '1' }, body: JSON.stringify(body),
-    }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
+test('phone and password accounts', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
+  const a = new Client();
+  const b = new Client();
+  const admin = await adminClient();
+  const ph = '09123334444';
+  assert.equal((await a.call('POST', '/api/auth/login', { phone: ph, password: '123456' })).body.error, 'no_account');
+  assert.equal((await a.call('POST', '/api/auth/signup', { phone: ph, password: '123' })).body.error, 'weak_password');
+  // Persian digits are the same password as Latin digits.
+  const s = await a.call('POST', '/api/auth/signup', { phone: '۰۹۱۲۳۳۳۴۴۴۴', password: '۱۲۳۴۵۶' });
+  assert.equal(s.status, 200);
+  assert.equal((await a.call('GET', '/api/me')).body.hasPassword, true);
+  assert.equal((await b.call('POST', '/api/auth/signup', { phone: ph, password: 'another1' })).body.error, 'exists');
+  assert.equal((await b.call('POST', '/api/auth/login', { phone: ph, password: 'nope12' })).body.error, 'wrong_password');
+  assert.equal((await b.call('POST', '/api/auth/login', { phone: ph, password: '123456' })).status, 200);
+  assert.equal((await b.call('GET', '/api/me')).body.id, s.body.id);
 
-    const req = await post('/api/auth/request', { phone: '09123334444' });
-    assert.equal(req.body.phoneLogin, true);
-    assert.equal((await post('/api/auth/verify', { phone: '09123334444', code: '09123334445' })).status, 400);
-    const ok = await post('/api/auth/verify', { phone: '09123334444', code: '۰۹۱۲۳۳۳۴۴۴۴' });
-    assert.equal(ok.status, 200);
-    assert.equal(ok.body.isAdmin, false);
+  // Changing the password needs the current one and signs out other devices.
+  assert.equal((await a.call('POST', '/api/auth/password', { current: 'bad', next: 'newpass1' })).body.error, 'wrong_password');
+  assert.equal((await a.call('POST', '/api/auth/password', { current: '123456', next: 'newpass1' })).status, 200);
+  assert.equal((await a.call('GET', '/api/me')).body.id, s.body.id);
+  assert.equal((await b.call('GET', '/api/me')).body.id, null);
 
-    // The admin still needs the real code.
-    const a = await post('/api/auth/request', { phone: ADMIN });
-    assert.notEqual(a.body.phoneLogin, true);
-    assert.equal((await post('/api/auth/verify', { phone: ADMIN, code: ADMIN })).status, 400);
-  } finally {
-    s2.kill();
-  }
+  // The admin phone cannot be claimed with a password.
+  assert.equal((await b.call('POST', '/api/auth/signup', { phone: ADMIN, password: '123456' })).body.error, 'admin_use_code');
+
+  // A forgotten password: the admin makes a one-time password.
+  const r = await admin.call('POST', '/api/admin/password', { id: s.body.id });
+  assert.match(r.body.password, /^\d{6}$/);
+  assert.equal((await a.call('GET', '/api/me')).body.id, null);
+  assert.equal((await b.call('POST', '/api/auth/login', { phone: ph, password: 'newpass1' })).body.error, 'wrong_password');
+  assert.equal((await b.call('POST', '/api/auth/login', { phone: ph, password: r.body.password })).status, 200);
+  assert.equal((await b.call('POST', '/api/admin/password', { id: s.body.id })).status, 403);
+
+  // Too many wrong passwords lock the account for a while.
+  for (let i = 0; i < 8; i++) await a.call('POST', '/api/auth/login', { phone: ph, password: 'wrong' + i });
+  assert.equal((await a.call('POST', '/api/auth/login', { phone: ph, password: r.body.password })).body.error, 'locked');
 });
 
 test('monthly subscription: one free month, then read-only until renewed', { skip: !DB && 'TEST_DATABASE_URL not set' }, async () => {
